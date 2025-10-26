@@ -1,0 +1,32 @@
+pitch-dataroom/
+├── app/
+│   ├── layout.jsx                 # Root layout
+│   ├── page.jsx                   # Homepage - deck list
+│   ├── [slug]/
+│   │   └── page.jsx               # Dynamic deck viewer
+│   ├── admin/
+│   │   └── page.jsx               # Upload management
+│   └── api/                       # Optional API routes
+│       └── analytics/
+│           └── route.js
+├── components/
+│   ├── DeckList.jsx
+│   ├── DeckViewer.jsx
+│   ├── PDFPage.jsx
+│   ├── Navigation.jsx
+│   └── UploadForm.jsx
+├── lib/
+│   ├── supabase.js                # Supabase client
+│   ├── deckService.js
+│   └── analyticsService.js
+├── hooks/
+│   ├── useDecks.js
+│   └── useAnalytics.js
+├── public/
+├── .env.local
+├── next.config.js
+└── package.json
+
+
+
+https://rqplzxizgdkndzoncwdc.supabase.co/storage/v1/object/public/decks/Ramen_Rumble%20NFT.pdf
