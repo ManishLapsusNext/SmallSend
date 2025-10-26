@@ -1,3 +1,4 @@
+/* === 1. General Reset & Body Styles === */
 * {
   margin: 0;
   padding: 0;
@@ -10,7 +11,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #f5f5f5;
+  background: #f5f5f5; /* Fallback for pages other than the viewer */
   color: #333;
 }
 
@@ -19,241 +20,159 @@ body {
   width: 100%;
 }
 
-/* Home Page */
-.home-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 60px 20px;
-}
 
-.deck-list h1 {
-  font-size: 2.5rem;
-  margin-bottom: 40px;
-  text-align: center;
-  color: #1a1a1a;
-}
-
-.deck-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 30px;
-  margin-top: 40px;
-}
-
-.deck-card {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
-  text-decoration: none;
-  color: inherit;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.deck-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-.deck-card h2 {
-  font-size: 1.5rem;
-  margin-bottom: 12px;
-  color: #1a1a1a;
-}
-
-.deck-card p {
-  color: #666;
-  line-height: 1.6;
-  margin-bottom: 16px;
-}
-
-.view-link {
-  display: inline-block;
-  color: #0066cc;
-  font-weight: 500;
-  margin-top: 12px;
-}
-
-/* Viewer Page - FIXED */
+/* === 2. Full-Screen Viewer Page Layout === */
 .viewer-page {
-  min-height: 100vh;
-  background: #2a2a2a;
+  display: flex; /* Use flexbox to manage child layout */
+  flex-direction: column;
+  height: 100vh; /* Critical: Make the page take up the full screen height */
+  width: 100vw;   /* Critical: Make the page take up the full screen width */
+  background: #1c1c1c; /* Dark background for the viewer */
   color: white;
-  padding: 20px;
-  width: 100%;
+  padding: 0; /* Remove padding for an edge-to-edge experience */
+  overflow: hidden; /* Prevent any accidental scrollbars */
 }
 
+/* Position the back link on top of the viewer */
 .back-link {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 10; /* Ensure it's above the slide content */
   display: inline-block;
   color: #fff;
   text-decoration: none;
-  padding: 12px 24px;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.4);
   border-radius: 8px;
-  margin-bottom: 20px;
-  transition: background 0.2s;
+  transition: background 0.2s ease;
 }
 
 .back-link:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.7);
 }
 
-.deck-viewer {
-  width: 100%;
-  margin: 0 auto;
-}
 
-.viewer-header {
+/* === 3. Image Deck Viewer Component === */
+.image-deck-viewer {
+  flex: 1; /* Allow the component to fill the entire .viewer-page */
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  margin-bottom: 30px;
-  flex-wrap: wrap;
-  gap: 20px;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  position: relative; /* Needed for positioning the footer */
 }
 
-.viewer-header h1 {
-  font-size: 2rem;
-  color: white;
+.slide-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative; /* Needed for positioning the navigation overlay */
+  padding: 2.5rem; /* Give some breathing room around the slide image */
+}
+
+.slide-image {
+  /* This is the key to the layout working perfectly */
+  object-fit: contain; /* Scales the image to fit inside the container while maintaining aspect ratio */
+  
+  /* Ensure the image never overflows its container */
+  max-width: 100%;
+  max-height: 100%;
+  
+  /* Visual styling */
+  display: block;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border-radius: 8px; /* Optional: slightly rounded corners */
+}
+
+
+/* === 4. Overlay Navigation === */
+.navigation-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex; /* This creates the two-column layout for the nav areas */
+  z-index: 5; /* Sit on top of the image */
+}
+
+.nav-area {
+  height: 100%;
+  flex: 1; /* Each navigation area takes up exactly half the width */
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent; /* Improves mobile experience */
+  transition: background-color 0.3s ease;
+}
+
+/* Show subtle arrow hints on hover to guide the user */
+.nav-area.prev:hover::after,
+.nav-area.next:hover::after {
+  content: '‹';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 4rem;
+  font-weight: 200;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 0 2rem;
+  pointer-events: none; /* Make sure the pseudo-element doesn't capture clicks */
+  text-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+.nav-area.next:hover::after {
+  content: '›';
+  right: 0;
+}
+
+.nav-area.prev:hover::after {
+  left: 0;
+}
+
+
+/* === 5. Footer & Page Info === */
+.viewer-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  z-index: 10; /* Ensure it's above other elements */
+  pointer-events: none; /* Allow clicks to pass through the footer area */
 }
 
 .page-info {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
   padding: 8px 16px;
   border-radius: 20px;
   font-size: 0.9rem;
-}
-
-.pdf-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #1a1a1a;
-  border-radius: 12px;
-  padding: 20px;
-  min-height: 85vh;
-  margin-bottom: 30px;
-  width: 100%;
-}
-
-.pdf-loading {
-  color: #999;
-  font-size: 1.1rem;
-}
-
-.react-pdf__Document {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-}
-
-.react-pdf__Page {
-  display: flex !important;
-  justify-content: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.react-pdf__Page canvas {
-  max-width: 100% !important;
-  max-height: 85vh !important;
-  height: auto !important;
-  width: auto !important;
-  display: block;
-}
-
-/* Navigation */
-.navigation {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 30px;
-}
-
-.nav-button {
-  padding: 14px 32px;
-  font-size: 1rem;
   font-weight: 500;
-  border: none;
-  border-radius: 8px;
-  background: #0066cc;
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s;
-  min-width: 140px;
+  pointer-events: auto; /* Re-enable pointer events for the info bubble itself */
 }
 
-.nav-button:hover:not(:disabled) {
-  background: #0052a3;
-  transform: translateY(-2px);
-}
 
-.nav-button:disabled {
-  background: #444;
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-/* Loading & Error States */
-.loading-container,
-.error-container,
-.empty-state {
-  text-align: center;
-  padding: 100px 20px;
-}
-
-.loading-container p,
-.error-container p {
-  font-size: 1.2rem;
-  color: #666;
-  margin-top: 20px;
-}
-
-.error-container h2 {
-  font-size: 2rem;
-  color: #d32f2f;
-  margin-bottom: 16px;
-}
-
-.empty-state h2 {
-  font-size: 2rem;
-  margin-bottom: 16px;
-}
-
-/* Responsive */
+/* === 6. Responsive Adjustments === */
 @media (max-width: 768px) {
-  .deck-list h1 {
-    font-size: 2rem;
+  .slide-container {
+    padding: 1rem; /* Reduce padding on smaller screens */
   }
 
-  .deck-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
-  .viewer-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .viewer-header h1 {
-    font-size: 1.5rem;
-  }
-
-  .navigation {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .nav-button {
-    width: 100%;
+  .back-link {
+    top: 15px;
+    left: 15px;
+    padding: 8px 16px;
   }
   
-  .react-pdf__Page canvas {
-    max-height: 70vh !important;
+  /* Hide the hover arrows on touch devices where hover is not reliable */
+  .nav-area.prev:hover::after,
+  .nav-area.next:hover::after {
+    display: none;
   }
 }

@@ -1,122 +1,75 @@
-import { useState, useEffect, useRef } from 'react'
-import { Document, Page, pdfjs } from 'react-pdf'
-import { analyticsService } from '../services/analyticsService'
-import 'react-pdf/dist/Page/AnnotationLayer.css'
-import 'react-pdf/dist/Page/TextLayer.css'
+import { useState, useCallback } from 'react';
+import { Document, Page, pdfjs } from 'react-pdf';
+import { useDeckAnalytics } from '../hooks/useDeckAnalytics';
+import { useKeyboardControls } from '../hooks/useKeyboardControls';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
+// Set up PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 function DeckViewer({ deck }) {
-  const [numPages, setNumPages] = useState(null)
-  const [pageNumber, setPageNumber] = useState(1)
-  const [loading, setLoading] = useState(true)
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
-  const [viewedPages, setViewedPages] = useState(new Set())
-  const pageStartTime = useRef(Date.now())
-  const containerRef = useRef(null)
+  const [numPages, setNumPages] = useState(null);
+  const [pageNumber, setPageNumber] = useState(1);
 
-  // Calculate responsive dimensions
-  useEffect(() => {
-    const updateDimensions = () => {
-      if (containerRef.current) {
-        const containerWidth = containerRef.current.offsetWidth
-        const containerHeight = window.innerHeight * 0.75
-        
-        // Calculate dimensions that fit the container while maintaining aspect ratio
-        setDimensions({
-          width: Math.min(containerWidth - 40, 1800),
-          height: containerHeight
-        })
-      }
+  // Custom hooks for handling logic
+  const { trackCurrentPage } = useDeckAnalytics(deck, pageNumber, numPages);
+
+  const onDocumentLoadSuccess = useCallback(({ numPages }) => {
+    setNumPages(numPages);
+  }, []);
+
+  const goToPrevPage = useCallback(() => {
+    setPageNumber(prevPageNumber => Math.max(prevPageNumber - 1, 1));
+  }, []);
+
+  const goToNextPage = useCallback(() => {
+    if (numPages) {
+      setPageNumber(prevPageNumber => Math.min(prevPageNumber + 1, numPages));
     }
+  }, [numPages]);
 
-    updateDimensions()
-    window.addEventListener('resize', updateDimensions)
-    return () => window.removeEventListener('resize', updateDimensions)
-  }, [])
-
-  const onDocumentLoadSuccess = ({ numPages }) => {
-    setNumPages(numPages)
-    setLoading(false)
-    analyticsService.trackDeckView(deck)
-  }
-
-  const goToPrevPage = () => {
-    if (pageNumber > 1) {
-      trackCurrentPage()
-      setPageNumber(pageNumber - 1)
-      pageStartTime.current = Date.now()
+  // Set up keyboard controls with stable callbacks
+  useKeyboardControls(goToPrevPage, goToNextPage);
+  
+  const handleNavigationClick = (direction) => {
+    // Manually track page before navigating
+    trackCurrentPage(); 
+    if (direction === 'next') {
+      goToNextPage();
+    } else {
+      goToPrevPage();
     }
-  }
-
-  const goToNextPage = () => {
-    if (pageNumber < numPages) {
-      trackCurrentPage()
-      setPageNumber(pageNumber + 1)
-      pageStartTime.current = Date.now()
-    }
-  }
-
-  const trackCurrentPage = () => {
-    const timeSpent = Math.floor((Date.now() - pageStartTime.current) / 1000)
-    analyticsService.trackPageView(deck, pageNumber, timeSpent)
-    setViewedPages(prev => new Set([...prev, pageNumber]))
-  }
-
-  useEffect(() => {
-    if (numPages && viewedPages.size === numPages) {
-      analyticsService.trackDeckComplete(deck, numPages)
-    }
-  }, [viewedPages, numPages, deck])
-
-  useEffect(() => {
-    pageStartTime.current = Date.now()
-    return () => {
-      if (pageNumber) trackCurrentPage()
-    }
-  }, [pageNumber])
-
-  useEffect(() => {
-    const handleKeyPress = (e) => {
-      if (e.key === 'ArrowLeft') goToPrevPage()
-      if (e.key === 'ArrowRight') goToNextPage()
-    }
-
-    window.addEventListener('keydown', handleKeyPress)
-    return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [pageNumber, numPages])
+  };
 
   return (
     <div className="deck-viewer">
-      <div className="viewer-header">
+      <header className="viewer-header">
         <h1>{deck.title}</h1>
         <div className="page-info">
           Page {pageNumber} of {numPages || '...'}
         </div>
-      </div>
+      </header>
 
-      <div className="pdf-container" ref={containerRef}>
-        {loading && <div className="pdf-loading">Loading PDF...</div>}
-        
+      <main className="pdf-container">
         <Document
           file={deck.file_url}
           onLoadSuccess={onDocumentLoadSuccess}
-          loading={<div>Loading document...</div>}
-          error={<div>Failed to load PDF. Please try again.</div>}
+          loading={<div className="pdf-loading">Loading PDF...</div>}
+          error={<div className="pdf-error">Failed to load PDF.</div>}
         >
           <Page 
             key={`page_${pageNumber}`}
             pageNumber={pageNumber}
-            width={dimensions.width}
             renderTextLayer={false}
             renderAnnotationLayer={false}
           />
         </Document>
-      </div>
+      </main>
 
-      <div className="navigation">
+      <nav className="navigation">
         <button 
-          onClick={goToPrevPage} 
+          onClick={() => handleNavigationClick('prev')}
           disabled={pageNumber <= 1}
           className="nav-button"
         >
@@ -124,15 +77,15 @@ function DeckViewer({ deck }) {
         </button>
         
         <button 
-          onClick={goToNextPage} 
+          onClick={() => handleNavigationClick('next')}
           disabled={pageNumber >= numPages}
           className="nav-button"
         >
           Next →
         </button>
-      </div>
+      </nav>
     </div>
-  )
+  );
 }
 
-export default DeckViewer
+export default DeckViewer;
