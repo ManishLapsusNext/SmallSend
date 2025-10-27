@@ -30,3 +30,36 @@ pitch-dataroom/
 
 
 https://rqplzxizgdkndzoncwdc.supabase.co/storage/v1/object/public/decks/Ramen_Rumble%20NFT.pdf
+
+
+
+Things to do
+
+
+The Required (Correct) Workflow:
+
+1    You upload a book (PDF) to Supabase.
+
+2   A new automated process (a Supabase Function) triggers. It takes the book, goes to a photocopier, and makes an image of every single page. It then stores these photos (images).
+
+3  This process updates the database record. Instead of linking to the book, it now links to the list of photos.
+
+4    Now, your deckService asks for the deck and receives the list of photos.
+
+5   Viewer.jsx hands the list of photos to the digital picture frame (ImageDeckViewer).
+
+6    The picture frame (ImageDeckViewer) is happy because it received the exact data it was designed for, and it displays your slides perfectly.
+
+Conclusion and Next Steps
+
+Your React code is correct. Do not change Viewer.jsx or ImageDeckViewer.jsx. The "No pages found" message is proof that your frontend is working properly and is correctly identifying that it's being given the wrong type of data.
+
+Your entire focus now must be on implementing Step 2 and 3 in the "Correct Workflow." This is a backend task. You need to create a system that automatically converts an uploaded PDF into a series of images.
+
+The keywords to search for are:
+
+    "Supabase Edge Function PDF to image"
+
+    "Node.js PDF to image library" (for use inside the Edge Function)
+
+    "Trigger Supabase Function on file upload"
