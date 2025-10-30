@@ -52,8 +52,6 @@ The Required (Correct) Workflow:
 
 Conclusion and Next Steps
 
-Your React code is correct. Do not change Viewer.jsx or ImageDeckViewer.jsx. The "No pages found" message is proof that your frontend is working properly and is correctly identifying that it's being given the wrong type of data.
-
 Your entire focus now must be on implementing Step 2 and 3 in the "Correct Workflow." This is a backend task. You need to create a system that automatically converts an uploaded PDF into a series of images.
 
 The keywords to search for are:
