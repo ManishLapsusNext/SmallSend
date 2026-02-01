@@ -10,6 +10,7 @@ import {
   X,
   Upload,
   RotateCcw,
+  LogOut,
 } from "lucide-react";
 import { deckService } from "../services/deckService";
 import { supabase } from "../services/supabase";
@@ -17,8 +18,9 @@ import defaultBanner from "../assets/banner.png";
 
 function DeckList({ decks, loading, onDelete }) {
   const [branding, setBranding] = useState({
-    room_name: "SmallSend Data Room",
-    banner_url: null,
+    room_name: "Deckly",
+    banner_url:
+      "https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=2000",
   });
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editValue, setEditValue] = useState("");
@@ -44,6 +46,10 @@ function DeckList({ decks, loading, onDelete }) {
     }
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
   const handleStartEdit = () => {
     setEditValue(branding.room_name);
     setIsEditingTitle(true);
@@ -66,12 +72,18 @@ function DeckList({ decks, loading, onDelete }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) return;
+    const userId = session.user.id;
+
     setUploading(true);
     setShowBrandingMenu(false);
 
     try {
       const fileExt = file.name.split(".").pop();
-      const fileName = `branding/banner-${Date.now()}.${fileExt}`;
+      const fileName = `${userId}/branding/banner-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("decks")
@@ -150,6 +162,11 @@ function DeckList({ decks, loading, onDelete }) {
                 <Upload size={16} />
                 <span>Change Banner</span>
               </button>
+              <button className="menu-item" onClick={handleLogout}>
+                <LogOut size={16} />
+                <span>Sign Out</span>
+              </button>
+              <div className="menu-divider"></div>
               <button
                 className="menu-item reset-btn"
                 onClick={handleResetBranding}

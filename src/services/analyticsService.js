@@ -1,15 +1,19 @@
 import posthog from 'posthog-js'
 
 // Initialize PostHog
-const posthogKey = import.meta.env.VITE_POSTHOG_KEY
-const posthogHost = import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com'
+const posthogKey = import.meta.env.VITE_PUBLIC_POSTHOG_KEY
+const posthogHost = import.meta.env.VITE_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com'
 
 if (posthogKey) {
   posthog.init(posthogKey, {
     api_host: posthogHost,
+    // Default feature flag rollout date
+    defaults: '2025-05-24',
     autocapture: true,
     capture_pageview: true,
-    capture_pageleave: true
+    capture_pageleave: true,
+    capture_exceptions: true, // Enable error tracking
+    debug: import.meta.env.MODE === 'development'
   })
 } else {
   console.warn('PostHog key not found - analytics disabled')
