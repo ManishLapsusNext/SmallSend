@@ -34,7 +34,7 @@ Whether you want to self-host your own private Data Room or contribute to the ne
 1. **Clone the Repo**
 
    ```bash
-   git clone https://github.com/your-repo/pitch-level29.git
+   git clone https://github.com/ManishLapsusNext/SmallSend.git
    ```
 
 2. **Install Dependencies**
