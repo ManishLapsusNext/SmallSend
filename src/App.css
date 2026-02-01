@@ -41,25 +41,20 @@ body {
 .home-page {
   width: 100%;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .home-container {
-  max-width: 1200px;
+  max-width: 1300px;
+  width: 100%;
   margin: 0 auto;
   padding: 0 2rem 6rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 .hero-section {
-  width: 100vw;
-  position: relative;
-  left: 50%;
-  right: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
-  padding: 10rem 0;
+  width: 100%;
+  padding: 8rem 2rem;
   margin-bottom: 4rem;
   background: radial-gradient(
     circle at center,
@@ -70,18 +65,20 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  text-align: center;
+}
+
+.hero-content {
+  max-width: 1000px;
 }
 
 .deck-list {
   width: 100%;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
 }
 
-.deck-list h1 {
+.hero-section h1 {
   font-family: "Outfit", sans-serif;
-  font-size: clamp(3rem, 10vw, 5rem);
+  font-size: clamp(3rem, 10vw, 5.5rem);
   font-weight: 900;
   margin-bottom: 0;
   text-align: center;
@@ -90,7 +87,26 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: -0.05em;
-  line-height: 1;
+  line-height: 1.1;
+}
+
+.empty-state,
+.loading {
+  width: 100%;
+  text-align: center;
+  padding: 4rem 1rem;
+}
+
+.empty-state h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.empty-state p,
+.loading p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
 }
 
 .fab-button {

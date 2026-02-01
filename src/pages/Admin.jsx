@@ -186,11 +186,16 @@ function Admin() {
 
   return (
     <div className="home-page">
-      <div className="home-container">
-        <header className="hero-section">
+      <header className="hero-section">
+        <div className="hero-content">
           <h1>{editId ? "Update Deck" : "Upload New Deck"}</h1>
-        </header>
+        </div>
+      </header>
 
+      <main
+        className="home-container"
+        style={{ display: "flex", justifyContent: "center" }}
+      >
         <div
           className="admin-content"
           style={{ width: "100%", maxWidth: "600px" }}
@@ -278,7 +283,7 @@ function Admin() {
             </div>
           </form>
         </div>
-      </div>
+      </main>
 
       <style>{`
         .admin-form {
