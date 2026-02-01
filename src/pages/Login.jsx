@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../services/supabase";
 import { Lock, Mail, Loader2 } from "lucide-react";
+import logo from "../assets/Deckly.png";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -35,7 +36,7 @@ function Login() {
       <div className="login-card">
         <div className="login-header">
           <div className="login-logo">
-            <Lock size={32} className="logo-icon" />
+            <img src={logo} alt="Deckly" className="logo-img" />
           </div>
           <h1>Deckly Access</h1>
           <p>Please sign in to manage your Data Room</p>

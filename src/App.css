@@ -757,20 +757,16 @@ body {
 }
 
 .login-logo {
-  width: 64px;
-  height: 64px;
-  background: linear-gradient(
-    135deg,
-    var(--accent-primary) 0%,
-    var(--highlight-color) 100%
-  );
-  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1.5rem;
-  color: #1b1926;
-  box-shadow: 0 10px 20px rgba(177, 140, 254, 0.3);
+}
+
+.logo-img {
+  max-width: 150px;
+  height: auto;
+  object-fit: contain;
 }
 
 .login-header h1 {
