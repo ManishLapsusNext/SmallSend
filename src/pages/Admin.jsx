@@ -78,7 +78,7 @@ function Admin() {
     for (let i = 1; i <= numPages; i++) {
       setProgress(`Processing page ${i} of ${numPages}...`);
       const page = await pdf.getPage(i);
-      const viewport = page.getViewport({ scale: 2 }); // High res
+      const viewport = page.getViewport({ scale: 1.5 }); // Balanced resolution
 
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
@@ -88,7 +88,7 @@ function Admin() {
       await page.render({ canvasContext: context, viewport }).promise;
 
       const blob = await new Promise((resolve) =>
-        canvas.toBlob(resolve, "image/png"),
+        canvas.toBlob(resolve, "image/webp", 0.8),
       );
       imageBlobs.push(blob);
     }
