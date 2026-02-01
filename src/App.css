@@ -1,4 +1,17 @@
-/* === 1. General Reset & Body Styles === */
+/* === 1. General Reset & Design Tokens === */
+:root {
+  --bg-primary: #0f1115;
+  --bg-secondary: #1a1d23;
+  --bg-card: #22262d;
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --accent-primary: #6366f1;
+  --accent-hover: #818cf8;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -7,12 +20,16 @@
 
 body {
   font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
-    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    "Outfit",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #f5f5f5; /* Fallback for pages other than the viewer */
-  color: #333;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .app {
@@ -20,47 +37,201 @@ body {
   width: 100%;
 }
 
-/* === 2. Full-Screen Viewer Page Layout === */
-.viewer-page {
-  display: flex; /* Use flexbox to manage child layout */
-  flex-direction: column;
-  height: 100vh; /* Critical: Make the page take up the full screen height */
-  width: 100vw; /* Critical: Make the page take up the full screen width */
-  background: #1c1c1c; /* Dark background for the viewer */
-  color: white;
-  padding: 0; /* Remove padding for an edge-to-edge experience */
-  overflow: hidden; /* Prevent any accidental scrollbars */
+/* === 2. Home Page & Data Room Layout === */
+.home-page {
+  width: 100%;
+  min-height: 100vh;
 }
 
-/* Position the back link on top of the viewer */
+.home-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem 6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hero-section {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  padding: 10rem 0;
+  margin-bottom: 4rem;
+  background: radial-gradient(
+    circle at center,
+    rgba(99, 102, 241, 0.12) 0%,
+    transparent 70%
+  );
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.deck-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.deck-list h1 {
+  font-family: "Outfit", sans-serif;
+  font-size: clamp(3rem, 10vw, 5rem);
+  font-weight: 900;
+  margin-bottom: 0;
+  text-align: center;
+  background: linear-gradient(to bottom, #ffffff 30%, #94a3b8 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.deck-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+/* === 3. Premium Deck Cards === */
+.deck-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition-smooth);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.deck-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--accent-primary);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.deck-thumbnail {
+  aspect-ratio: 16/10;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Placeholder for thumbnail icon/text */
+.deck-thumbnail::after {
+  content: "📄";
+  font-size: 3rem;
+  opacity: 0.2;
+}
+
+.thumbnail-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: var(--transition-smooth);
+}
+
+.deck-card:hover .thumbnail-preview {
+  transform: scale(1.05);
+}
+
+.deck-card-content {
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.deck-card h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+
+.deck-card p {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  flex: 1;
+}
+
+.view-link {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition-smooth);
+}
+
+.deck-card:hover .view-link {
+  color: var(--accent-hover);
+  gap: 0.75rem;
+}
+
+/* === 4. Full-Screen Viewer Page Layout === */
+.viewer-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: #090a0c;
+  color: white;
+  padding: 0;
+  overflow: hidden;
+}
+
 .back-link {
   position: absolute;
   top: 20px;
   left: 20px;
-  z-index: 10; /* Ensure it's above the slide content */
-  display: inline-block;
-  color: #fff;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary);
   text-decoration: none;
-  padding: 10px 20px;
+  padding: 8px 16px;
   background: rgba(0, 0, 0, 0.4);
-  border-radius: 8px;
-  transition: background 0.2s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: var(--transition-smooth);
 }
 
 .back-link:hover {
-  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* === 3. Image Deck Viewer Component === */
-.image-deck-viewer {
-  flex: 1; /* Allow the component to fill the entire .viewer-page */
+/* === 5. Viewer Components === */
+.image-deck-viewer,
+.deck-viewer {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
-  position: relative; /* Needed for positioning the footer */
+  position: relative;
 }
 
 .slide-container {
@@ -69,44 +240,35 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  position: relative; /* Needed for positioning the navigation overlay */
-  padding: 0; /* Remove padding to let the slide fill the screen */
+  position: relative;
+  padding: 0;
 }
 
 .slide-image {
-  /* This is the key to the layout working perfectly */
-  object-fit: contain; /* Scales the image to fit inside the container while maintaining aspect ratio */
-
-  /* Ensure the image never overflows its container */
+  object-fit: contain;
   max-width: 100%;
   max-height: 100%;
-
-  /* Visual styling */
-  display: block;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  border-radius: 8px; /* Optional: slightly rounded corners */
+  box-shadow: 0 10px 50px rgba(0, 0, 0, 0.8);
 }
 
-/* === 4. Overlay Navigation === */
+/* === 6. Navigation Overlays === */
 .navigation-overlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  display: flex; /* This creates the two-column layout for the nav areas */
-  z-index: 5; /* Sit on top of the image */
+  display: flex;
+  z-index: 10;
 }
 
 .nav-area {
   height: 100%;
-  flex: 1; /* Each navigation area takes up exactly half the width */
+  flex: 1;
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent; /* Improves mobile experience */
-  transition: background-color 0.3s ease;
+  transition: var(--transition-smooth);
 }
 
-/* Show subtle arrow hints on hover to guide the user */
 .nav-area.prev:hover::after,
 .nav-area.next:hover::after {
   content: "‹";
@@ -115,9 +277,8 @@ body {
   transform: translateY(-50%);
   font-size: 4rem;
   font-weight: 200;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.4);
   padding: 0 2rem;
-  pointer-events: none; /* Make sure the pseudo-element doesn't capture clicks */
   text-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
 }
 
@@ -130,63 +291,41 @@ body {
   left: 0;
 }
 
-/* === 5. Footer & Page Info === */
+/* === 7. Footer & Info === */
 .viewer-footer {
   position: absolute;
-  bottom: 0;
+  bottom: 2rem;
   left: 0;
   width: 100%;
-  padding: 1rem;
   display: flex;
   justify-content: center;
-  z-index: 10; /* Ensure it's above other elements */
-  pointer-events: none; /* Allow clicks to pass through the footer area */
+  z-index: 15;
+  pointer-events: none;
 }
 
 .page-info {
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 0.9rem;
+  padding: 6px 14px;
+  border-radius: 99px;
+  font-size: 0.8rem;
   font-weight: 500;
-  pointer-events: auto; /* Re-enable pointer events for the info bubble itself */
+  pointer-events: auto;
 }
 
-/* === 6. Responsive Adjustments === */
-@media (max-width: 768px) {
-  .slide-container {
-    padding: 1rem; /* Reduce padding on smaller screens */
-  }
-
-  .back-link {
-    top: 15px;
-    left: 15px;
-    padding: 8px 16px;
-  }
-
-  /* Hide the hover arrows on touch devices where hover is not reliable */
-  .nav-area.prev:hover::after,
-  .nav-area.next:hover::after {
-    display: none;
-  }
-}
-
-/* === 7. PDF Viewer Overrides === */
+/* === 8. PDF Specific Centering === */
 .react-pdf__Document {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
-  margin-top: 20px !important;
+  margin-top: 0 !important;
 }
 
 .react-pdf__Page {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
   background-color: transparent !important;
 }
 
@@ -194,11 +333,18 @@ body {
   width: 100% !important;
   height: auto !important;
   max-width: 100% !important;
-  max-height: calc(
-    100vh - 2rem
-  ) !important; /* Slightly more room for centering */
+  max-height: calc(100vh - 2rem) !important;
   object-fit: contain;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  border-radius: 8px;
+  box-shadow: 0 10px 50px rgba(0, 0, 0, 0.8);
   display: block;
+}
+
+@media (max-width: 768px) {
+  .deck-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-page {
+    padding: 2rem 1rem;
+  }
 }
