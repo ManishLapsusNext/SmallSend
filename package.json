@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.76.1",
+    "lucide-react": "^0.563.0",
     "pdfjs-dist": "^5.4.296",
     "posthog-js": "^1.280.1",
     "react": "^19.1.1",

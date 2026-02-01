@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Share2, Pencil, Trash2, Plus } from "lucide-react";
 
 function DeckList({ decks, loading, onDelete }) {
   return (
@@ -54,7 +55,7 @@ function DeckList({ decks, loading, onDelete }) {
                           }}
                           title="Copy Link"
                         >
-                          <span className="share-icon">🔗</span>
+                          <Share2 size={16} />
                           <span className="copied-toast">Copied!</span>
                         </button>
                         <Link
@@ -63,7 +64,7 @@ function DeckList({ decks, loading, onDelete }) {
                           onClick={(e) => e.stopPropagation()}
                           title="Replace/Edit Deck"
                         >
-                          ✏️
+                          <Pencil size={16} />
                         </Link>
                         {onDelete && (
                           <button
@@ -75,7 +76,7 @@ function DeckList({ decks, loading, onDelete }) {
                             }}
                             title="Delete Deck"
                           >
-                            ×
+                            <Trash2 size={16} />
                           </button>
                         )}
                       </div>
@@ -99,7 +100,7 @@ function DeckList({ decks, loading, onDelete }) {
       </main>
 
       <Link to="/admin" className="fab-button" title="Upload New Deck">
-        +
+        <Plus size={32} />
       </Link>
     </div>
   );
