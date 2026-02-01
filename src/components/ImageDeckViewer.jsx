@@ -1,15 +1,32 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useKeyboardControls } from "../hooks/useKeyboardControls";
 import { analyticsService } from "../services/analyticsService";
 
 function ImageDeckViewer({ deck }) {
-  // --- FIX IS HERE ---
-  // Add a defensive check. If deck.pages doesn't exist, default to an empty array.
-  const pages = Array.isArray(deck?.pages) ? deck.pages : [];
+  // Stabilize the pages array reference to avoid unnecessary effect re-runs
+  const pages = useMemo(
+    () => (Array.isArray(deck?.pages) ? deck.pages : []),
+    [deck?.pages],
+  );
   const numPages = pages.length;
 
   const [currentPage, setCurrentPage] = useState(1);
   const startTimeRef = useRef(Date.now());
+
+  // Prefetching: Load the next two slides in the background
+  useEffect(() => {
+    const prefetchPages = [currentPage + 1, currentPage + 2];
+
+    prefetchPages.forEach((pageIdx) => {
+      if (pageIdx <= numPages) {
+        const imageUrl = pages[pageIdx - 1];
+        if (imageUrl) {
+          const img = new Image();
+          img.src = imageUrl;
+        }
+      }
+    });
+  }, [currentPage, pages, numPages]);
 
   // Track time spent on each page
   useEffect(() => {
