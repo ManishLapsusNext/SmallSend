@@ -1,12 +1,65 @@
-// --- FIX 1: Using "bare specifiers" from deno.json ---
 import { createClient } from '@supabase/supabase-js'
 import { serve } from 'std/http'
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
-// --- FIX 2 & 3: Removed 'async' and prefixed unused variable with '_' ---
-function convertPdfToImages(_pdfBuffer: ArrayBuffer): Promise<ArrayBuffer[]> {
-  console.log('Pretending to convert PDF to images...');
-  // This is a Promise-based function, so we return a resolved Promise.
-  return Promise.resolve([]);
+// Set up PDF.js worker source from the imported package
+// This URL should resolve to the worker script provided by pdfjs-dist via esm.sh
+GlobalWorkerOptions.workerSrc = 'https://esm.sh/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
+
+async function convertPdfToImages(pdfBuffer: ArrayBuffer): Promise<ArrayBuffer[]> {
+  console.log('Converting PDF to images...');
+  const images: ArrayBuffer[] = [];
+  const loadingTask = getDocument({ data: pdfBuffer });
+  const pdfDocument = await loadingTask.promise;
+  const numPages = pdfDocument.numPages;
+
+  for (let i = 1; i <= numPages; i++) {
+    const page = await pdfDocument.getPage(i);
+    // Adjust scale for rendering. Higher scale means higher resolution.
+    const viewport = page.getViewport({ scale: 1.5 });
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) {
+      console.error('Could not get canvas context.');
+      // Skip this page if context is not available
+      continue;
+    }
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    const renderContext = {
+      canvasContext: context,
+      viewport: viewport,
+    };
+
+    await page.render(renderContext).promise;
+
+    // Convert canvas to PNG ArrayBuffer
+    await new Promise<void>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (reader.result instanceof ArrayBuffer) {
+              images.push(reader.result);
+              resolve();
+            } else {
+              reject(new Error('Failed to read blob as ArrayBuffer'));
+            }
+          };
+          reader.onerror = reject;
+          reader.readAsArrayBuffer(blob);
+        } else {
+          reject(new Error('Canvas toBlob failed'));
+        }
+      }, 'image/png'); // Specify the desired image format
+    });
+    page.cleanup(); // Clean up page resources to prevent memory leaks
+  }
+  pdfDocument.destroy(); // Clean up document resources
+  console.log(`Successfully converted ${numPages} pages to images.`);
+  return images;
 }
 
 

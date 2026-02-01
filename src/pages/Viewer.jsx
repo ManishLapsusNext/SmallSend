@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-// 1. IMPORT THE NEW COMPONENT
-import ImageDeckViewer from '../components/ImageDeckViewer'; 
-import { deckService } from '../services/deckService';
+import { useState, useEffect, useCallback } from "react";
+import { useParams, Link } from "react-router-dom";
+import ImageDeckViewer from "../components/ImageDeckViewer";
+import DeckViewer from "../components/DeckViewer";
+import { deckService } from "../services/deckService";
 
 function Viewer() {
   const { slug } = useParams();
@@ -10,21 +10,21 @@ function Viewer() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadDeck();
-  }, [slug]);
-
-  const loadDeck = async () => {
+  const loadDeck = useCallback(async () => {
     try {
       const data = await deckService.getDeckBySlug(slug);
       setDeck(data);
     } catch (err) {
       setError(err.message);
-      console.error('Error loading deck:', err);
+      console.error("Error loading deck:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [slug]);
+
+  useEffect(() => {
+    loadDeck();
+  }, [loadDeck]);
 
   if (loading) {
     return (
@@ -39,17 +39,27 @@ function Viewer() {
       <div className="error-container">
         <h2>Deck not found</h2>
         <p>The requested deck could not be loaded.</p>
-        <Link to="/" className="back-link">← Back to home</Link>
+        <Link to="/" className="back-link">
+          ← Back to home
+        </Link>
       </div>
     );
   }
 
+  // Determine which viewer to use
+  const hasProcessedImages = Array.isArray(deck.pages) && deck.pages.length > 0;
+
   return (
     <div className="viewer-page">
-      <Link to="/" className="back-link">← Back to all decks</Link>
-      
-      {/* 2. RENDER THE NEW COMPONENT */}
-      <ImageDeckViewer deck={deck} />
+      <Link to="/" className="back-link">
+        ← Back to all decks
+      </Link>
+
+      {hasProcessedImages ? (
+        <ImageDeckViewer deck={deck} />
+      ) : (
+        <DeckViewer deck={deck} />
+      )}
     </div>
   );
 }
