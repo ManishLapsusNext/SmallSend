@@ -40,7 +40,7 @@ function DeckList({ decks, loading, onDelete }) {
       const data = await deckService.getBrandingSettings();
       if (data) {
         setBranding({
-          room_name: data.room_name || "SmallSend Data Room",
+          room_name: data.room_name || "Deckly Data Room",
           banner_url: data.banner_url || null,
         });
       }
@@ -111,7 +111,7 @@ function DeckList({ decks, loading, onDelete }) {
     if (!window.confirm("Reset branding to defaults?")) return;
 
     try {
-      const defaults = { room_name: "SmallSend Data Room", banner_url: null };
+      const defaults = { room_name: "Deckly Data Room", banner_url: null };
       await deckService.updateBrandingSettings(defaults);
       setBranding(defaults);
       setShowBrandingMenu(false);
