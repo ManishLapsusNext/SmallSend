@@ -93,7 +93,7 @@ function Login() {
               Create one
             </Link>
           </p>
-          <p style={{ marginTop: "1rem" }}>© 2026 SmallSend by ManishLapsus</p>
+          <p style={{ marginTop: "1rem" }}>© 2026 Deckly by Manish</p>
         </div>
       </div>
 
