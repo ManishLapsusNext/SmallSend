@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-function DeckList({ decks, loading }) {
+function DeckList({ decks, loading, onDelete }) {
   if (loading) {
     return (
       <div className="home-page">
@@ -26,9 +26,6 @@ function DeckList({ decks, loading }) {
     <div className="home-container">
       <header className="hero-section">
         <h1>Level 29 Data Room</h1>
-        <Link to="/admin" className="admin-link-subtle">
-          +
-        </Link>
       </header>
       <div className="deck-list">
         {decks.map((deck) => (
@@ -39,7 +36,22 @@ function DeckList({ decks, loading }) {
               )}
             </div>
             <div className="deck-card-content">
-              <h2>{deck.title}</h2>
+              <div className="deck-header-row">
+                <h2>{deck.title}</h2>
+                {onDelete && (
+                  <button
+                    className="delete-deck-btn"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onDelete(deck);
+                    }}
+                    title="Delete Deck"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
               {deck.description ? (
                 <p>{deck.description}</p>
               ) : (
@@ -52,6 +64,9 @@ function DeckList({ decks, loading }) {
           </Link>
         ))}
       </div>
+      <Link to="/admin" className="fab-button" title="Upload New Deck">
+        +
+      </Link>
     </div>
   );
 }

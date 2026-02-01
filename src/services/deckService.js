@@ -30,7 +30,7 @@ export const deckService = {
     const fileExt = file.name.split(".").pop();
     const fileName = `${deckData.slug}-${Date.now()}.${fileExt}`;
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from("decks")
       .upload(fileName, file);
 
@@ -59,9 +59,22 @@ export const deckService = {
   },
 
   // Delete deck
-  async deleteDeck(id, fileUrl) {
+  async deleteDeck(id, fileUrl, slug) {
+    // 1. Delete the PDF file
     const fileName = fileUrl.split("/").pop();
     await supabase.storage.from("decks").remove([fileName]);
+
+    // 2. Delete processed images if any
+    const { data: files } = await supabase.storage
+      .from("decks")
+      .list(`deck-images/${slug}`);
+
+    if (files && files.length > 0) {
+      const filesToDelete = files.map((f) => `deck-images/${slug}/${f.name}`);
+      await supabase.storage.from("decks").remove(filesToDelete);
+    }
+
+    // 3. Delete from database
     const { error } = await supabase.from("decks").delete().eq("id", id);
     if (error) throw error;
   },

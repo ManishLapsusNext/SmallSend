@@ -75,7 +75,7 @@ body {
 .deck-list {
   width: 100%;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
 }
 
@@ -93,26 +93,41 @@ body {
   line-height: 1;
 }
 
-.admin-link-subtle {
-  position: absolute;
-  top: 2rem;
-  right: 2rem;
-  color: var(--text-secondary);
+.fab-button {
+  position: fixed;
+  bottom: 3rem;
+  right: 3rem;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, #a855f7 100%);
+  color: white;
   text-decoration: none;
-  font-size: 1.5rem;
-  opacity: 0.1;
+  font-size: 2.5rem;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
   transition: var(--transition-smooth);
+  z-index: 100;
+  line-height: 1;
+  padding-bottom: 4px;
 }
 
-.admin-link-subtle:hover {
-  opacity: 1;
-  color: var(--accent-primary);
+.fab-button:hover {
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 15px 35px rgba(99, 102, 241, 0.6);
+  background: linear-gradient(135deg, var(--accent-hover) 0%, #c084fc 100%);
 }
 
 .deck-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2.5rem;
+  width: 100%;
 }
 
 /* === 3. Premium Deck Cards === */
@@ -127,6 +142,10 @@ body {
   display: flex;
   flex-direction: column;
   position: relative;
+  width: 400px;
+  height: 400px;
+  margin-inline: 20px;
+  flex-shrink: 0;
 }
 
 .deck-card:hover {
@@ -136,20 +155,13 @@ body {
 }
 
 .deck-thumbnail {
-  aspect-ratio: 16/10;
+  flex: 0 0 50%; /* Take exactly half the card height */
   background: var(--bg-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   position: relative;
-}
-
-/* Placeholder for thumbnail icon/text */
-.deck-thumbnail::after {
-  content: "📄";
-  font-size: 3rem;
-  opacity: 0.2;
 }
 
 .thumbnail-preview {
@@ -164,25 +176,65 @@ body {
 }
 
 .deck-card-content {
-  padding: 1.5rem;
+  padding: 1.25rem;
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.deck-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.delete-deck-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: var(--transition-smooth);
+  flex-shrink: 0;
+}
+
+.delete-deck-btn:hover {
+  background: #ef4444;
+  color: white;
+  transform: scale(1.1);
 }
 
 .deck-card h2 {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 600;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .deck-card p {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   color: var(--text-secondary);
-  line-height: 1.6;
-  margin-bottom: 1.5rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
   flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .view-link {
