@@ -44,11 +44,7 @@ function Home() {
     );
   }
 
-  return (
-    <div className="home-page">
-      <DeckList decks={decks} loading={loading} onDelete={handleDelete} />
-    </div>
-  );
+  return <DeckList decks={decks} loading={loading} onDelete={handleDelete} />;
 }
 
 export default Home;
