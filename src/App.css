@@ -93,6 +93,22 @@ body {
   line-height: 1;
 }
 
+.admin-link-subtle {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 1.5rem;
+  opacity: 0.1;
+  transition: var(--transition-smooth);
+}
+
+.admin-link-subtle:hover {
+  opacity: 1;
+  color: var(--accent-primary);
+}
+
 .deck-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

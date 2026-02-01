@@ -26,6 +26,9 @@ function DeckList({ decks, loading }) {
     <div className="home-container">
       <header className="hero-section">
         <h1>Level 29 Data Room</h1>
+        <Link to="/admin" className="admin-link-subtle">
+          +
+        </Link>
       </header>
       <div className="deck-list">
         {decks.map((deck) => (
