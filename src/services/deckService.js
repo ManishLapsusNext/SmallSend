@@ -120,12 +120,12 @@ export const deckService = {
 
     const timestamp = Date.now();
     for (let i = 0; i < imageBlobs.length; i++) {
-      const fileName = `${userId}/deck-images/${deckSlug}/page-${i + 1}-${timestamp}.png`;
+      const fileName = `${userId}/deck-images/${deckSlug}/page-${i + 1}-${timestamp}.webp`;
 
       const { error } = await supabase.storage
         .from("decks")
         .upload(fileName, imageBlobs[i], {
-          contentType: "image/png",
+          contentType: "image/webp",
           upsert: true,
         });
 
