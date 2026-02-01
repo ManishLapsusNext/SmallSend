@@ -130,4 +130,43 @@ export const deckService = {
     if (error) throw error;
     return data;
   },
+
+  // Get global branding settings
+  async getBrandingSettings() {
+    const { data, error } = await supabase
+      .from("branding")
+      .select("*")
+      .single();
+
+    if (error && error.code !== "PGRST116") throw error; // Ignore "no rows found" error
+    return data;
+  },
+
+  // Update global branding settings
+  async updateBrandingSettings(settings) {
+    // Get existing record if any
+    const { data: existing } = await supabase
+      .from("branding")
+      .select("id")
+      .single();
+
+    if (existing) {
+      const { data, error } = await supabase
+        .from("branding")
+        .update({ ...settings, updated_at: new Date().toISOString() })
+        .eq("id", existing.id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase
+        .from("branding")
+        .insert([{ ...settings }])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    }
+  },
 };

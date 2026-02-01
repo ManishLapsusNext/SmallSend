@@ -1,12 +1,203 @@
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Share2, Pencil, Trash2, Plus } from "lucide-react";
+import {
+  Share2,
+  Pencil,
+  Trash2,
+  Plus,
+  Settings,
+  Check,
+  X,
+  Upload,
+  RotateCcw,
+} from "lucide-react";
+import { deckService } from "../services/deckService";
+import { supabase } from "../services/supabase";
+import defaultBanner from "../assets/banner.png";
 
 function DeckList({ decks, loading, onDelete }) {
+  const [branding, setBranding] = useState({
+    room_name: "SmallSend Data Room",
+    banner_url: null,
+  });
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editValue, setEditValue] = useState("");
+  const [showBrandingMenu, setShowBrandingMenu] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    loadBranding();
+  }, []);
+
+  const loadBranding = async () => {
+    try {
+      const data = await deckService.getBrandingSettings();
+      if (data) {
+        setBranding({
+          room_name: data.room_name || "SmallSend Data Room",
+          banner_url: data.banner_url || null,
+        });
+      }
+    } catch (err) {
+      console.error("Error loading branding:", err);
+    }
+  };
+
+  const handleStartEdit = () => {
+    setEditValue(branding.room_name);
+    setIsEditingTitle(true);
+    setShowBrandingMenu(false);
+  };
+
+  const handleSaveTitle = async () => {
+    if (editValue.trim() && editValue !== branding.room_name) {
+      try {
+        await deckService.updateBrandingSettings({ room_name: editValue });
+        setBranding((prev) => ({ ...prev, room_name: editValue }));
+      } catch (err) {
+        alert("Failed to update room name: " + err.message);
+      }
+    }
+    setIsEditingTitle(false);
+  };
+
+  const handleBannerUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setShowBrandingMenu(false);
+
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `branding/banner-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("decks")
+        .upload(fileName, file, { cacheControl: "3600", upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("decks").getPublicUrl(fileName);
+
+      await deckService.updateBrandingSettings({ banner_url: publicUrl });
+      setBranding((prev) => ({ ...prev, banner_url: publicUrl }));
+    } catch (err) {
+      alert("Failed to upload banner: " + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleResetBranding = async () => {
+    if (!window.confirm("Reset branding to defaults?")) return;
+
+    try {
+      const defaults = { room_name: "SmallSend Data Room", banner_url: null };
+      await deckService.updateBrandingSettings(defaults);
+      setBranding(defaults);
+      setShowBrandingMenu(false);
+    } catch (err) {
+      alert("Failed to reset branding: " + err.message);
+    }
+  };
+
+  const bannerStyle = {
+    backgroundImage: `url(${branding.banner_url || defaultBanner})`,
+  };
+
   return (
     <div className="home-page">
-      <header className="hero-section">
+      <header className="hero-section" style={bannerStyle}>
+        <div className="hero-overlay"></div>
+
+        <div className="branding-controls">
+          <button
+            className={`customize-btn ${showBrandingMenu ? "active" : ""} ${uploading ? "loading" : ""}`}
+            onClick={() => setShowBrandingMenu(!showBrandingMenu)}
+            disabled={uploading}
+            title="Customize Branding"
+          >
+            {uploading ? (
+              <div className="spinner-small"></div>
+            ) : (
+              <Settings size={20} />
+            )}
+          </button>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            accept="image/*"
+            onChange={handleBannerUpload}
+          />
+
+          {showBrandingMenu && (
+            <div className="branding-menu">
+              <h3>Branding Settings</h3>
+              <button onClick={handleStartEdit} className="menu-item">
+                <Pencil size={16} />
+                <span>Edit Room Name</span>
+              </button>
+              <button
+                className="menu-item"
+                onClick={() => fileInputRef.current.click()}
+              >
+                <Upload size={16} />
+                <span>Change Banner</span>
+              </button>
+              <button
+                className="menu-item reset-btn"
+                onClick={handleResetBranding}
+              >
+                <RotateCcw size={16} />
+                <span>Reset Defaults</span>
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="hero-content">
-          <h1>SmallSend Data Room</h1>
+          <div className="title-container">
+            {isEditingTitle ? (
+              <div className="title-editor">
+                <input
+                  type="text"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSaveTitle();
+                    if (e.key === "Escape") setIsEditingTitle(false);
+                  }}
+                  autoFocus
+                />
+                <div className="editor-actions">
+                  <button
+                    onClick={handleSaveTitle}
+                    className="save-btn"
+                    title="Save"
+                  >
+                    <Check size={20} />
+                  </button>
+                  <button
+                    onClick={() => setIsEditingTitle(false)}
+                    className="cancel-btn"
+                    title="Cancel"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="title-display">
+                <h1>{branding.room_name}</h1>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

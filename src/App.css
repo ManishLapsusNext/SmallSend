@@ -54,26 +54,175 @@ body {
 
 .hero-section {
   width: 100%;
-  padding: 8rem 2rem;
+  padding: 10rem 2rem;
   margin-bottom: 4rem;
-  background: radial-gradient(
-    circle at center,
-    rgba(99, 102, 241, 0.12) 0%,
-    transparent 70%
-  );
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(15, 17, 21, 0.4) 0%,
+    rgba(15, 17, 21, 0.8) 100%
+  );
+  z-index: 1;
 }
 
 .hero-content {
-  max-width: 1000px;
+  max-width: 1100px;
+  width: 100%;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
 }
 
 .deck-list {
   width: 100%;
+}
+
+.branding-controls {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.customize-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  backdrop-filter: blur(10px);
+  padding: 0;
+}
+
+.customize-btn:hover,
+.customize-btn.active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}
+
+.branding-menu {
+  background: rgba(15, 17, 21, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: 220px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  animation: slideIn 0.3s ease-out;
+}
+
+.menu-item.reset-btn {
+  margin-top: 0.5rem;
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.menu-item.reset-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+}
+
+.spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.branding-menu h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.menu-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  width: 100%;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--text-secondary);
+  transform: translateX(-5px);
+}
+
+.menu-item span {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.title-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.title-display {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
 }
 
 .hero-section h1 {
@@ -82,12 +231,80 @@ body {
   font-weight: 900;
   margin-bottom: 0;
   text-align: center;
-  background: linear-gradient(to bottom, #ffffff 30%, #94a3b8 100%);
+  background: linear-gradient(to bottom, #ffffff 50%, #94a3b8 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: -0.05em;
   line-height: 1.1;
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.title-display:hover {
+  cursor: default;
+}
+
+.title-editor {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(15, 17, 21, 0.6);
+  padding: 1rem 2rem;
+  border-radius: 99px;
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.title-editor input {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--accent-primary);
+  color: white;
+  font-family: "Outfit", sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  padding: 0.5rem;
+  width: 400px;
+  text-align: center;
+  outline: none;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.save-btn,
+.cancel-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.save-btn {
+  background: #10b981;
+  color: white;
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.save-btn:hover {
+  background: #059669;
+  transform: scale(1.1);
+}
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
 }
 
 .empty-state,
