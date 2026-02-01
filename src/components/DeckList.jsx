@@ -18,8 +18,9 @@ import defaultBanner from "../assets/banner.png";
 
 function DeckList({ decks, loading, onDelete }) {
   const [branding, setBranding] = useState({
-    room_name: "SmallSend Data Room",
-    banner_url: null,
+    room_name: "Deckly",
+    banner_url:
+      "https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=2000",
   });
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editValue, setEditValue] = useState("");

@@ -1,5 +1,5 @@
 {
-  "name": "pitch-level29",
+  "name": "deckly",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -15,7 +15,7 @@
     "@supabase/supabase-js": "^2.76.1",
     "lucide-react": "^0.563.0",
     "pdfjs-dist": "^5.4.296",
-    "posthog-js": "^1.280.1",
+    "posthog-js": "^1.336.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-pdf": "^10.2.0",

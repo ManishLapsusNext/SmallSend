@@ -37,7 +37,7 @@ function Login() {
           <div className="login-logo">
             <Lock size={32} className="logo-icon" />
           </div>
-          <h1>SmallSend Access</h1>
+          <h1>Deckly Access</h1>
           <p>Please sign in to manage your Data Room</p>
         </div>
 

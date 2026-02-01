@@ -37,5 +37,5 @@ export function useDeckAnalytics(deck, pageNumber, numPages) {
     }
   }, [viewedPages, numPages, deck]);
 
-  return { trackCurrentPage };
+  return { trackCurrentPage };  
 }

@@ -46,7 +46,7 @@ function Signup() {
           <div className="login-logo">
             <UserPlus size={32} className="logo-icon" />
           </div>
-          <h1>Join SmallSend</h1>
+          <h1>Join Deckly</h1>
           <p>Create your private Data Room in seconds</p>
         </div>
 

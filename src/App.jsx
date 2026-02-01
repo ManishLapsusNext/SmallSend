@@ -38,7 +38,7 @@ function App() {
     return (
       <div className="loading-screen">
         <div className="spinner"></div>
-        <p>Initializing SmallSend...</p>
+        <p>Initializing Deckly...</p>
       </div>
     );
   }
