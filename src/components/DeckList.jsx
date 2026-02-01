@@ -10,6 +10,7 @@ import {
   X,
   Upload,
   RotateCcw,
+  LogOut,
 } from "lucide-react";
 import { deckService } from "../services/deckService";
 import { supabase } from "../services/supabase";
@@ -42,6 +43,10 @@ function DeckList({ decks, loading, onDelete }) {
     } catch (err) {
       console.error("Error loading branding:", err);
     }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
 
   const handleStartEdit = () => {
@@ -150,6 +155,11 @@ function DeckList({ decks, loading, onDelete }) {
                 <Upload size={16} />
                 <span>Change Banner</span>
               </button>
+              <button className="menu-item" onClick={handleLogout}>
+                <LogOut size={16} />
+                <span>Sign Out</span>
+              </button>
+              <div className="menu-divider"></div>
               <button
                 className="menu-item reset-btn"
                 onClick={handleResetBranding}
