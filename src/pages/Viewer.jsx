@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import ImageDeckViewer from "../components/ImageDeckViewer";
 import DeckViewer from "../components/DeckViewer";
 import { deckService } from "../services/deckService";
+import { analyticsService } from "../services/analyticsService";
 
 function Viewer() {
   const { slug } = useParams();
@@ -14,6 +15,7 @@ function Viewer() {
     try {
       const data = await deckService.getDeckBySlug(slug);
       setDeck(data);
+      analyticsService.trackDeckView(data);
     } catch (err) {
       setError(err.message);
       console.error("Error loading deck:", err);

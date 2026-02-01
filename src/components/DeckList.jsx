@@ -11,10 +11,12 @@ import {
   Upload,
   RotateCcw,
   LogOut,
+  BarChart3, // Added BarChart3
 } from "lucide-react";
 import { deckService } from "../services/deckService";
 import { supabase } from "../services/supabase";
 import defaultBanner from "../assets/banner.png";
+import AnalyticsModal from "./AnalyticsModal"; // Added AnalyticsModal import
 
 function DeckList({ decks, loading, onDelete }) {
   const [branding, setBranding] = useState({
@@ -27,6 +29,7 @@ function DeckList({ decks, loading, onDelete }) {
   const [showBrandingMenu, setShowBrandingMenu] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
+  const [selectedAnalyticsDeck, setSelectedAnalyticsDeck] = useState(null);
 
   useEffect(() => {
     loadBranding();
@@ -274,6 +277,17 @@ function DeckList({ decks, loading, onDelete }) {
                         >
                           <Pencil size={16} />
                         </Link>
+                        <button
+                          className="analytics-deck-btn"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSelectedAnalyticsDeck(deck);
+                          }}
+                          title="View Deck Analytics"
+                        >
+                          <BarChart3 size={16} />
+                        </button>
                         {onDelete && (
                           <button
                             className="delete-deck-btn"
@@ -310,6 +324,13 @@ function DeckList({ decks, loading, onDelete }) {
       <Link to="/admin" className="fab-button" title="Upload New Deck">
         <Plus size={32} />
       </Link>
+
+      {selectedAnalyticsDeck && (
+        <AnalyticsModal
+          deck={selectedAnalyticsDeck}
+          onClose={() => setSelectedAnalyticsDeck(null)}
+        />
+      )}
     </div>
   );
 }

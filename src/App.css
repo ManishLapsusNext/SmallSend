@@ -5,9 +5,9 @@
   --bg-card: #2d2b3f;
   --text-primary: #ffffff;
   --text-secondary: #94a3b8;
-  --accent-primary: #52feaf;
+  --accent-primary: #0edb7c;
   --accent-hover: #c4a7ff;
-  --highlight-color: #52feaf;
+  --highlight-color: #2ad485;
   --border-color: rgba(255, 255, 255, 0.08);
   --glass-bg: rgba(255, 255, 255, 0.03);
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -436,7 +436,8 @@ body {
 
 .share-deck-btn,
 .edit-deck-btn,
-.delete-deck-btn {
+.delete-deck-btn,
+.analytics-deck-btn {
   background: rgba(255, 255, 255, 0.05);
   color: white;
   border: 1px solid var(--border-color);
@@ -459,6 +460,13 @@ body {
   background: var(--accent-primary);
   color: white;
   border-color: var(--accent-primary);
+  transform: translateY(-2px);
+}
+
+.analytics-deck-btn:hover {
+  background: #6366f1;
+  color: white;
+  border-color: #6366f1;
   transform: translateY(-2px);
 }
 
