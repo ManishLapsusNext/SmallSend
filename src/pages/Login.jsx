@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../services/supabase";
 import { Lock, Mail, Loader2 } from "lucide-react";
 
@@ -87,9 +87,26 @@ function Login() {
         </form>
 
         <div className="login-footer">
-          <p>© 2026 SmallSend by Manish</p>
+          <p>
+            Don't have an account?{" "}
+            <Link to="/signup" className="auth-link">
+              Create one
+            </Link>
+          </p>
+          <p style={{ marginTop: "1rem" }}>© 2026 SmallSend by ManishLapsus</p>
         </div>
       </div>
+
+      <style>{`
+        .auth-link {
+          color: var(--accent-primary);
+          text-decoration: none;
+          font-weight: 600;
+        }
+        .auth-link:hover {
+          text-decoration: underline;
+        }
+      `}</style>
     </div>
   );
 }

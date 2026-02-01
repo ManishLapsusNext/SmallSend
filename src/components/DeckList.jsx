@@ -71,12 +71,18 @@ function DeckList({ decks, loading, onDelete }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) return;
+    const userId = session.user.id;
+
     setUploading(true);
     setShowBrandingMenu(false);
 
     try {
       const fileExt = file.name.split(".").pop();
-      const fileName = `branding/banner-${Date.now()}.${fileExt}`;
+      const fileName = `${userId}/branding/banner-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("decks")

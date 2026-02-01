@@ -36,11 +36,16 @@ export const deckService = {
     return data;
   },
 
-  // Upload PDF and create deck
+  // NEW: Upload a deck PDF
   async uploadDeck(file, deckData) {
-    // Upload file to Supabase Storage
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) throw new Error("Not authenticated");
+    const userId = session.user.id;
+
     const fileExt = file.name.split(".").pop();
-    const fileName = `${deckData.slug}-${Date.now()}.${fileExt}`;
+    const fileName = `${userId}/decks/${deckData.slug}-${Date.now()}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from("decks")
@@ -61,6 +66,7 @@ export const deckService = {
           ...deckData,
           file_url: publicUrl,
           status: "PENDING",
+          user_id: userId,
         },
       ])
       .select()
@@ -72,32 +78,49 @@ export const deckService = {
 
   // Delete deck
   async deleteDeck(id, fileUrl, slug) {
-    // 1. Delete the PDF file
-    const fileName = fileUrl.split("/").pop();
-    await supabase.storage.from("decks").remove([fileName]);
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) throw new Error("Not authenticated");
+    const userId = session.user.id;
 
-    // 2. Delete processed images if any
+    // 1. Delete the PDF file
+    // Extract storage path from the public URL
+    const urlParts = fileUrl.split("/storage/v1/object/public/decks/");
+    const storagePath = urlParts[1];
+
+    if (storagePath) {
+      await supabase.storage.from("decks").remove([storagePath]);
+    }
+
+    // 2. Delete processed images
     const { data: files } = await supabase.storage
       .from("decks")
-      .list(`deck-images/${slug}`);
+      .list(`${userId}/deck-images/${slug}`);
 
     if (files && files.length > 0) {
-      const filesToDelete = files.map((f) => `deck-images/${slug}/${f.name}`);
+      const filesToDelete = files.map(
+        (f) => `${userId}/deck-images/${slug}/${f.name}`,
+      );
       await supabase.storage.from("decks").remove(filesToDelete);
     }
 
     // 3. Delete from database
-    const { error } = await supabase.from("decks").delete().eq("id", id);
+    const { error } = await supabase
+      .from("decks")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", userId);
     if (error) throw error;
   },
 
   // NEW: Upload processing images
-  async uploadSlideImages(deckSlug, imageBlobs) {
+  async uploadSlideImages(userId, deckSlug, imageBlobs) {
     const imageUrls = [];
 
     const timestamp = Date.now();
     for (let i = 0; i < imageBlobs.length; i++) {
-      const fileName = `deck-images/${deckSlug}/page-${i + 1}-${timestamp}.png`;
+      const fileName = `${userId}/deck-images/${deckSlug}/page-${i + 1}-${timestamp}.png`;
 
       const { error } = await supabase.storage
         .from("decks")
@@ -131,11 +154,17 @@ export const deckService = {
     return data;
   },
 
-  // Get global branding settings
+  // Get global branding settings (for the current user)
   async getBrandingSettings() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) return null;
+
     const { data, error } = await supabase
       .from("branding")
       .select("*")
+      .eq("user_id", session.user.id)
       .single();
 
     if (error && error.code !== "PGRST116") throw error; // Ignore "no rows found" error
@@ -144,10 +173,16 @@ export const deckService = {
 
   // Update global branding settings
   async updateBrandingSettings(settings) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) throw new Error("Not authenticated");
+
     // Get existing record if any
     const { data: existing } = await supabase
       .from("branding")
       .select("id")
+      .eq("user_id", session.user.id)
       .single();
 
     if (existing) {
@@ -162,11 +197,20 @@ export const deckService = {
     } else {
       const { data, error } = await supabase
         .from("branding")
-        .insert([{ ...settings }])
+        .insert([{ ...settings, user_id: session.user.id }])
         .select()
         .single();
       if (error) throw error;
       return data;
     }
+  },
+
+  // Helper for user-specific storage path
+  async getStoragePath(slug, filename) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) throw new Error("Not authenticated");
+    return `${session.user.id}/${slug}/${filename}`;
   },
 };

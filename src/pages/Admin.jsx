@@ -109,10 +109,15 @@ function Admin() {
 
       // 1. If a new file is uploaded
       if (file) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session) throw new Error("Not authenticated");
+        const userId = session.user.id;
+
         setProgress("Uploading new PDF...");
-        // For updates, we just upload the new file
         const fileExt = file.name.split(".").pop();
-        const fileName = `${slug}-${Date.now()}.${fileExt}`;
+        const fileName = `${userId}/decks/${slug}-${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
           .from("decks")
           .upload(fileName, file);
@@ -128,10 +133,10 @@ function Admin() {
           setProgress("Cleaning up old slides...");
           const { data: files } = await supabase.storage
             .from("decks")
-            .list(`deck-images/${slug}`);
+            .list(`${userId}/deck-images/${slug}`);
           if (files && files.length > 0) {
             const filesToDelete = files.map(
-              (f) => `deck-images/${slug}/${f.name}`,
+              (f) => `${userId}/deck-images/${slug}/${f.name}`,
             );
             await supabase.storage.from("decks").remove(filesToDelete);
           }
@@ -140,7 +145,11 @@ function Admin() {
         // Process new images
         const imageBlobs = await processPdfToImages(file);
         setProgress(`Uploading ${imageBlobs.length} new slides...`);
-        finalPages = await deckService.uploadSlideImages(slug, imageBlobs);
+        finalPages = await deckService.uploadSlideImages(
+          userId,
+          slug,
+          imageBlobs,
+        );
       }
 
       // 2. Update or Create database record
@@ -158,17 +167,27 @@ function Admin() {
           .eq("id", editId);
         if (dbError) throw dbError;
       } else {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const userId = session.user.id;
+
         setProgress("Creating new deck...");
         const deckRecord = await deckService.uploadDeck(file, {
           title,
           slug,
           description,
           display_order: 1,
+          user_id: userId,
         });
 
         const imageBlobs = await processPdfToImages(file);
         setProgress(`Uploading ${imageBlobs.length} slides...`);
-        const imageUrls = await deckService.uploadSlideImages(slug, imageBlobs);
+        const imageUrls = await deckService.uploadSlideImages(
+          userId,
+          slug,
+          imageBlobs,
+        );
 
         setProgress("Finalizing...");
         await deckService.updateDeckPages(deckRecord.id, imageUrls);

@@ -5,7 +5,7 @@
   --bg-card: #2d2b3f;
   --text-primary: #ffffff;
   --text-secondary: #94a3b8;
-  --accent-primary: #b18cfe;
+  --accent-primary: #52feaf;
   --accent-hover: #c4a7ff;
   --highlight-color: #52feaf;
   --border-color: rgba(255, 255, 255, 0.08);
@@ -911,4 +911,26 @@ body {
   border-radius: 50%;
   border-top-color: var(--accent-primary);
   animation: spin 1s linear infinite;
+}
+
+.signup-success {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.success-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.auth-link {
+  color: var(--accent-primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: var(--transition-smooth);
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+  color: var(--accent-hover);
 }

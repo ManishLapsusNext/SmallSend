@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import Viewer from "./pages/Viewer";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import "./App.css";
 
 function App() {
@@ -49,6 +50,10 @@ function App() {
           <Route
             path="/login"
             element={!session ? <Login /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/signup"
+            element={!session ? <Signup /> : <Navigate to="/" />}
           />
           <Route
             path="/"
