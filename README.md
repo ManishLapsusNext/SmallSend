@@ -2,7 +2,7 @@
 
 ### Secure, Premium Pitch Deck Streaming for Modern Founders. (https://deckly-xi.vercel.app)
 
-**Deckly** is an open-source, high-performance Data Room designed to give founders a "DocSend-killer" experience. Built with a focus on speed, aesthetics, and privacy, it transforms static PDFs into immersive, slide-based experiences that load instantly on any device.
+**Deckly** is an open-source, high-performance Data Room designed to give founders a Smooth Pitchdeck Sharing experience. Built with a focus on speed, aesthetics, and privacy, it transforms static PDFs into immersive, slide-based experiences that load instantly on any device.
 
 ---
 
