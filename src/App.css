@@ -183,6 +183,58 @@ body {
   overflow: hidden;
 }
 
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.share-deck-btn,
+.edit-deck-btn {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--accent-primary);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition-smooth);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.share-deck-btn:hover,
+.edit-deck-btn:hover {
+  background: var(--accent-primary);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.copied-toast {
+  position: absolute;
+  top: -35px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--accent-primary);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--transition-smooth);
+  white-space: nowrap;
+}
+
+.share-deck-btn.copied .copied-toast {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 .deck-header-row {
   display: flex;
   justify-content: space-between;

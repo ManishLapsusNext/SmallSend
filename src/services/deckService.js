@@ -24,6 +24,18 @@ export const deckService = {
     return data;
   },
 
+  // Get single deck by ID
+  async getDeckById(id) {
+    const { data, error } = await supabase
+      .from("decks")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
   // Upload PDF and create deck
   async uploadDeck(file, deckData) {
     // Upload file to Supabase Storage
@@ -83,8 +95,9 @@ export const deckService = {
   async uploadSlideImages(deckSlug, imageBlobs) {
     const imageUrls = [];
 
+    const timestamp = Date.now();
     for (let i = 0; i < imageBlobs.length; i++) {
-      const fileName = `deck-images/${deckSlug}/page-${i + 1}.png`;
+      const fileName = `deck-images/${deckSlug}/page-${i + 1}-${timestamp}.png`;
 
       const { error } = await supabase.storage
         .from("decks")

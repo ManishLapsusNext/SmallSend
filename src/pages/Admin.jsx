@@ -1,12 +1,17 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { deckService } from "../services/deckService";
+import { supabase } from "../services/supabase";
 import * as pdfjsLib from "pdfjs-dist";
 
 // Set worker source for pdfjs-dist
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 function Admin() {
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
+  const [existingDeck, setExistingDeck] = useState(null);
+
   const [file, setFile] = useState(null);
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -16,12 +21,38 @@ function Admin() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (editId) {
+      loadExistingDeck(editId);
+    }
+  }, [editId]);
+
+  const loadExistingDeck = async (id) => {
+    try {
+      setLoading(true);
+      setProgress("Loading deck data...");
+      const deck = await deckService.getDeckById(id);
+      if (deck) {
+        setExistingDeck(deck);
+        setTitle(deck.title);
+        setSlug(deck.slug);
+        setDescription(deck.description || "");
+      }
+    } catch (err) {
+      console.error("Error loading deck:", err);
+      setError("Failed to load deck for editing.");
+    } finally {
+      setLoading(false);
+      setProgress("");
+    }
+  };
+
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile && selectedFile.type === "application/pdf") {
       setFile(selectedFile);
-      // Generate slug from filename if empty
-      if (!slug) {
+      // Generate slug from filename if empty and not editing
+      if (!slug && !editId) {
         const generatedSlug = selectedFile.name
           .toLowerCase()
           .replace(/[^a-z0-9]/g, "-")
@@ -29,7 +60,7 @@ function Admin() {
           .replace(/^-|-$/g, "");
         setSlug(generatedSlug);
       }
-      if (!title) {
+      if (!title && !editId) {
         setTitle(selectedFile.name.replace(".pdf", ""));
       }
     } else {
@@ -67,36 +98,86 @@ function Admin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file || !title || !slug) return;
+    if ((!file && !editId) || !title || !slug) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      // 1. Upload PDF and create initial record
-      setProgress("Uploading PDF...");
-      const deckRecord = await deckService.uploadDeck(file, {
-        title,
-        slug,
-        description,
-        display_order: 1, // Default
-      });
+      let finalFileUrl = existingDeck?.file_url;
+      let finalPages = existingDeck?.pages || [];
 
-      // 2. Process PDF to images client-side
-      const imageBlobs = await processPdfToImages(file);
+      // 1. If a new file is uploaded
+      if (file) {
+        setProgress("Uploading new PDF...");
+        // For updates, we just upload the new file
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${slug}-${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("decks")
+          .upload(fileName, file);
+        if (uploadError) throw uploadError;
 
-      // 3. Upload images
-      setProgress(`Uploading ${imageBlobs.length} images...`);
-      const imageUrls = await deckService.uploadSlideImages(slug, imageBlobs);
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("decks").getPublicUrl(fileName);
+        finalFileUrl = publicUrl;
 
-      // 4. Update deck record with image URLs
-      setProgress("Finalizing deck...");
-      await deckService.updateDeckPages(deckRecord.id, imageUrls);
+        // Clean up old processed images if editing
+        if (editId && existingDeck) {
+          setProgress("Cleaning up old slides...");
+          const { data: files } = await supabase.storage
+            .from("decks")
+            .list(`deck-images/${slug}`);
+          if (files && files.length > 0) {
+            const filesToDelete = files.map(
+              (f) => `deck-images/${slug}/${f.name}`,
+            );
+            await supabase.storage.from("decks").remove(filesToDelete);
+          }
+        }
+
+        // Process new images
+        const imageBlobs = await processPdfToImages(file);
+        setProgress(`Uploading ${imageBlobs.length} new slides...`);
+        finalPages = await deckService.uploadSlideImages(slug, imageBlobs);
+      }
+
+      // 2. Update or Create database record
+      if (editId) {
+        setProgress("Updating deck record...");
+        const { error: dbError } = await supabase
+          .from("decks")
+          .update({
+            title,
+            description,
+            file_url: finalFileUrl,
+            pages: finalPages,
+            status: "PROCESSED",
+          })
+          .eq("id", editId);
+        if (dbError) throw dbError;
+      } else {
+        setProgress("Creating new deck...");
+        const deckRecord = await deckService.uploadDeck(file, {
+          title,
+          slug,
+          description,
+          display_order: 1,
+        });
+
+        const imageBlobs = await processPdfToImages(file);
+        setProgress(`Uploading ${imageBlobs.length} slides...`);
+        const imageUrls = await deckService.uploadSlideImages(slug, imageBlobs);
+
+        setProgress("Finalizing...");
+        await deckService.updateDeckPages(deckRecord.id, imageUrls);
+      }
 
       setProgress("Success!");
       setTimeout(() => navigate("/"), 1500);
     } catch (err) {
-      console.error("Upload failed:", err);
+      console.error("Operation failed:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -107,7 +188,7 @@ function Admin() {
     <div className="home-page">
       <div className="home-container">
         <header className="hero-section">
-          <h1>Upload New Deck</h1>
+          <h1>{editId ? "Update Deck" : "Upload New Deck"}</h1>
         </header>
 
         <div
@@ -131,10 +212,17 @@ function Admin() {
               <input
                 type="text"
                 value={slug}
-                onChange={(e) => setSlug(e.target.value)}
+                onChange={(e) => !editId && setSlug(e.target.value)}
                 required
                 placeholder="e.g. q4-update"
+                disabled={!!editId}
+                style={editId ? { opacity: 0.6, cursor: "not-allowed" } : {}}
               />
+              {editId && (
+                <p className="help-text">
+                  Slug cannot be changed to preserve sharing links.
+                </p>
+              )}
             </div>
 
             <div className="form-group">
@@ -147,15 +235,20 @@ function Admin() {
             </div>
 
             <div className="form-group">
-              <label>PDF File</label>
+              <label>{editId ? "Replace PDF (Optional)" : "PDF File"}</label>
               <div className="file-input-wrapper">
                 <input
                   type="file"
                   accept=".pdf"
                   onChange={handleFileChange}
-                  required
+                  required={!editId}
                 />
               </div>
+              {editId && (
+                <p className="help-text">
+                  Leave empty to keep the current deck content.
+                </p>
+              )}
             </div>
 
             {loading && (
@@ -173,7 +266,11 @@ function Admin() {
                 className="submit-button"
                 disabled={loading}
               >
-                {loading ? "Processing..." : "Upload & Process Deck"}
+                {loading
+                  ? "Processing..."
+                  : editId
+                    ? "Save Changes"
+                    : "Upload & Process Deck"}
               </button>
               <Link to="/" className="cancel-link">
                 Cancel
@@ -193,6 +290,11 @@ function Admin() {
         }
         .form-group {
           margin-bottom: 1.5rem;
+        }
+        .help-text {
+          font-size: 0.75rem;
+          color: var(--text-secondary);
+          margin-top: 0.4rem;
         }
         .form-group label {
           display: block;
