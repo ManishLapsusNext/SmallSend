@@ -14,7 +14,7 @@ import Textarea from "../components/common/Textarea";
 // Set worker source for pdfjs-dist
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-function Admin() {
+function ManageDeck() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
   const [existingDeck, setExistingDeck] = useState(null);
@@ -210,7 +210,7 @@ function Admin() {
 
   return (
     <div className="home-page">
-      <header className="hero-section hero-section-admin">
+      <header className="hero-section hero-section-manage">
         <div className="hero-content">
           <h1>{editId ? "Update Deck" : "Upload New Deck"}</h1>
         </div>
@@ -226,7 +226,7 @@ function Admin() {
         }}
       >
         <Card
-          className="admin-content admin-card-premium"
+          className="manage-deck-content manage-card-premium"
           style={{
             width: "100%",
             maxWidth: "640px",
@@ -365,4 +365,4 @@ function Admin() {
   );
 }
 
-export default Admin;
+export default ManageDeck;

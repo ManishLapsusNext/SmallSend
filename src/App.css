@@ -1604,7 +1604,7 @@ body {
 }
 
 /* Admin Specific Styles */
-.admin-card-premium {
+.manage-card-premium {
   background: rgba(15, 17, 21, 0.6) !important;
   backdrop-filter: blur(40px) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
@@ -1613,17 +1613,17 @@ body {
     0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
-.admin-form-container {
+.manage-form-container {
   padding: 4rem 2rem;
   max-width: 1200px;
   margin: 0 auto;
 }
 
-.hero-section-admin {
+.hero-section-manage {
   padding: 6rem 1rem 8rem;
 }
 
-.hero-section-admin h1 {
+.hero-section-manage h1 {
   font-size: clamp(2.5rem, 8vw, 4rem); /* Slightly smaller than home */
   margin-bottom: 0.5rem;
 }
