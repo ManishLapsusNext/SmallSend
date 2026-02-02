@@ -147,12 +147,18 @@ export const analyticsService = {
     }
   },
 
-  // Get stats for a specific deck
+  // Get stats for a specific deck (Management view - requires ownership)
   async getDeckStats(deckId) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) throw new Error("Not authenticated");
+
     const { data, error } = await supabase
       .from("deck_stats")
       .select("*")
       .eq("deck_id", deckId)
+      .eq("user_id", session.user.id) // Ensure only owner can see stats
       .order("page_number", { ascending: true });
 
     if (error) throw error;

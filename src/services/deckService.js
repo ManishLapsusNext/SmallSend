@@ -153,12 +153,18 @@ export const deckService = {
     return imageUrls;
   },
 
-  // NEW: Update deck with processed pages
+  // NEW: Update deck with processed pages (with ownership check)
   async updateDeckPages(deckId, pages) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) throw new Error("Not authenticated");
+
     const { data, error } = await supabase
       .from("decks")
       .update({ pages, status: "PROCESSED" })
       .eq("id", deckId)
+      .eq("user_id", session.user.id) // MANDATORY check
       .select()
       .single();
 
