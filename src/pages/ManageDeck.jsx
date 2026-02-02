@@ -1,13 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { deckService } from "../services/deckService";
 import { supabase } from "../services/supabase";
+import { Upload, X, ArrowLeft, FileText } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
+
+// Common Components
+import Button from "../components/common/Button";
+import Input from "../components/common/Input";
+import Card from "../components/common/Card";
+import Textarea from "../components/common/Textarea";
 
 // Set worker source for pdfjs-dist
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-function Admin() {
+function ManageDeck() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
   const [existingDeck, setExistingDeck] = useState(null);
@@ -20,6 +27,7 @@ function Admin() {
   const [progress, setProgress] = useState("");
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (editId) {
@@ -51,7 +59,6 @@ function Admin() {
     const selectedFile = e.target.files[0];
     if (selectedFile && selectedFile.type === "application/pdf") {
       setFile(selectedFile);
-      // Generate slug from filename if empty and not editing
       if (!slug && !editId) {
         const generatedSlug = selectedFile.name
           .toLowerCase()
@@ -63,7 +70,7 @@ function Admin() {
       if (!title && !editId) {
         setTitle(selectedFile.name.replace(".pdf", ""));
       }
-    } else {
+    } else if (selectedFile) {
       alert("Please select a valid PDF file.");
     }
   };
@@ -78,7 +85,7 @@ function Admin() {
     for (let i = 1; i <= numPages; i++) {
       setProgress(`Processing page ${i} of ${numPages}...`);
       const page = await pdf.getPage(i);
-      const viewport = page.getViewport({ scale: 1.5 }); // Balanced resolution
+      const viewport = page.getViewport({ scale: 1.5 });
 
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
@@ -107,7 +114,6 @@ function Admin() {
       let finalFileUrl = existingDeck?.file_url;
       let finalPages = existingDeck?.pages || [];
 
-      // 1. If a new file is uploaded
       if (file) {
         const {
           data: { session },
@@ -128,7 +134,6 @@ function Admin() {
         } = supabase.storage.from("decks").getPublicUrl(fileName);
         finalFileUrl = publicUrl;
 
-        // Clean up old processed images if editing
         if (editId && existingDeck) {
           setProgress("Cleaning up old slides...");
           const { data: files } = await supabase.storage
@@ -142,7 +147,6 @@ function Admin() {
           }
         }
 
-        // Process new images
         const imageBlobs = await processPdfToImages(file);
         setProgress(`Uploading ${imageBlobs.length} new slides...`);
         finalPages = await deckService.uploadSlideImages(
@@ -152,7 +156,6 @@ function Admin() {
         );
       }
 
-      // 2. Update or Create database record
       if (editId) {
         setProgress("Updating deck record...");
         const { error: dbError } = await supabase
@@ -180,7 +183,7 @@ function Admin() {
           description,
           display_order: 1,
           user_id: userId,
-          file_size: file.size, // Capture size from the File object
+          file_size: file.size,
         });
 
         const imageBlobs = await processPdfToImages(file);
@@ -195,7 +198,7 @@ function Admin() {
         await deckService.updateDeckPages(deckRecord.id, imageUrls);
       }
 
-      setProgress("Success!");
+      setProgress("Success! Redirecting...");
       setTimeout(() => navigate("/"), 1500);
     } catch (err) {
       console.error("Operation failed:", err);
@@ -207,7 +210,7 @@ function Admin() {
 
   return (
     <div className="home-page">
-      <header className="hero-section">
+      <header className="hero-section hero-section-manage">
         <div className="hero-content">
           <h1>{editId ? "Update Deck" : "Upload New Deck"}</h1>
         </div>
@@ -215,196 +218,151 @@ function Admin() {
 
       <main
         className="home-container"
-        style={{ display: "flex", justifyContent: "center" }}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          paddingBottom: "4rem",
+        }}
       >
-        <div
-          className="admin-content"
-          style={{ width: "100%", maxWidth: "600px" }}
+        <Card
+          className="manage-deck-content manage-card-premium"
+          style={{
+            width: "100%",
+            maxWidth: "640px",
+            padding: "3.5rem",
+            marginTop: "-4rem",
+            position: "relative",
+            zIndex: 10,
+            borderRadius: "32px",
+          }}
         >
-          <form onSubmit={handleSubmit} className="admin-form">
-            <div className="form-group">
-              <label>Deck Title</label>
+          <form
+            onSubmit={handleSubmit}
+            style={{ display: "flex", flexDirection: "column", gap: "2rem" }}
+          >
+            <Input
+              label="Deck Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              placeholder="e.g. Q4 Investor Update"
+              icon={FileText}
+            />
+
+            <Input
+              label="Slug (URL Identifier)"
+              value={slug}
+              onChange={(e) => !editId && setSlug(e.target.value)}
+              required
+              placeholder="e.g. q4-update"
+              disabled={!!editId}
+              error={
+                editId ? "Slug is permanent to preserve existing links." : null
+              }
+            />
+
+            <Textarea
+              label="Description (Optional)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief summary of the deck's content..."
+              rows={3}
+            />
+
+            <div className="form-field-wrapper">
+              <label className="form-field-label">
+                {editId ? "Replace PDF (Optional)" : "PDF File"}
+              </label>
+              <Input
+                readOnly
+                placeholder={
+                  editId
+                    ? "Leave empty to keep current file"
+                    : "Select PDF file..."
+                }
+                value={file ? file.name : ""}
+                icon={Upload}
+                onClick={() => fileInputRef.current?.click()}
+                className="cursor-pointer"
+              />
               <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                placeholder="e.g. Q4 Investor Update"
+                type="file"
+                ref={fileInputRef}
+                style={{ display: "none" }}
+                accept=".pdf"
+                onChange={handleFileChange}
               />
-            </div>
-
-            <div className="form-group">
-              <label>Slug (URL Identifier)</label>
-              <input
-                type="text"
-                value={slug}
-                onChange={(e) => !editId && setSlug(e.target.value)}
-                required
-                placeholder="e.g. q4-update"
-                disabled={!!editId}
-                style={editId ? { opacity: 0.6, cursor: "not-allowed" } : {}}
-              />
-              {editId && (
-                <p className="help-text">
-                  Slug cannot be changed to preserve sharing links.
-                </p>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>Description (Optional)</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Brief summary of the deck..."
-              />
-            </div>
-
-            <div className="form-group">
-              <label>{editId ? "Replace PDF (Optional)" : "PDF File"}</label>
-              <div className="file-input-wrapper">
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleFileChange}
-                  required={!editId}
-                />
-              </div>
-              {editId && (
-                <p className="help-text">
-                  Leave empty to keep the current deck content.
-                </p>
-              )}
             </div>
 
             {loading && (
-              <div className="progress-status">
-                <div className="spinner"></div>
-                <p>{progress}</p>
+              <div className="progress-status-container">
+                <div className="spinner-small"></div>
+                <p
+                  style={{
+                    color: "var(--accent-primary)",
+                    fontWeight: "600",
+                    margin: 0,
+                  }}
+                >
+                  {progress}
+                </p>
               </div>
             )}
 
-            {error && <div className="error-message">{error}</div>}
+            {error && (
+              <div
+                style={{
+                  color: "#ef4444",
+                  padding: "1.25rem",
+                  background: "rgba(239,68,68,0.08)",
+                  borderRadius: "12px",
+                  fontSize: "0.95rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  border: "1px solid rgba(239,68,68,0.2)",
+                }}
+              >
+                <X size={18} />
+                {error}
+              </div>
+            )}
 
-            <div className="form-actions">
-              <button
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "1.25rem",
+                marginTop: "1rem",
+              }}
+            >
+              <Button
                 type="submit"
-                className="submit-button"
-                disabled={loading}
+                variant="primary"
+                size="large"
+                fullWidth
+                loading={loading}
+                className="btn-glow-primary"
               >
                 {loading
-                  ? "Processing..."
+                  ? progress || "Processing..."
                   : editId
                     ? "Save Changes"
                     : "Upload & Process Deck"}
-              </button>
-              <Link to="/" className="cancel-link">
-                Cancel
+              </Button>
+
+              <Link to="/" style={{ textDecoration: "none" }}>
+                <Button variant="ghost" fullWidth icon={ArrowLeft}>
+                  Back to Dashboard
+                </Button>
               </Link>
             </div>
           </form>
-        </div>
+        </Card>
       </main>
-
-      <style>{`
-        .admin-form {
-          background: var(--bg-card);
-          padding: 2.5rem;
-          border-radius: 20px;
-          border: 1px solid var(--border-color);
-          box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        }
-        .form-group {
-          margin-bottom: 1.5rem;
-        }
-        .help-text {
-          font-size: 0.75rem;
-          color: var(--text-secondary);
-          margin-top: 0.4rem;
-        }
-        .form-group label {
-          display: block;
-          margin-bottom: 0.5rem;
-          font-weight: 500;
-          color: var(--text-secondary);
-          font-size: 0.9rem;
-        }
-        .form-group input, .form-group textarea {
-          width: 100%;
-          padding: 0.8rem 1rem;
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: 10px;
-          color: white;
-          font-family: inherit;
-          transition: var(--transition-smooth);
-        }
-        .form-group input:focus, .form-group textarea:focus {
-          outline: none;
-          border-color: var(--accent-primary);
-          box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-        }
-        .form-group textarea {
-          height: 100px;
-          resize: vertical;
-        }
-        .progress-status {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          margin: 1.5rem 0;
-          padding: 1rem;
-          background: rgba(99, 102, 241, 0.1);
-          border-radius: 10px;
-          color: var(--accent-hover);
-          font-weight: 500;
-        }
-        .submit-button {
-          width: 100%;
-          padding: 1rem;
-          background: var(--accent-primary);
-          color: white;
-          border: none;
-          border-radius: 10px;
-          font-weight: 600;
-          font-size: 1rem;
-          cursor: pointer;
-          transition: var(--transition-smooth);
-        }
-        .submit-button:hover:not(:disabled) {
-          background: var(--accent-hover);
-          transform: translateY(-2px);
-        }
-        .submit-button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        .form-actions {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1rem;
-          margin-top: 2rem;
-        }
-        .cancel-link {
-          color: var(--text-secondary);
-          text-decoration: none;
-          font-size: 0.9rem;
-        }
-        .cancel-link:hover {
-          color: white;
-        }
-        .error-message {
-          color: #ef4444;
-          background: rgba(239, 68, 68, 0.1);
-          padding: 1rem;
-          border-radius: 10px;
-          margin-bottom: 1.5rem;
-          font-size: 0.9rem;
-        }
-      `}</style>
     </div>
   );
 }
 
-export default Admin;
+export default ManageDeck;

@@ -328,7 +328,7 @@ function DeckList({ decks, loading, onDelete, onUpdate }) {
         </div>
       </main>
 
-      <Link to="/admin" className="fab-button" title="Upload New Deck">
+      <Link to="/upload" className="fab-button" title="Upload New Deck">
         <Plus size={32} />
       </Link>
 

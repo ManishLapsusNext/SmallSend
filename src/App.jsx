@@ -8,7 +8,7 @@ import {
 import { supabase } from "./services/supabase";
 import Home from "./pages/Home";
 import Viewer from "./pages/Viewer";
-import Admin from "./pages/Admin";
+import ManageDeck from "./pages/ManageDeck";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import "./App.css";
@@ -60,8 +60,8 @@ function App() {
             element={session ? <Home /> : <Navigate to="/login" />}
           />
           <Route
-            path="/admin"
-            element={session ? <Admin /> : <Navigate to="/login" />}
+            path="/upload"
+            element={session ? <ManageDeck /> : <Navigate to="/login" />}
           />
           <Route path="/:slug" element={<Viewer />} />
         </Routes>
