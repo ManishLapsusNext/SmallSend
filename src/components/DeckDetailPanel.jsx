@@ -13,6 +13,12 @@ import { analyticsService } from "../services/analyticsService";
 import { supabase } from "../services/supabase";
 import * as pdfjsLib from "pdfjs-dist";
 
+// Common Components
+import Button from "./common/Button";
+import Input from "./common/Input";
+import Toggle from "./common/Toggle";
+import Card from "./common/Card";
+
 // Set worker source for pdfjs-dist
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
@@ -225,88 +231,65 @@ function DeckDetailPanel({
           </div>
 
           <div className="mockup-form">
-            <div className="form-field-modern">
-              <input
-                type="text"
-                placeholder="Rename"
-                value={editValues.title}
-                onChange={(e) =>
-                  setEditValues({ ...editValues, title: e.target.value })
-                }
-              />
-            </div>
+            <Input
+              placeholder="Rename"
+              value={editValues.title}
+              onChange={(e) =>
+                setEditValues({ ...editValues, title: e.target.value })
+              }
+            />
 
-            <div className="form-field-modern">
-              <label
-                className="replace-file-label"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload size={18} style={{ marginRight: "10px" }} />
-                <span>
-                  {newFile
-                    ? `Replace: ${newFile.name}`
-                    : "Replace File (Upload new File)"}
-                </span>
-              </label>
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: "none" }}
-                accept=".pdf"
-                onChange={handleFileChange}
-              />
-            </div>
+            <Input
+              readOnly
+              placeholder="Replace File"
+              value={
+                newFile
+                  ? `Replace: ${newFile.name}`
+                  : "Replace File (Upload new PDF)"
+              }
+              icon={Upload}
+              onClick={() => fileInputRef.current?.click()}
+              className="cursor-pointer"
+            />
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              accept=".pdf"
+              onChange={handleFileChange}
+            />
 
-            <div className="form-field-modern">
-              <input
-                type="text"
-                placeholder="Replace Link"
-                value={editValues.slug}
-                onChange={(e) =>
-                  setEditValues({ ...editValues, slug: e.target.value })
-                }
-              />
-            </div>
-            {editValues.slug !== deck.slug && (
-              <div
-                className="slug-warning"
-                style={{
-                  color: "#ef4444",
-                  fontSize: "0.8rem",
-                  marginTop: "-0.5rem",
-                }}
-              >
-                <AlertTriangle size={14} /> Breaking change: existing links will
-                fail!
-              </div>
-            )}
+            <Input
+              placeholder="Replace Link"
+              value={editValues.slug}
+              error={
+                editValues.slug !== deck.slug
+                  ? "Breaking change: existing links will fail!"
+                  : null
+              }
+              onChange={(e) =>
+                setEditValues({ ...editValues, slug: e.target.value })
+              }
+            />
 
-            <div className="form-field-modern">
-              <div className="form-row-between">
-                <span>Link Expiry</span>
-                <div
-                  className={`toggle-container ${expiryEnabled ? "on" : "off"}`}
-                  onClick={() => setExpiryEnabled(!expiryEnabled)}
-                >
-                  <div className="toggle-knob"></div>
-                </div>
-              </div>
-            </div>
+            <Toggle
+              label="Link Expiry"
+              enabled={expiryEnabled}
+              onToggle={setExpiryEnabled}
+            />
 
             {expiryEnabled && (
-              <div className="form-field-modern">
-                <input
-                  type="date"
-                  value={expiryDate}
-                  onChange={(e) => setExpiryDate(e.target.value)}
-                />
-              </div>
+              <Input
+                type="date"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+              />
             )}
 
             <div className="analytics-section">
               <h3>Analytics</h3>
               <div className="analytics-summary-grid">
-                <div className="analytics-summary-card">
+                <Card className="analytics-summary-card" hoverable={false}>
                   <div className="analytics-card-icon eye">
                     <Eye size={20} />
                   </div>
@@ -316,9 +299,9 @@ function DeckDetailPanel({
                       {summaryStats.views}
                     </div>
                   </div>
-                </div>
+                </Card>
 
-                <div className="analytics-summary-card">
+                <Card className="analytics-summary-card" hoverable={false}>
                   <div className="analytics-card-icon clock">
                     <Clock size={20} />
                   </div>
@@ -328,36 +311,41 @@ function DeckDetailPanel({
                       {Math.round(summaryStats.avgTime)}s
                     </div>
                   </div>
-                </div>
+                </Card>
               </div>
 
               <div className="analytics-details-wrapper">
-                <button
-                  className="analytics-details-btn-modern"
+                <Button
+                  variant="secondary"
+                  size="medium"
                   onClick={() => onShowAnalytics(deck)}
                 >
                   Details
-                </button>
+                </Button>
               </div>
             </div>
           </div>
         </div>
 
         <div className="panel-bottom-actions">
-          <button
-            className="btn-large btn-delete-large"
+          <Button
+            variant="danger"
+            size="large"
+            fullWidth
             onClick={() => onDelete(deck)}
             disabled={isSaving}
           >
             DELETE
-          </button>
-          <button
-            className="btn-large btn-save-large"
+          </Button>
+          <Button
+            variant="primary"
+            size="large"
+            fullWidth
             onClick={handleSave}
-            disabled={isSaving}
+            loading={isSaving}
           >
-            {isSaving ? uploadProgress || "SAVING..." : "SAVE"}
-          </button>
+            {uploadProgress || "SAVE"}
+          </Button>
         </div>
       </div>
     </>
