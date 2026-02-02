@@ -1,11 +1,17 @@
 import { supabase } from "./supabase";
 
 export const deckService = {
-  // Get all decks
+  // Get all decks for the logged-in user
   async getAllDecks() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) return []; // Fallback for safety
+
     const { data, error } = await supabase
       .from("decks")
       .select("*")
+      .eq("user_id", session.user.id) // MANDATORY: Filter by owner
       .order("display_order", { ascending: true });
 
     if (error) throw error;
@@ -24,12 +30,18 @@ export const deckService = {
     return data;
   },
 
-  // Get single deck by ID
+  // Get single deck by ID (management use)
   async getDeckById(id) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) throw new Error("Not authenticated");
+
     const { data, error } = await supabase
       .from("decks")
       .select("*")
       .eq("id", id)
+      .eq("user_id", session.user.id) // MANDATORY check
       .single();
 
     if (error) throw error;
