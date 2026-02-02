@@ -35,6 +35,12 @@ function Home() {
     }
   };
 
+  const handleUpdate = (updatedDeck) => {
+    setDecks((prev) =>
+      prev.map((d) => (d.id === updatedDeck.id ? updatedDeck : d)),
+    );
+  };
+
   if (error) {
     return (
       <div className="error-container">
@@ -44,7 +50,14 @@ function Home() {
     );
   }
 
-  return <DeckList decks={decks} loading={loading} onDelete={handleDelete} />;
+  return (
+    <DeckList
+      decks={decks}
+      loading={loading}
+      onDelete={handleDelete}
+      onUpdate={handleUpdate}
+    />
+  );
 }
 
 export default Home;

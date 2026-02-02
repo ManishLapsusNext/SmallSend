@@ -163,6 +163,7 @@ function Admin() {
             file_url: finalFileUrl,
             pages: finalPages,
             status: "PROCESSED",
+            file_size: file ? file.size : existingDeck.file_size,
           })
           .eq("id", editId);
         if (dbError) throw dbError;
@@ -179,6 +180,7 @@ function Admin() {
           description,
           display_order: 1,
           user_id: userId,
+          file_size: file.size, // Capture size from the File object
         });
 
         const imageBlobs = await processPdfToImages(file);

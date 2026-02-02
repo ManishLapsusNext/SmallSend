@@ -16,9 +16,10 @@ import {
 import { deckService } from "../services/deckService";
 import { supabase } from "../services/supabase";
 import defaultBanner from "../assets/banner.png";
-import AnalyticsModal from "./AnalyticsModal"; // Added AnalyticsModal import
+import AnalyticsModal from "./AnalyticsModal";
+import DeckDetailPanel from "./DeckDetailPanel";
 
-function DeckList({ decks, loading, onDelete }) {
+function DeckList({ decks, loading, onDelete, onUpdate }) {
   const [branding, setBranding] = useState({
     room_name: "Deckly",
     banner_url:
@@ -30,6 +31,8 @@ function DeckList({ decks, loading, onDelete }) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
   const [selectedAnalyticsDeck, setSelectedAnalyticsDeck] = useState(null);
+  const [selectedDeck, setSelectedDeck] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
 
   useEffect(() => {
     loadBranding();
@@ -118,6 +121,15 @@ function DeckList({ decks, loading, onDelete }) {
     } catch (err) {
       alert("Failed to reset branding: " + err.message);
     }
+  };
+
+  const handleCopyLink = (e, deck) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = `${window.location.origin}/${deck.slug}`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(deck.id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const bannerStyle = {
@@ -235,60 +247,57 @@ function DeckList({ decks, loading, onDelete }) {
           ) : (
             <div className="deck-grid">
               {decks.map((deck) => (
-                <Link key={deck.id} to={`/${deck.slug}`} className="deck-card">
-                  <div className="deck-thumbnail">
-                    {deck.pages && deck.pages.length > 0 && (
-                      <img
-                        src={deck.pages[0]}
-                        alt=""
-                        className="thumbnail-preview"
-                      />
-                    )}
-                  </div>
-                  <div className="deck-card-content">
-                    <div className="deck-header-row">
-                      <h2>{deck.title}</h2>
-                      <div className="card-actions">
-                        <button
-                          className="share-deck-btn"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const url = `${window.location.origin}/${deck.slug}`;
-                            navigator.clipboard.writeText(url);
-                            e.currentTarget.classList.add("copied");
-                            setTimeout(() => {
-                              const btn = document.querySelector(
-                                ".share-deck-btn.copied",
-                              );
-                              if (btn) btn.classList.remove("copied");
-                            }, 2000);
-                          }}
-                          title="Copy Link"
-                        >
-                          <Share2 size={16} />
-                          <span className="copied-toast">Copied!</span>
-                        </button>
-                        <Link
-                          to={`/admin?edit=${deck.id}`}
-                          className="edit-deck-btn"
-                          onClick={(e) => e.stopPropagation()}
-                          title="Replace/Edit Deck"
-                        >
-                          <Pencil size={16} />
-                        </Link>
-                        <button
-                          className="analytics-deck-btn"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setSelectedAnalyticsDeck(deck);
-                          }}
-                          title="View Deck Analytics"
-                        >
-                          <BarChart3 size={16} />
-                        </button>
-                        {onDelete && (
+                <div key={deck.id} className="deck-card-wrapper">
+                  <Link
+                    to={`/${deck.slug}`}
+                    className={`deck-card ${selectedDeck?.id === deck.id ? "active" : ""}`}
+                  >
+                    <div className="deck-thumbnail">
+                      {deck.pages && deck.pages.length > 0 && (
+                        <img
+                          src={deck.pages[0]}
+                          alt=""
+                          className="thumbnail-preview"
+                        />
+                      )}
+                    </div>
+                    <div className="deck-card-content">
+                      <div className="deck-header-row">
+                        <h2>{deck.title}</h2>
+                        <div className="card-actions">
+                          <button
+                            className={`share-deck-btn ${copiedId === deck.id ? "copied" : ""}`}
+                            onClick={(e) => handleCopyLink(e, deck)}
+                            title="Copy Link"
+                          >
+                            <Share2 size={16} />
+                            <div className="copied-toast">Copied!</div>
+                          </button>
+
+                          <button
+                            className="analytics-deck-btn"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedAnalyticsDeck(deck);
+                            }}
+                            title="View Analytics"
+                          >
+                            <BarChart3 size={16} />
+                          </button>
+
+                          <button
+                            className="edit-deck-btn"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedDeck(deck);
+                            }}
+                            title="Quick Edit"
+                          >
+                            <Pencil size={16} />
+                          </button>
+
                           <button
                             className="delete-deck-btn"
                             onClick={(e) => {
@@ -300,21 +309,19 @@ function DeckList({ decks, loading, onDelete }) {
                           >
                             <Trash2 size={16} />
                           </button>
-                        )}
+                        </div>
+                      </div>
+                      {deck.description ? (
+                        <p>{deck.description}</p>
+                      ) : (
+                        <p>Manage and share this pitch deck.</p>
+                      )}
+                      <div className="view-link">
+                        View Deck <span>→</span>
                       </div>
                     </div>
-                    {deck.description ? (
-                      <p>{deck.description}</p>
-                    ) : (
-                      <p>
-                        Click to view this pitch deck and explore the details.
-                      </p>
-                    )}
-                    <div className="view-link">
-                      View Deck <span>→</span>
-                    </div>
-                  </div>
-                </Link>
+                  </Link>
+                </div>
               ))}
             </div>
           )}
@@ -324,6 +331,24 @@ function DeckList({ decks, loading, onDelete }) {
       <Link to="/admin" className="fab-button" title="Upload New Deck">
         <Plus size={32} />
       </Link>
+
+      {selectedDeck && (
+        <DeckDetailPanel
+          deck={selectedDeck}
+          onClose={() => setSelectedDeck(null)}
+          onDelete={(deck) => {
+            onDelete(deck);
+            setSelectedDeck(null);
+          }}
+          onShowAnalytics={(deck) => {
+            setSelectedAnalyticsDeck(deck);
+          }}
+          onUpdate={(updatedDeck) => {
+            onUpdate(updatedDeck);
+            setSelectedDeck(updatedDeck);
+          }}
+        />
+      )}
 
       {selectedAnalyticsDeck && (
         <AnalyticsModal
