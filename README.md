@@ -56,31 +56,40 @@ Whether you want to self-host your own private Data Room or contribute to the ne
 
 ## 🚀 Getting Started
 
-1. **Clone the Repo**
+### 1. Supabase Setup
 
-   ```bash
-   git clone https://github.com/ManishLapsusNext/Deckly.git
-   ```
+Deckly uses Supabase for database, authentication, and storage.
 
-2. **Install Dependencies**
+- Create a new project at [supabase.com](https://supabase.com).
+- Copy-paste the content of [supabase/schema.sql](./supabase/schema.sql) into the Supabase SQL Editor and run it to set up your tables and policies.
+- Create a public storage bucket named `decks`.
 
-   ```bash
-   npm install
-   ```
+### 2. Configure Environment
 
-3. **Configure Environment**
-   Create a `.env.local` file with your Supabase credentials:
+Create a `.env.local` file in the root:
 
-   ```env
-   VITE_SUPABASE_URL=your_url
-   VITE_SUPABASE_ANON_KEY=your_key
-   ```
+```env
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-4. **Launch**
-   ```bash
-   npm run dev
-   ```
+### 3. Launch
+
+#### Option A: Standard (Local Node.js)
+
+```bash
+npm install
+npm run dev
+```
+
+#### Option B: Docker (Recommended)
+
+```bash
+docker-compose up
+```
+
+The app will be available at `http://localhost:5173`.
 
 ---
 
-Built with ❤️ for the startup community.
+Built with ❤️ for the startup community. Star this repo if you find it useful!
