@@ -136,8 +136,16 @@ function DeckDetailPanel({
         file_url: finalFileUrl,
         pages: finalPages,
         file_size: fileSize,
-        expires_at: expiryEnabled ? new Date(expiryDate).toISOString() : null,
       };
+
+      // Only include expires_at if it's enabled or was previously set
+      // This prevents errors if the user hasn't added the column to Supabase yet
+      if (expiryEnabled && expiryDate) {
+        updates.expires_at = new Date(expiryDate).toISOString();
+      } else if (deck.expires_at) {
+        // Only set to null if it was actually there to begin with
+        updates.expires_at = null;
+      }
 
       const updated = await deckService.updateDeck(deck.id, updates);
       onUpdate(updated);
