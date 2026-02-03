@@ -5,7 +5,7 @@ import { analyticsService } from "../services/analyticsService";
 function AnalyticsModal({ deck, onClose }) {
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("views");
 
   useEffect(() => {
     const fetchStats = async () => {
