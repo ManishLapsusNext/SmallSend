@@ -1,13 +1,20 @@
 /* === 1. General Reset & Design Tokens === */
 :root {
-  --bg-primary: #1b1926;
-  --bg-secondary: #242231;
-  --bg-card: #2d2b3f;
+  --bg-primary: #12121a;
+  --bg-secondary: #1c1c21;
+  --bg-card: rgba(255, 255, 255, 0.03);
   --text-primary: #ffffff;
   --text-secondary: #94a3b8;
-  --accent-primary: #0edb7c;
-  --accent-hover: #c4a7ff;
-  --highlight-color: #2ad485;
+  --accent-primary: #2ee59d;
+  --accent-secondary: #a78bfa;
+  --accent-hover: #10b981;
+  --highlight-color: #2ee59d;
+
+  /* Central Brand Colors (RGB for Tailwind Opacity Support) */
+  --deckly-primary-rgb: 46, 229, 157;
+  --deckly-secondary-rgb: 167, 139, 250;
+  --deckly-background-rgb: 18, 18, 26;
+
   --border-color: rgba(255, 255, 255, 0.08);
   --glass-bg: rgba(255, 255, 255, 0.03);
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -74,7 +81,7 @@ body {
 
 .btn-modern-primary:hover {
   background: var(--highlight-color);
-  box-shadow: 0 0 20px rgba(14, 219, 124, 0.3);
+  box-shadow: 0 0 20px rgba(var(--deckly-primary-rgb), 0.3);
 }
 
 .btn-modern-secondary {
@@ -182,8 +189,8 @@ body {
 .form-field-inner:focus-within,
 .form-field-inner-textarea:focus-within {
   border-color: var(--accent-primary);
-  background: rgba(14, 219, 124, 0.05);
-  box-shadow: 0 0 15px rgba(14, 219, 124, 0.1);
+  background: rgba(46, 229, 157, 0.05);
+  box-shadow: 0 0 15px rgba(46, 229, 157, 0.1);
 }
 
 .field-icon {
@@ -340,7 +347,7 @@ body {
   background: var(--accent-primary);
   border-color: var(--accent-primary);
   transform: scale(1.1);
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 20px rgba(var(--deckly-primary-rgb), 0.4);
 }
 
 .branding-menu {
@@ -677,9 +684,9 @@ body {
 }
 
 .analytics-deck-btn:hover {
-  background: #6366f1;
+  background: #10b981;
   color: white;
-  border-color: #6366f1;
+  border-color: #10b981;
   transform: translateY(-2px);
 }
 
@@ -1040,7 +1047,7 @@ body {
 .input-wrapper input:focus {
   outline: none;
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 0 0 4px rgba(var(--deckly-primary-rgb), 0.15);
 }
 
 .login-button {
@@ -1063,7 +1070,7 @@ body {
 .login-button:hover:not(:disabled) {
   background: var(--accent-hover);
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 10px 20px rgba(var(--deckly-primary-rgb), 0.3);
 }
 
 .login-button:disabled {
@@ -1124,7 +1131,7 @@ body {
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(99, 102, 241, 0.2);
+  border: 3px solid rgba(var(--deckly-primary-rgb), 0.2);
   border-radius: 50%;
   border-top-color: var(--accent-primary);
   animation: spin 1s linear infinite;
@@ -1377,13 +1384,13 @@ body {
   font-weight: 600;
   font-size: 1.1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 10px 20px rgba(var(--deckly-primary-rgb), 0.2);
 }
 
 .primary-panel-btn:hover {
   background: var(--accent-hover);
   transform: translateY(-2px);
-  box-shadow: 0 15px 30px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 15px 30px rgba(var(--deckly-primary-rgb), 0.3);
 }
 
 .action-grid {
@@ -1480,7 +1487,7 @@ body {
 .toggle-container {
   display: flex;
   align-items: center;
-  background: #0edb7c;
+  background: #2ee59d;
   border-radius: 20px;
   padding: 4px;
   height: 28px;
@@ -1545,13 +1552,13 @@ body {
 }
 
 .analytics-card-icon.eye {
-  background: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
+  background: rgba(46, 229, 157, 0.1);
+  color: #2ee59d;
 }
 
 .analytics-card-icon.clock {
-  background: rgba(14, 219, 124, 0.1);
-  color: #0edb7c;
+  background: rgba(46, 229, 157, 0.1);
+  color: #2ee59d;
 }
 
 .analytics-card-info {
@@ -1629,12 +1636,12 @@ body {
 }
 
 .btn-glow-primary:hover {
-  box-shadow: 0 0 30px rgba(14, 219, 124, 0.4);
+  box-shadow: 0 0 30px rgba(var(--deckly-primary-rgb), 0.4);
 }
 
 .progress-status-container {
-  background: rgba(14, 219, 124, 0.05);
-  border: 1px solid rgba(14, 219, 124, 0.1);
+  background: rgba(46, 229, 157, 0.05);
+  border: 1px solid rgba(46, 229, 157, 0.1);
   padding: 1.25rem;
   border-radius: 12px;
   display: flex;
@@ -1646,7 +1653,7 @@ body {
 .spinner-small {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(14, 219, 124, 0.2);
+  border: 2px solid rgba(var(--deckly-primary-rgb), 0.2);
   border-radius: 50%;
   border-top-color: var(--accent-primary);
   animation: spin 0.8s linear infinite;

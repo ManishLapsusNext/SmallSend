@@ -25,9 +25,9 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   const variants = {
     primary:
-      "bg-deckly-primary text-white hover:bg-opacity-90 shadow-lg shadow-deckly-primary/20",
+      "bg-deckly-primary text-slate-950 hover:bg-opacity-90 shadow-lg shadow-deckly-primary/20",
     secondary:
-      "bg-white/10 text-white hover:bg-white/20 backdrop-blur-md border border-white/10",
+      "bg-deckly-secondary text-slate-950 hover:bg-opacity-90 backdrop-blur-md shadow-lg shadow-deckly-secondary/20",
     danger: "bg-deckly-accent text-white hover:bg-opacity-90",
     ghost: "bg-transparent text-white hover:bg-white/10",
   };
@@ -58,8 +58,8 @@ const Button: React.FC<ButtonProps> = ({
         <Loader2 className="w-5 h-5 animate-spin" />
       ) : (
         <>
-          {Icon && <Icon size={size === "large" ? 22 : 18} />}
-          {children && <span>{children as React.ReactNode}</span>}
+          {Icon && <Icon size={size === "large" ? 22 : 18} strokeWidth={3} />}
+          {children}
         </>
       )}
     </motion.button>

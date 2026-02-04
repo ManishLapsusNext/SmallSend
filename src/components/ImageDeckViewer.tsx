@@ -23,7 +23,7 @@ function ImageDeckViewer({ deck }: ImageDeckViewerProps) {
     prefetchPages.forEach((pageIdx) => {
       if (pageIdx <= numPages) {
         const page = pages[pageIdx - 1];
-        const imageUrl = page?.image_url;
+        const imageUrl = (page as any)?.image_url || (page as any)?.url;
         if (imageUrl) {
           const img = new Image();
           img.src = imageUrl;
@@ -75,7 +75,9 @@ function ImageDeckViewer({ deck }: ImageDeckViewerProps) {
     );
   }
 
-  const currentImage = pages[currentPage - 1]?.image_url;
+  const currentPageData = pages[currentPage - 1];
+  const currentImage =
+    (currentPageData as any)?.image_url || (currentPageData as any)?.url;
 
   return (
     <div className="flex flex-col h-full bg-[#0d0f14] overflow-hidden">
@@ -89,11 +91,28 @@ function ImageDeckViewer({ deck }: ImageDeckViewerProps) {
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="relative h-full w-full flex items-center justify-center"
           >
-            <img
-              src={currentImage}
-              alt={`Slide ${currentPage}`}
-              className="max-h-full max-w-full object-contain shadow-[0_32px_128px_-12px_rgba(0,0,0,1)] rounded-sm"
-            />
+            {(() => {
+              const imgSrc =
+                currentImage ||
+                "https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=2000";
+              console.log(
+                "Viewer Current Page:",
+                currentPage,
+                "Image Source:",
+                imgSrc,
+              );
+              return (
+                <img
+                  src={imgSrc}
+                  alt={`Slide ${currentPage}`}
+                  referrerPolicy="no-referrer"
+                  className="max-h-full max-w-full object-contain shadow-[0_32px_128px_-12px_rgba(0,0,0,1)] rounded-sm"
+                  onError={() => {
+                    console.error("Viewer Image Load Error:", imgSrc);
+                  }}
+                />
+              );
+            })()}
           </motion.div>
         </AnimatePresence>
 

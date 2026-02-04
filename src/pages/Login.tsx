@@ -105,7 +105,7 @@ function Login() {
               loading={loading}
               className="mt-2"
             >
-              Sign In to Dashboard
+              Sign In
             </Button>
           </form>
 

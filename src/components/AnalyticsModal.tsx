@@ -100,7 +100,7 @@ function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
                   className="p-5 border-white/10 bg-white/[0.02]"
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 bg-deckly-primary/10 text-deckly-primary rounded-xl flex items-center justify-center">
                       <Eye size={20} />
                     </div>
                     <span className="text-[10px] items uppercase tracking-widest text-slate-500 font-bold">
@@ -118,7 +118,7 @@ function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
                   className="p-5 border-white/10 bg-white/[0.02]"
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 bg-deckly-secondary/10 text-deckly-secondary rounded-xl flex items-center justify-center">
                       <Clock size={20} />
                     </div>
                     <span className="text-[10px] items uppercase tracking-widest text-slate-500 font-bold">
@@ -184,10 +184,10 @@ function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
                               animate={{ width: `${percentage}%` }}
                               transition={{ duration: 1, ease: "circOut" }}
                               className={cn(
-                                "h-full flex items-center justify-end px-3",
+                                "h-full flex items-center justify-end px-3 rounded-lg",
                                 activeTab === "views"
-                                  ? "bg-deckly-primary/60"
-                                  : "bg-emerald-500/60",
+                                  ? "bg-deckly-primary"
+                                  : "bg-deckly-secondary",
                               )}
                             >
                               <span className="text-[9px] font-bold text-white shadow-sm">

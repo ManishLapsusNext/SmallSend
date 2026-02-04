@@ -151,31 +151,31 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
       <header
-        className="relative w-full h-[400px] flex items-center justify-center text-center overflow-hidden border-b border-white/5"
+        className="relative w-full h-[300px] flex items-center justify-center text-center border-b border-white/5"
         style={{
           backgroundImage: `url(${branding.banner_url || defaultBanner})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-        <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-deckly-background"></div>
+        <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-[1px]"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-deckly-background"></div>
 
         <div className="absolute top-8 right-8 z-20 flex flex-col items-end gap-2">
           <button
             className={cn(
-              "w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-md border border-white/20 text-white",
+              "w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-md border border-white/20",
               showBrandingMenu
-                ? "bg-deckly-primary border-deckly-primary shadow-lg shadow-deckly-primary/40"
-                : "bg-white/10 hover:bg-white/20",
+                ? "bg-deckly-secondary border-deckly-secondary shadow-lg shadow-deckly-secondary/40 text-slate-950"
+                : "bg-white/10 hover:bg-white/20 text-white",
             )}
             onClick={() => setShowBrandingMenu(!showBrandingMenu)}
             disabled={uploading}
           >
             {uploading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0" />
             ) : (
-              <Settings size={20} />
+              <Settings size={22} strokeWidth={3} className="flex-shrink-0" />
             )}
           </button>
 
@@ -185,35 +185,54 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
                 initial={{ opacity: 0, scale: 0.95, y: -10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                className="bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 w-56 shadow-2xl flex flex-col gap-1.5"
+                className="bg-slate-900 border border-white/10 rounded-2xl p-4 w-56 shadow-2xl flex flex-col gap-1.5"
               >
                 <h3 className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1 px-2">
                   Branding
                 </h3>
                 <button
                   onClick={handleStartEdit}
-                  className="flex items-center gap-3 w-full p-2.5 rounded-lg hover:bg-white/5 text-sm transition-colors text-slate-200"
+                  className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-deckly-primary/10 hover:text-deckly-primary text-sm transition-all text-slate-300 group/item"
                 >
-                  <Pencil size={14} /> Edit Room Name
+                  <Pencil
+                    size={14}
+                    strokeWidth={2.5}
+                    className="group-hover/item:scale-110 transition-transform flex-shrink-0"
+                  />
+                  Edit Room Name
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-3 w-full p-2.5 rounded-lg hover:bg-white/5 text-sm transition-colors text-slate-200"
+                  className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-deckly-primary/10 hover:text-deckly-primary text-sm transition-all text-slate-300 group/item"
                 >
-                  <Upload size={14} /> Change Banner
+                  <Upload
+                    size={14}
+                    strokeWidth={2.5}
+                    className="group-hover/item:scale-110 transition-transform flex-shrink-0"
+                  />
+                  Change Banner
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-3 w-full p-2.5 rounded-lg hover:bg-white/5 text-sm transition-colors text-slate-200"
+                  className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-deckly-primary/10 hover:text-deckly-primary text-sm transition-all text-slate-300 group/item"
                 >
-                  <LogOut size={14} /> Sign Out
+                  <LogOut
+                    size={14}
+                    strokeWidth={2.5}
+                    className="group-hover/item:scale-110 transition-transform flex-shrink-0"
+                  />
+                  Sign Out
                 </button>
                 <div className="h-px bg-white/5 my-1" />
                 <button
                   onClick={handleResetBranding}
-                  className="flex items-center gap-3 w-full p-2.5 rounded-lg hover:bg-red-500/10 text-sm transition-colors text-red-400"
+                  className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-red-500/10 text-sm transition-all text-red-400 group/item"
                 >
-                  <RotateCcw size={14} /> Reset Defaults
+                  <RotateCcw
+                    size={14}
+                    className="group-hover/item:rotate-[-45deg] transition-transform"
+                  />{" "}
+                  Reset Defaults
                 </button>
               </motion.div>
             )}
@@ -244,15 +263,19 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
                 <div className="flex gap-2">
                   <button
                     onClick={handleSaveTitle}
-                    className="w-10 h-10 rounded-full bg-deckly-primary flex items-center justify-center text-white hover:bg-opacity-90 transition-all"
+                    className="w-10 h-10 rounded-full bg-deckly-primary flex items-center justify-center text-slate-950 hover:bg-opacity-90 transition-all shadow-lg shadow-deckly-primary/20 flex-shrink-0"
                   >
-                    <Check size={20} />
+                    <Check
+                      size={20}
+                      strokeWidth={3}
+                      className="flex-shrink-0"
+                    />
                   </button>
                   <button
                     onClick={() => setIsEditingTitle(false)}
-                    className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all"
+                    className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white hover:bg-red-600 transition-all shadow-lg shadow-red-500/20 flex-shrink-0"
                   >
-                    <X size={20} />
+                    <X size={20} strokeWidth={3} className="flex-shrink-0" />
                   </button>
                 </div>
               </motion.div>
@@ -261,7 +284,7 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
                 key="display"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-6xl md:text-8xl font-black text-white tracking-tighter drop-shadow-2xl"
+                className="text-4xl md:text-5xl font-black text-white tracking-tighter drop-shadow-2xl"
               >
                 {branding.room_name}
               </motion.h1>
@@ -279,16 +302,16 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
       />
 
       {/* Main Content */}
-      <main className="max-w-7xl w-full mx-auto px-6 -mt-12 pb-24 relative z-20">
+      <main className="max-w-7xl w-full mx-auto px-6 pt-12 pb-24 relative z-20">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4 text-slate-400">
             <div className="w-10 h-10 border-2 border-deckly-primary/20 border-t-deckly-primary rounded-full animate-spin" />
             <p>Gathering your decks...</p>
           </div>
         ) : !decks || decks.length === 0 ? (
-          <div className="bg-slate-900/50 backdrop-blur-md border border-white/5 rounded-3xl p-20 text-center flex flex-col items-center gap-6 shadow-xl">
-            <div className="w-20 h-20 bg-deckly-primary/10 rounded-full flex items-center justify-center text-deckly-primary mb-2">
-              <Plus size={40} />
+          <div className="bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-12 text-center flex flex-col items-center gap-4 shadow-xl max-w-lg mx-auto">
+            <div className="w-16 h-16 bg-deckly-secondary/20 rounded-full flex items-center justify-center text-deckly-secondary mb-2">
+              <Plus size={32} />
             </div>
             <h2 className="text-3xl font-bold text-white tracking-tight">
               Your data room is empty
@@ -298,11 +321,12 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
               processing and analytics for you.
             </p>
             <Link to="/upload">
-              <Button size="large" className="group">
-                Upload First Deck{" "}
+              <Button size="large" className="group flex items-center gap-2">
+                Upload First Deck
                 <Plus
                   size={20}
-                  className="ml-1 group-hover:rotate-90 transition-transform"
+                  strokeWidth={3}
+                  className="group-hover:rotate-90 transition-transform"
                 />
               </Button>
             </Link>
@@ -330,39 +354,68 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
               >
                 <Link
                   to={`/${deck.slug}`}
-                  className="group relative flex flex-col h-[420px] bg-slate-900/50 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden hover:border-deckly-primary/50 transition-all duration-300 shadow-xl hover:shadow-deckly-primary/10"
+                  className="group relative flex flex-col bg-slate-900 border border-white/5 rounded-2xl overflow-hidden hover:border-deckly-primary/30 transition-all duration-300 shadow-xl hover:shadow-2xl"
                 >
                   {/* Thumbnail area */}
-                  <div className="h-48 relative overflow-hidden bg-slate-950">
-                    {deck.pages && deck.pages.length > 0 ? (
-                      <img
-                        src={deck.pages[0].image_url}
-                        alt=""
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-800 uppercase tracking-widest text-xs font-black">
-                        Processing...
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent"></div>
+                  <div className="h-44 relative overflow-hidden bg-slate-900 shadow-inner w-full flex-shrink-0">
+                    {(() => {
+                      const firstPage =
+                        deck.pages &&
+                        Array.isArray(deck.pages) &&
+                        deck.pages.length > 0
+                          ? deck.pages[0]
+                          : null;
+                      const imgSrc =
+                        (firstPage as any)?.image_url ||
+                        (firstPage as any)?.url ||
+                        branding.banner_url ||
+                        defaultBanner ||
+                        "https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=2000";
+                      console.log("Deck ID:", deck.id, "Image Source:", imgSrc);
+                      return (
+                        <img
+                          src={imgSrc}
+                          alt={deck.title}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          onError={(e: any) => {
+                            console.error(
+                              "Image Load Error for Deck:",
+                              deck.id,
+                              "Source:",
+                              e.target.src,
+                            );
+                            if (!e.target.dataset.triedFallback) {
+                              e.target.dataset.triedFallback = "true";
+                              e.target.src =
+                                "https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=1000";
+                            }
+                          }}
+                        />
+                      );
+                    })()}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent pointer-events-none"></div>
                   </div>
 
                   {/* Content area */}
-                  <div className="flex-1 p-6 flex flex-col">
-                    <div className="flex justify-between items-start mb-4">
-                      <h2 className="text-xl font-bold text-white leading-tight line-clamp-2 max-w-[70%]">
+                  <div className="flex-1 p-6 flex flex-col min-w-0">
+                    <div className="flex justify-between items-center mb-4 gap-4">
+                      <h2 className="text-xl font-bold text-white leading-tight line-clamp-2 truncate flex-1 min-w-0">
                         {deck.title}
                       </h2>
-                      <div className="flex gap-1.5 translate-y-1">
+                      <div className="flex flex-shrink-0 gap-2 items-center ml-auto">
                         <ActionButton
                           onClick={(e: any) => handleCopyLink(e, deck)}
                           title="Copy Link"
                           active={copiedId === deck.id}
                         >
-                          <Share2 size={14} />
+                          <Share2
+                            size={18}
+                            strokeWidth={3}
+                            className="text-white flex-shrink-0"
+                          />
                           {copiedId === deck.id && (
-                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-950 text-white text-[10px] px-2 py-1 rounded border border-white/10">
+                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-950 text-white text-[10px] px-2 py-1 rounded border border-white/10 shadow-xl z-50">
                               Copied!
                             </div>
                           )}
@@ -374,9 +427,13 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
                             setSelectedAnalyticsDeck(deck);
                           }}
                           title="Analytics"
-                          color="indigo"
+                          color="secondary"
                         >
-                          <BarChart3 size={14} />
+                          <BarChart3
+                            size={18}
+                            strokeWidth={3}
+                            className="text-white flex-shrink-0"
+                          />
                         </ActionButton>
                         <ActionButton
                           onClick={(e: any) => {
@@ -386,7 +443,11 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
                           }}
                           title="Edit"
                         >
-                          <Pencil size={14} />
+                          <Pencil
+                            size={18}
+                            strokeWidth={3}
+                            className="text-white flex-shrink-0"
+                          />
                         </ActionButton>
                         <ActionButton
                           onClick={(e: any) => {
@@ -397,17 +458,21 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
                           title="Delete"
                           color="red"
                         >
-                          <Trash2 size={14} />
+                          <Trash2
+                            size={18}
+                            strokeWidth={3}
+                            className="text-white flex-shrink-0"
+                          />
                         </ActionButton>
                       </div>
                     </div>
 
-                    <p className="text-sm text-slate-400 line-clamp-3 mb-6 flex-1 italic">
+                    <p className="text-sm text-slate-400 line-clamp-3 mb-6 flex-1">
                       {deck.description ||
                         "No description provided for this data room asset."}
                     </p>
 
-                    <div className="flex items-center gap-2 text-deckly-primary text-sm font-bold group-hover:gap-3 transition-all">
+                    <div className="flex items-center gap-2 text-deckly-primary text-sm font-bold group-hover:gap-3 transition-all pt-4 border-t border-white/5">
                       Open Data Room <span>→</span>
                     </div>
                   </div>
@@ -469,10 +534,11 @@ function ActionButton({
   title,
   color = "default",
   active = false,
+  className = "",
 }: any) {
   const colors: any = {
     default: "hover:bg-deckly-primary hover:text-white",
-    indigo: "hover:bg-indigo-500 hover:text-white",
+    secondary: "hover:bg-deckly-secondary hover:text-white",
     red: "hover:bg-red-500 hover:text-white",
   };
 
@@ -481,11 +547,12 @@ function ActionButton({
       onClick={onClick}
       title={title}
       className={cn(
-        "relative w-9 h-9 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 text-slate-400 transition-all",
+        "relative w-10 h-10 rounded-xl flex items-center justify-center bg-white/10 border border-white/10 text-white transition-all flex-shrink-0",
         colors[color],
         active
-          ? "bg-deckly-primary text-white border-deckly-primary scale-110"
+          ? "bg-deckly-primary text-slate-950 border-deckly-primary scale-110"
           : "hover:-translate-y-1",
+        className,
       )}
     >
       {children}

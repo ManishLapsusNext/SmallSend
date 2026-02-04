@@ -248,17 +248,27 @@ function DeckDetailPanel({
           {/* Main Preview */}
           <section className="space-y-6">
             <div className="aspect-video w-full rounded-[32px] overflow-hidden bg-slate-800 border-4 border-white/5 shadow-2xl relative">
-              {deck.pages && deck.pages.length > 0 ? (
+              {deck.pages &&
+              Array.isArray(deck.pages) &&
+              deck.pages.length > 0 ? (
                 <img
                   src={deck.pages[0].image_url}
                   alt={deck.title}
                   className="w-full h-full object-cover"
+                  onError={(e: any) => {
+                    e.target.style.display = "none";
+                    e.target.nextSibling.classList.remove("hidden");
+                  }}
                 />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center font-bold text-slate-700 uppercase tracking-widest text-xs">
-                  No Preview
-                </div>
-              )}
+              ) : null}
+              <div
+                className={cn(
+                  "w-full h-full flex items-center justify-center font-bold text-slate-700 uppercase tracking-widest text-xs",
+                  deck.pages && deck.pages.length > 0 ? "hidden" : "",
+                )}
+              >
+                No Preview Available
+              </div>
             </div>
 
             <div className="flex flex-col gap-1">
@@ -385,7 +395,7 @@ function DeckDetailPanel({
                 hoverable={false}
                 className="p-4 bg-white/[0.02] border-white/5 flex items-center gap-4"
               >
-                <div className="w-10 h-10 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 bg-deckly-primary/10 text-deckly-primary rounded-xl flex items-center justify-center shrink-0">
                   <Eye size={20} />
                 </div>
                 <div className="flex flex-col leading-tight">
@@ -403,7 +413,7 @@ function DeckDetailPanel({
                 hoverable={false}
                 className="p-4 bg-white/[0.02] border-white/5 flex items-center gap-4"
               >
-                <div className="w-10 h-10 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 bg-deckly-secondary/10 text-deckly-secondary rounded-xl flex items-center justify-center shrink-0">
                   <Clock size={20} />
                 </div>
                 <div className="flex flex-col leading-tight">

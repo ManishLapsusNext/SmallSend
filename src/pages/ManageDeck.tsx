@@ -226,9 +226,9 @@ function ManageDeck() {
   return (
     <div className="flex flex-col min-h-screen bg-deckly-background">
       {/* Decorative header */}
-      <div className="relative w-full h-[240px] flex items-center justify-center text-center overflow-hidden border-b border-white/5 bg-slate-900">
+      <div className="relative w-full h-[320px] flex items-center justify-center text-center overflow-hidden border-b border-white/5 bg-slate-900">
         <div className="absolute inset-0 bg-gradient-to-b from-deckly-primary/10 to-transparent"></div>
-        <div className="relative z-10 w-full max-w-4xl px-4">
+        <div className="relative z-10 w-full max-w-4xl px-4 -mt-10">
           <motion.h1
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -244,7 +244,7 @@ function ManageDeck() {
         </div>
       </div>
 
-      <main className="max-w-3xl w-full mx-auto px-6 -mt-16 pb-24 relative z-20">
+      <main className="max-w-3xl w-full mx-auto px-6 -mt-24 pb-24 relative z-20">
         <Card
           variant="glass"
           hoverable={false}

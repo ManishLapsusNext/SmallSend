@@ -5,10 +5,10 @@ export default {
     extend: {
       colors: {
         deckly: {
-          primary: "#0ea5e9", // Sky 500
-          secondary: "#6366f1", // Indigo 500
+          primary: "#2ee59d", // Bright Minty Green (10%)
+          secondary: "#a78bfa", // Soft Purple (30%)
           accent: "#f43f5e", // Rose 500
-          background: "#0f172a", // Slate 900
+          background: "#1e1b2e", // Greyish Slate (60%)
           card: "rgba(30, 41, 59, 0.7)", // Slate 800 with opacity
         },
       },
