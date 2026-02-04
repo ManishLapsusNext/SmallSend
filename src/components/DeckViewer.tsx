@@ -2,22 +2,34 @@ import { useState, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useDeckAnalytics } from "../hooks/useDeckAnalytics";
 import { useKeyboardControls } from "../hooks/useKeyboardControls";
+import { Deck } from "../types";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
 // Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-function DeckViewer({ deck }) {
-  const [numPages, setNumPages] = useState(null);
+interface DeckViewerProps {
+  deck: Deck;
+}
+
+function DeckViewer({ deck }: DeckViewerProps) {
+  const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
 
   // Custom hooks for handling logic
-  const { trackCurrentPage } = useDeckAnalytics(deck, pageNumber, numPages);
+  const { trackCurrentPage } = useDeckAnalytics(
+    deck,
+    pageNumber,
+    numPages || 0,
+  );
 
-  const onDocumentLoadSuccess = useCallback(({ numPages }) => {
-    setNumPages(numPages);
-  }, []);
+  const onDocumentLoadSuccess = useCallback(
+    ({ numPages }: { numPages: number }) => {
+      setNumPages(numPages);
+    },
+    [],
+  );
 
   const goToPrevPage = useCallback(() => {
     setPageNumber((prevPageNumber) => Math.max(prevPageNumber - 1, 1));
@@ -32,7 +44,7 @@ function DeckViewer({ deck }) {
   // Set up keyboard controls with stable callbacks
   useKeyboardControls(goToPrevPage, goToNextPage);
 
-  const handleNavigationClick = (direction) => {
+  const handleNavigationClick = (direction: "prev" | "next") => {
     // Manually track page before navigating
     trackCurrentPage();
     if (direction === "next") {

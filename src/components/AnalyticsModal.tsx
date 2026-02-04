@@ -1,11 +1,17 @@
 import { useState, useEffect } from "react";
-import { X, BarChart3, Clock, Eye, ChevronRight, Loader2 } from "lucide-react";
+import { X, BarChart3, Clock, Eye, Loader2 } from "lucide-react";
 import { analyticsService } from "../services/analyticsService";
+import { Deck, DeckStats } from "../types";
 
-function AnalyticsModal({ deck, onClose }) {
-  const [stats, setStats] = useState([]);
+interface AnalyticsModalProps {
+  deck: Deck;
+  onClose: () => void;
+}
+
+function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
+  const [stats, setStats] = useState<DeckStats[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("views");
+  const [activeTab, setActiveTab] = useState<"views" | "time">("views");
 
   useEffect(() => {
     const fetchStats = async () => {

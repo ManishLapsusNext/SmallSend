@@ -1,6 +1,14 @@
 import React from "react";
 
-const Button = ({
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "primary" | "secondary" | "danger" | "ghost";
+  size?: "small" | "medium" | "large";
+  icon?: React.ElementType;
+  fullWidth?: boolean;
+  loading?: boolean;
+}
+
+const Button: React.FC<ButtonProps> = ({
   children,
   onClick,
   variant = "primary",
@@ -11,6 +19,7 @@ const Button = ({
   icon: Icon,
   fullWidth = false,
   loading = false,
+  ...props
 }) => {
   const baseClass = "btn-modern";
   const variantClass = `${baseClass}-${variant}`;
@@ -23,6 +32,7 @@ const Button = ({
       onClick={onClick}
       disabled={disabled || loading}
       className={`${baseClass} ${variantClass} ${sizeClass} ${widthClass} ${className}`}
+      {...props}
     >
       {loading ? (
         <span className="btn-spinner"></span>

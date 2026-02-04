@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import { Session } from "@supabase/supabase-js";
 import { supabase } from "./services/supabase";
 import Home from "./pages/Home";
 import Viewer from "./pages/Viewer";
@@ -14,7 +15,7 @@ import Signup from "./pages/Signup";
 import "./App.css";
 
 function App() {
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -1,25 +1,26 @@
 import { supabase } from "./supabase";
+import { Deck, BrandingSettings, SlidePage } from "../types";
 
 export const deckService = {
   // Get all decks for the logged-in user
-  async getAllDecks() {
+  async getAllDecks(): Promise<Deck[]> {
     const {
       data: { session },
     } = await supabase.auth.getSession();
-    if (!session) return []; // Fallback for safety
+    if (!session) return []; 
 
     const { data, error } = await supabase
       .from("decks")
       .select("*")
-      .eq("user_id", session.user.id) // MANDATORY: Filter by owner
+      .eq("user_id", session.user.id)
       .order("display_order", { ascending: true });
 
     if (error) throw error;
-    return data;
+    return data as Deck[];
   },
 
   // Get single deck by slug
-  async getDeckBySlug(slug) {
+  async getDeckBySlug(slug: string): Promise<Deck> {
     const { data, error } = await supabase
       .from("decks")
       .select("*")
@@ -27,11 +28,11 @@ export const deckService = {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as Deck;
   },
 
   // Get single deck by ID (management use)
-  async getDeckById(id) {
+  async getDeckById(id: string): Promise<Deck> {
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -41,15 +42,15 @@ export const deckService = {
       .from("decks")
       .select("*")
       .eq("id", id)
-      .eq("user_id", session.user.id) // MANDATORY check
+      .eq("user_id", session.user.id) 
       .single();
 
     if (error) throw error;
-    return data;
+    return data as Deck;
   },
 
   // NEW: Upload a deck PDF
-  async uploadDeck(file, deckData) {
+  async uploadDeck(file: File, deckData: Partial<Deck>): Promise<Deck> {
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -85,11 +86,11 @@ export const deckService = {
       .single();
 
     if (deckError) throw deckError;
-    return deckRecord;
+    return deckRecord as Deck;
   },
 
   // Delete deck
-  async deleteDeck(id, fileUrl, slug) {
+  async deleteDeck(id: string, fileUrl: string, slug: string): Promise<void> {
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -97,7 +98,6 @@ export const deckService = {
     const userId = session.user.id;
 
     // 1. Delete the PDF file
-    // Extract storage path from the public URL
     const urlParts = fileUrl.split("/storage/v1/object/public/decks/");
     const storagePath = urlParts[1];
 
@@ -127,8 +127,8 @@ export const deckService = {
   },
 
   // NEW: Upload processing images
-  async uploadSlideImages(userId, deckSlug, imageBlobs) {
-    const imageUrls = [];
+  async uploadSlideImages(userId: string, deckSlug: string, imageBlobs: Blob[]): Promise<string[]> {
+    const imageUrls: string[] = [];
 
     const timestamp = Date.now();
     for (let i = 0; i < imageBlobs.length; i++) {
@@ -154,7 +154,7 @@ export const deckService = {
   },
 
   // NEW: Update deck with processed pages (with ownership check)
-  async updateDeckPages(deckId, pages) {
+  async updateDeckPages(deckId: string, pages: SlidePage[]): Promise<Deck> {
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -164,16 +164,16 @@ export const deckService = {
       .from("decks")
       .update({ pages, status: "PROCESSED" })
       .eq("id", deckId)
-      .eq("user_id", session.user.id) // MANDATORY check
+      .eq("user_id", session.user.id) 
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return data as Deck;
   },
 
   // Update deck generic
-  async updateDeck(deckId, updates) {
+  async updateDeck(deckId: string, updates: Partial<Deck>): Promise<Deck> {
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -188,11 +188,11 @@ export const deckService = {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as Deck;
   },
 
   // Get global branding settings (for the current user)
-  async getBrandingSettings() {
+  async getBrandingSettings(): Promise<BrandingSettings | null> {
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -204,12 +204,12 @@ export const deckService = {
       .eq("user_id", session.user.id)
       .single();
 
-    if (error && error.code !== "PGRST116") throw error; // Ignore "no rows found" error
-    return data;
+    if (error && error.code !== "PGRST116") throw error; 
+    return data as BrandingSettings;
   },
 
   // Update global branding settings
-  async updateBrandingSettings(settings) {
+  async updateBrandingSettings(settings: Partial<BrandingSettings>): Promise<BrandingSettings> {
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -230,7 +230,7 @@ export const deckService = {
         .select()
         .single();
       if (error) throw error;
-      return data;
+      return data as BrandingSettings;
     } else {
       const { data, error } = await supabase
         .from("branding")
@@ -238,12 +238,12 @@ export const deckService = {
         .select()
         .single();
       if (error) throw error;
-      return data;
+      return data as BrandingSettings;
     }
   },
 
   // Helper for user-specific storage path
-  async getStoragePath(slug, filename) {
+  async getStoragePath(slug: string, filename: string): Promise<string> {
     const {
       data: { session },
     } = await supabase.auth.getSession();

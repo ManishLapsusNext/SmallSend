@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { deckService } from "../services/deckService";
 import { supabase } from "../services/supabase";
 import { Upload, X, ArrowLeft, FileText } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
+import { Deck, SlidePage } from "../types";
 
 // Common Components
 import Button from "../components/common/Button";
@@ -17,17 +18,17 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLi
 function ManageDeck() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
-  const [existingDeck, setExistingDeck] = useState(null);
+  const [existingDeck, setExistingDeck] = useState<Deck | null>(null);
 
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState("");
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (editId) {
@@ -35,7 +36,7 @@ function ManageDeck() {
     }
   }, [editId]);
 
-  const loadExistingDeck = async (id) => {
+  const loadExistingDeck = async (id: string) => {
     try {
       setLoading(true);
       setProgress("Loading deck data...");
@@ -46,7 +47,7 @@ function ManageDeck() {
         setSlug(deck.slug);
         setDescription(deck.description || "");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error loading deck:", err);
       setError("Failed to load deck for editing.");
     } finally {
@@ -55,8 +56,8 @@ function ManageDeck() {
     }
   };
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
     if (selectedFile && selectedFile.type === "application/pdf") {
       setFile(selectedFile);
       if (!slug && !editId) {
@@ -75,12 +76,12 @@ function ManageDeck() {
     }
   };
 
-  const processPdfToImages = async (pdfFile) => {
+  const processPdfToImages = async (pdfFile: File) => {
     setProgress("Loading PDF for processing...");
     const arrayBuffer = await pdfFile.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     const numPages = pdf.numPages;
-    const imageBlobs = [];
+    const imageBlobs: Blob[] = [];
 
     for (let i = 1; i <= numPages; i++) {
       setProgress(`Processing page ${i} of ${numPages}...`);
@@ -89,21 +90,23 @@ function ManageDeck() {
 
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
+      if (!context) continue;
+
       canvas.height = viewport.height;
       canvas.width = viewport.width;
 
-      await page.render({ canvasContext: context, viewport }).promise;
+      await (page as any).render({ canvasContext: context, viewport }).promise;
 
-      const blob = await new Promise((resolve) =>
+      const blob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob(resolve, "image/webp", 0.8),
       );
-      imageBlobs.push(blob);
+      if (blob) imageBlobs.push(blob);
     }
 
     return imageBlobs;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if ((!file && !editId) || !title || !slug) return;
 
@@ -112,15 +115,15 @@ function ManageDeck() {
 
     try {
       let finalFileUrl = existingDeck?.file_url;
-      let finalPages = existingDeck?.pages || [];
+      let finalPages: SlidePage[] = existingDeck?.pages || [];
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      const userId = session.user.id;
 
       if (file) {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (!session) throw new Error("Not authenticated");
-        const userId = session.user.id;
-
         setProgress("Uploading new PDF...");
         const fileExt = file.name.split(".").pop();
         const fileName = `${userId}/decks/${slug}-${Date.now()}.${fileExt}`;
@@ -149,11 +152,15 @@ function ManageDeck() {
 
         const imageBlobs = await processPdfToImages(file);
         setProgress(`Uploading ${imageBlobs.length} new slides...`);
-        finalPages = await deckService.uploadSlideImages(
+        const imageUrls = await deckService.uploadSlideImages(
           userId,
           slug,
           imageBlobs,
         );
+        finalPages = imageUrls.map((url, idx) => ({
+          image_url: url,
+          page_number: idx + 1,
+        }));
       }
 
       if (editId) {
@@ -166,27 +173,22 @@ function ManageDeck() {
             file_url: finalFileUrl,
             pages: finalPages,
             status: "PROCESSED",
-            file_size: file ? file.size : existingDeck.file_size,
+            file_size: file ? file.size : existingDeck?.file_size,
           })
           .eq("id", editId);
         if (dbError) throw dbError;
       } else {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        const userId = session.user.id;
-
         setProgress("Creating new deck...");
-        const deckRecord = await deckService.uploadDeck(file, {
+        const deckRecord = await deckService.uploadDeck(file as File, {
           title,
           slug,
           description,
           display_order: 1,
           user_id: userId,
-          file_size: file.size,
+          file_size: file?.size || 0,
         });
 
-        const imageBlobs = await processPdfToImages(file);
+        const imageBlobs = await processPdfToImages(file as File);
         setProgress(`Uploading ${imageBlobs.length} slides...`);
         const imageUrls = await deckService.uploadSlideImages(
           userId,
@@ -194,13 +196,18 @@ function ManageDeck() {
           imageBlobs,
         );
 
+        const pages: SlidePage[] = imageUrls.map((url, idx) => ({
+          image_url: url,
+          page_number: idx + 1,
+        }));
+
         setProgress("Finalizing...");
-        await deckService.updateDeckPages(deckRecord.id, imageUrls);
+        await deckService.updateDeckPages(deckRecord.id, pages);
       }
 
       setProgress("Success! Redirecting...");
       setTimeout(() => navigate("/"), 1500);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Operation failed:", err);
       setError(err.message);
     } finally {

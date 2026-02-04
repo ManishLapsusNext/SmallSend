@@ -1,18 +1,18 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../services/supabase";
-import { Lock, Mail, Loader2, UserPlus } from "lucide-react";
+import { Lock, Mail, Loader2 } from "lucide-react";
 import logo from "../assets/Deckly.png";
 
 function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
-  const handleSignup = async (e) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -33,7 +33,7 @@ function Signup() {
         // Automatically redirect to login after a short delay
         setTimeout(() => navigate("/login"), 3000);
       }
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);

@@ -1,17 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import {
-  X,
-  Calendar,
-  HardDrive,
-  Upload,
-  AlertTriangle,
-  Eye,
-  Clock,
-} from "lucide-react";
+import { X, Calendar, HardDrive, Upload, Eye, Clock } from "lucide-react";
 import { deckService } from "../services/deckService";
 import { analyticsService } from "../services/analyticsService";
 import { supabase } from "../services/supabase";
 import * as pdfjsLib from "pdfjs-dist";
+import { Deck, DeckWithExpiry } from "../types";
 
 // Common Components
 import Button from "./common/Button";
@@ -22,13 +15,21 @@ import Card from "./common/Card";
 // Set worker source for pdfjs-dist
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
+interface DeckDetailPanelProps {
+  deck: DeckWithExpiry;
+  onClose: () => void;
+  onDelete: (deck: Deck) => void;
+  onShowAnalytics: (deck: Deck) => void;
+  onUpdate: (deck: Deck) => void;
+}
+
 function DeckDetailPanel({
   deck,
   onClose,
   onDelete,
   onShowAnalytics,
   onUpdate,
-}) {
+}: DeckDetailPanelProps) {
   const [editValues, setEditValues] = useState({
     title: "",
     slug: "",
@@ -38,8 +39,8 @@ function DeckDetailPanel({
   const [summaryStats, setSummaryStats] = useState({ views: 0, avgTime: 0 });
   const [isSaving, setIsSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
-  const fileInputRef = useRef(null);
-  const [newFile, setNewFile] = useState(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newFile, setNewFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (deck) {
@@ -55,7 +56,7 @@ function DeckDetailPanel({
     }
   }, [deck]);
 
-  const loadStats = async (deckId) => {
+  const loadStats = async (deckId: string) => {
     try {
       const pageStats = await analyticsService.getDeckStats(deckId);
       if (pageStats && pageStats.length > 0) {
@@ -72,12 +73,12 @@ function DeckDetailPanel({
     }
   };
 
-  const processPdfToImages = async (pdfFile) => {
+  const processPdfToImages = async (pdfFile: File) => {
     setUploadProgress("Processing PDF...");
     const arrayBuffer = await pdfFile.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     const numPages = pdf.numPages;
-    const imageBlobs = [];
+    const imageBlobs: Blob[] = [];
 
     for (let i = 1; i <= numPages; i++) {
       setUploadProgress(`Processing slide ${i} of ${numPages}...`);
@@ -85,13 +86,15 @@ function DeckDetailPanel({
       const viewport = page.getViewport({ scale: 1.5 });
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
+      if (!context) continue;
+
       canvas.height = viewport.height;
       canvas.width = viewport.width;
-      await page.render({ canvasContext: context, viewport }).promise;
-      const blob = await new Promise((resolve) =>
+      await (page as any).render({ canvasContext: context, viewport }).promise;
+      const blob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob(resolve, "image/webp", 0.8),
       );
-      imageBlobs.push(blob);
+      if (blob) imageBlobs.push(blob);
     }
     return imageBlobs;
   };
@@ -128,15 +131,19 @@ function DeckDetailPanel({
 
         const imageBlobs = await processPdfToImages(newFile);
         setUploadProgress(`Uploading ${imageBlobs.length} new slides...`);
-        finalPages = await deckService.uploadSlideImages(
+        const imageUrls = await deckService.uploadSlideImages(
           userId,
           editValues.slug,
           imageBlobs,
         );
+        finalPages = imageUrls.map((url, idx) => ({
+          image_url: url,
+          page_number: idx + 1,
+        }));
       }
 
       // 2. Update Database Record
-      const updates = {
+      const updates: any = {
         title: editValues.title,
         slug: editValues.slug,
         file_url: finalFileUrl,
@@ -144,12 +151,9 @@ function DeckDetailPanel({
         file_size: fileSize,
       };
 
-      // Only include expires_at if it's enabled or was previously set
-      // This prevents errors if the user hasn't added the column to Supabase yet
       if (expiryEnabled && expiryDate) {
         updates.expires_at = new Date(expiryDate).toISOString();
       } else if (deck.expires_at) {
-        // Only set to null if it was actually there to begin with
         updates.expires_at = null;
       }
 
@@ -160,7 +164,7 @@ function DeckDetailPanel({
         onClose();
         setUploadProgress("");
       }, 1000);
-    } catch (err) {
+    } catch (err: any) {
       alert("Failed to update deck: " + err.message);
       setUploadProgress("");
     } finally {
@@ -168,7 +172,7 @@ function DeckDetailPanel({
     }
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type === "application/pdf") {
       setNewFile(file);
@@ -179,7 +183,7 @@ function DeckDetailPanel({
 
   if (!deck) return null;
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -187,7 +191,7 @@ function DeckDetailPanel({
     });
   };
 
-  const formatSize = (bytes) => {
+  const formatSize = (bytes?: number) => {
     if (!bytes) return "Unknown size";
     const kb = bytes / 1024;
     if (kb < 1024) return `${Math.round(kb)} KB`;
@@ -209,7 +213,7 @@ function DeckDetailPanel({
           <div className="panel-preview">
             {deck.pages && deck.pages.length > 0 ? (
               <img
-                src={deck.pages[0]}
+                src={deck.pages[0].image_url}
                 alt={deck.title}
                 className="panel-thumbnail"
               />
@@ -265,7 +269,7 @@ function DeckDetailPanel({
               error={
                 editValues.slug !== deck.slug
                   ? "Breaking change: existing links will fail!"
-                  : null
+                  : undefined
               }
               onChange={(e) =>
                 setEditValues({ ...editValues, slug: e.target.value })

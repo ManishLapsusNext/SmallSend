@@ -1,6 +1,18 @@
 import React from "react";
 
-const Toggle = ({ enabled, onToggle, label, className = "" }) => {
+interface ToggleProps {
+  enabled: boolean;
+  onToggle: (enabled: boolean) => void;
+  label?: string;
+  className?: string;
+}
+
+const Toggle: React.FC<ToggleProps> = ({
+  enabled,
+  onToggle,
+  label,
+  className = "",
+}) => {
   return (
     <div className={`toggle-field ${className}`}>
       {label && <span>{label}</span>}

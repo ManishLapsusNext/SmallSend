@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import DeckList from "../components/DeckList";
 import { deckService } from "../services/deckService";
+import { Deck } from "../types";
 
 function Home() {
-  const [decks, setDecks] = useState([]);
+  const [decks, setDecks] = useState<Deck[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadDecks();
@@ -15,7 +16,7 @@ function Home() {
     try {
       const data = await deckService.getAllDecks();
       setDecks(data);
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message);
       console.error("Error loading decks:", err);
     } finally {
@@ -23,19 +24,19 @@ function Home() {
     }
   };
 
-  const handleDelete = async (deck) => {
+  const handleDelete = async (deck: Deck) => {
     if (!window.confirm(`Are you sure you want to delete "${deck.title}"?`))
       return;
 
     try {
       await deckService.deleteDeck(deck.id, deck.file_url, deck.slug);
       setDecks((prev) => prev.filter((d) => d.id !== deck.id));
-    } catch (err) {
+    } catch (err: any) {
       alert(`Failed to delete deck: ${err.message}`);
     }
   };
 
-  const handleUpdate = (updatedDeck) => {
+  const handleUpdate = (updatedDeck: Deck) => {
     setDecks((prev) =>
       prev.map((d) => (d.id === updatedDeck.id ? updatedDeck : d)),
     );

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Share2,
@@ -11,15 +11,23 @@ import {
   Upload,
   RotateCcw,
   LogOut,
-  BarChart3, // Added BarChart3
+  BarChart3,
 } from "lucide-react";
 import { deckService } from "../services/deckService";
 import { supabase } from "../services/supabase";
 import defaultBanner from "../assets/banner.png";
 import AnalyticsModal from "./AnalyticsModal";
 import DeckDetailPanel from "./DeckDetailPanel";
+import { Deck } from "../types";
 
-function DeckList({ decks, loading, onDelete, onUpdate }) {
+interface DeckListProps {
+  decks: Deck[];
+  loading: boolean;
+  onDelete: (deck: Deck) => void;
+  onUpdate: (deck: Deck) => void;
+}
+
+function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
   const [branding, setBranding] = useState({
     room_name: "Deckly",
     banner_url:
@@ -29,10 +37,11 @@ function DeckList({ decks, loading, onDelete, onUpdate }) {
   const [editValue, setEditValue] = useState("");
   const [showBrandingMenu, setShowBrandingMenu] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef(null);
-  const [selectedAnalyticsDeck, setSelectedAnalyticsDeck] = useState(null);
-  const [selectedDeck, setSelectedDeck] = useState(null);
-  const [copiedId, setCopiedId] = useState(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedAnalyticsDeck, setSelectedAnalyticsDeck] =
+    useState<Deck | null>(null);
+  const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     loadBranding();
@@ -44,7 +53,7 @@ function DeckList({ decks, loading, onDelete, onUpdate }) {
       if (data) {
         setBranding({
           room_name: data.room_name || "Deckly Data Room",
-          banner_url: data.banner_url || null,
+          banner_url: data.banner_url || "",
         });
       }
     } catch (err) {
@@ -67,14 +76,14 @@ function DeckList({ decks, loading, onDelete, onUpdate }) {
       try {
         await deckService.updateBrandingSettings({ room_name: editValue });
         setBranding((prev) => ({ ...prev, room_name: editValue }));
-      } catch (err) {
+      } catch (err: any) {
         alert("Failed to update room name: " + err.message);
       }
     }
     setIsEditingTitle(false);
   };
 
-  const handleBannerUpload = async (e) => {
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -103,7 +112,7 @@ function DeckList({ decks, loading, onDelete, onUpdate }) {
 
       await deckService.updateBrandingSettings({ banner_url: publicUrl });
       setBranding((prev) => ({ ...prev, banner_url: publicUrl }));
-    } catch (err) {
+    } catch (err: any) {
       alert("Failed to upload banner: " + err.message);
     } finally {
       setUploading(false);
@@ -114,16 +123,19 @@ function DeckList({ decks, loading, onDelete, onUpdate }) {
     if (!window.confirm("Reset branding to defaults?")) return;
 
     try {
-      const defaults = { room_name: "Deckly Data Room", banner_url: null };
-      await deckService.updateBrandingSettings(defaults);
+      const defaults = { room_name: "Deckly Data Room", banner_url: "" };
+      await deckService.updateBrandingSettings({
+        room_name: defaults.room_name,
+        banner_url: null,
+      });
       setBranding(defaults);
       setShowBrandingMenu(false);
-    } catch (err) {
+    } catch (err: any) {
       alert("Failed to reset branding: " + err.message);
     }
   };
 
-  const handleCopyLink = (e, deck) => {
+  const handleCopyLink = (e: React.MouseEvent, deck: Deck) => {
     e.preventDefault();
     e.stopPropagation();
     const url = `${window.location.origin}/${deck.slug}`;
@@ -172,7 +184,7 @@ function DeckList({ decks, loading, onDelete, onUpdate }) {
               </button>
               <button
                 className="menu-item"
-                onClick={() => fileInputRef.current.click()}
+                onClick={() => fileInputRef.current?.click()}
               >
                 <Upload size={16} />
                 <span>Change Banner</span>
@@ -255,7 +267,7 @@ function DeckList({ decks, loading, onDelete, onUpdate }) {
                     <div className="deck-thumbnail">
                       {deck.pages && deck.pages.length > 0 && (
                         <img
-                          src={deck.pages[0]}
+                          src={deck.pages[0].image_url}
                           alt=""
                           className="thumbnail-preview"
                         />

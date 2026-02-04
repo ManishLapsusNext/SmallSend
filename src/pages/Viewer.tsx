@@ -4,19 +4,21 @@ import ImageDeckViewer from "../components/ImageDeckViewer";
 import DeckViewer from "../components/DeckViewer";
 import { deckService } from "../services/deckService";
 import { analyticsService } from "../services/analyticsService";
+import { Deck } from "../types";
 
 function Viewer() {
-  const { slug } = useParams();
-  const [deck, setDeck] = useState(null);
+  const { slug } = useParams<{ slug: string }>();
+  const [deck, setDeck] = useState<Deck | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   const loadDeck = useCallback(async () => {
+    if (!slug) return;
     try {
       const data = await deckService.getDeckBySlug(slug);
       setDeck(data);
       analyticsService.trackDeckView(data);
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message);
       console.error("Error loading deck:", err);
     } finally {

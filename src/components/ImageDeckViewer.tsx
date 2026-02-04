@@ -1,8 +1,13 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useKeyboardControls } from "../hooks/useKeyboardControls";
 import { analyticsService } from "../services/analyticsService";
+import { Deck } from "../types";
 
-function ImageDeckViewer({ deck }) {
+interface ImageDeckViewerProps {
+  deck: Deck;
+}
+
+function ImageDeckViewer({ deck }: ImageDeckViewerProps) {
   // Stabilize the pages array reference to avoid unnecessary effect re-runs
   const pages = useMemo(
     () => (Array.isArray(deck?.pages) ? deck.pages : []),
@@ -19,7 +24,8 @@ function ImageDeckViewer({ deck }) {
 
     prefetchPages.forEach((pageIdx) => {
       if (pageIdx <= numPages) {
-        const imageUrl = pages[pageIdx - 1];
+        const page = pages[pageIdx - 1];
+        const imageUrl = page?.image_url;
         if (imageUrl) {
           const img = new Image();
           img.src = imageUrl;
@@ -30,21 +36,16 @@ function ImageDeckViewer({ deck }) {
 
   // Track time spent on each page
   useEffect(() => {
-    // Start measuring time for the NEW current page
     startTimeRef.current = Date.now();
 
-    // The cleanup function fires when the user leaves the current page
-    // (either by changing the page number or by unmounting the component)
     return () => {
       const endTime = Date.now();
       const timeSpent = (endTime - startTimeRef.current) / 1000;
 
-      // We only track if they spent more than 0.5 seconds (filter out accidental scrolls)
       if (timeSpent > 0.5) {
         analyticsService.trackPageView(deck, currentPage, timeSpent);
         analyticsService.syncSlideStats(deck, currentPage, timeSpent);
 
-        // If it's the last page, also mark it as completed
         if (currentPage === numPages) {
           analyticsService.trackDeckComplete(deck, numPages);
         }
@@ -57,7 +58,6 @@ function ImageDeckViewer({ deck }) {
   }, []);
 
   const goToNextPage = useCallback(() => {
-    // Make sure we don't go past the end
     if (numPages > 0) {
       setCurrentPage((prev) => Math.min(prev + 1, numPages));
     }
@@ -65,7 +65,6 @@ function ImageDeckViewer({ deck }) {
 
   useKeyboardControls(goToPrevPage, goToNextPage);
 
-  // Handle the case where there are no images to show
   if (numPages === 0) {
     return (
       <div className="viewer-error-state">
@@ -78,7 +77,7 @@ function ImageDeckViewer({ deck }) {
     );
   }
 
-  const currentImage = pages[currentPage - 1];
+  const currentImage = pages[currentPage - 1]?.image_url;
 
   return (
     <div className="image-deck-viewer">

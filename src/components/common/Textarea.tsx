@@ -1,32 +1,29 @@
 import React from "react";
 
-const Input = ({
+interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label?: string;
+  error?: string | null;
+}
+
+const Textarea: React.FC<TextareaProps> = ({
   label,
   value,
   onChange,
   placeholder,
-  type = "text",
-  icon: Icon,
   error,
   className = "",
-  onClick,
-  readOnly = false,
+  rows = 4,
   ...props
 }) => {
   return (
     <div className={`form-field-wrapper ${className}`}>
       {label && <label className="form-field-label">{label}</label>}
-      <div
-        className={`form-field-inner ${error ? "has-error" : ""} ${Icon ? "has-icon" : ""}`}
-        onClick={onClick}
-      >
-        {Icon && <Icon size={18} className="field-icon" />}
-        <input
-          type={type}
+      <div className={`form-field-inner-textarea ${error ? "has-error" : ""}`}>
+        <textarea
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          readOnly={readOnly}
+          rows={rows}
           {...props}
         />
       </div>
@@ -35,4 +32,4 @@ const Input = ({
   );
 };
 
-export default Input;
+export default Textarea;
