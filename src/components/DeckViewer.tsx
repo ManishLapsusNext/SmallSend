@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
+import { motion, AnimatePresence } from "framer-motion";
 import { useDeckAnalytics } from "../hooks/useDeckAnalytics";
 import { useKeyboardControls } from "../hooks/useKeyboardControls";
 import { Deck } from "../types";
@@ -45,7 +46,6 @@ function DeckViewer({ deck }: DeckViewerProps) {
   useKeyboardControls(goToPrevPage, goToNextPage);
 
   const handleNavigationClick = (direction: "prev" | "next") => {
-    // Manually track page before navigating
     trackCurrentPage();
     if (direction === "next") {
       goToNextPage();
@@ -55,44 +55,64 @@ function DeckViewer({ deck }: DeckViewerProps) {
   };
 
   return (
-    <div className="deck-viewer">
-      <div className="slide-container">
-        <Document
-          file={deck.file_url}
-          onLoadSuccess={onDocumentLoadSuccess}
-          loading={<div className="pdf-loading">Loading PDF...</div>}
-          error={<div className="pdf-error">Failed to load PDF.</div>}
-        >
-          <Page
-            key={`page_${pageNumber}`}
-            pageNumber={pageNumber}
-            renderTextLayer={false}
-            renderAnnotationLayer={false}
-            scale={2.0}
-            loading=""
-            className="slide-image"
-          />
-        </Document>
+    <div className="flex flex-col h-full bg-[#0d0f14] overflow-hidden">
+      <div className="flex-1 relative flex items-center justify-center p-4 md:p-8">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={pageNumber}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="relative shadow-2xl rounded-sm overflow-hidden bg-white max-h-full"
+          >
+            <Document
+              file={deck.file_url}
+              onLoadSuccess={onDocumentLoadSuccess}
+              loading={
+                <div className="flex flex-col items-center gap-4 p-20">
+                  <div className="w-10 h-10 border-2 border-deckly-primary/30 border-t-deckly-primary rounded-full animate-spin" />
+                  <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">
+                    Loading PDF
+                  </p>
+                </div>
+              }
+              error={
+                <div className="p-10 text-red-500 font-bold">
+                  Failed to load asset.
+                </div>
+              }
+            >
+              <Page
+                pageNumber={pageNumber}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                scale={2.0}
+                loading=""
+              />
+            </Document>
+          </motion.div>
+        </AnimatePresence>
 
-        <div className="navigation-overlay">
+        {/* Clickable areas for navigation */}
+        <div className="absolute inset-0 flex">
           <div
-            className="nav-area prev"
+            className="flex-1 cursor-pointer"
             onClick={() => handleNavigationClick("prev")}
-            style={{ display: pageNumber <= 1 ? "none" : "block" }}
-          ></div>
+            title="Previous Page"
+          />
           <div
-            className="nav-area next"
+            className="flex-1 cursor-pointer"
             onClick={() => handleNavigationClick("next")}
-            style={{
-              display: numPages && pageNumber >= numPages ? "none" : "block",
-            }}
-          ></div>
+            title="Next Page"
+          />
         </div>
       </div>
 
-      <footer className="viewer-footer">
-        <div className="page-info">
-          {pageNumber} / {numPages || "..."}
+      <footer className="h-20 bg-black/40 backdrop-blur-xl border-t border-white/5 flex items-center justify-center relative z-10 px-6">
+        <div className="px-5 py-2 bg-white/5 rounded-full border border-white/5 text-slate-300 text-sm font-black tracking-widest uppercase">
+          {pageNumber} <span className="text-slate-600 mx-2">/</span>{" "}
+          {numPages || "..."}
         </div>
       </footer>
     </div>

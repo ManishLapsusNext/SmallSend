@@ -37,16 +37,18 @@ function App() {
 
   if (loading) {
     return (
-      <div className="loading-screen">
-        <div className="spinner"></div>
-        <p>Initializing Deckly...</p>
+      <div className="min-h-screen bg-deckly-background flex flex-col items-center justify-center gap-4 text-white">
+        <div className="w-12 h-12 border-4 border-deckly-primary/30 border-t-deckly-primary rounded-full animate-spin"></div>
+        <p className="font-medium animate-pulse text-slate-400">
+          Initializing Deckly...
+        </p>
       </div>
     );
   }
 
   return (
     <Router>
-      <div className="app">
+      <div className="min-h-screen bg-deckly-background text-slate-200 selection:bg-deckly-primary/30 selection:text-deckly-primary">
         <Routes>
           <Route
             path="/login"

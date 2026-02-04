@@ -1,4 +1,6 @@
 import React from "react";
+import { motion } from "framer-motion";
+import { cn } from "../../utils/cn";
 
 interface CardProps {
   children: React.ReactNode;
@@ -17,18 +19,26 @@ const Card: React.FC<CardProps> = ({
   onClick,
   style,
 }) => {
-  const baseClass = "card-modern";
-  const variantClass = `${baseClass}-${variant}`;
-  const hoverClass = hoverable ? "is-hoverable" : "";
+  const variants = {
+    glass: "bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl",
+    solid: "bg-deckly-background border border-white/5 shadow-xl",
+    outline: "bg-transparent border-2 border-white/10",
+  };
 
   return (
-    <div
-      className={`${baseClass} ${variantClass} ${hoverClass} ${className}`}
+    <motion.div
+      whileHover={hoverable ? { y: -4, transition: { duration: 0.2 } } : {}}
+      className={cn(
+        "rounded-2xl overflow-hidden p-4",
+        variants[variant],
+        hoverable ? "cursor-pointer" : "",
+        className,
+      )}
       onClick={onClick}
       style={style}
     >
       {children}
-    </div>
+    </motion.div>
   );
 };
 

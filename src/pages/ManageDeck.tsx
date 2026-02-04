@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { deckService } from "../services/deckService";
 import { supabase } from "../services/supabase";
-import { Upload, X, ArrowLeft, FileText } from "lucide-react";
+import {
+  Upload,
+  ArrowLeft,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import { Deck, SlidePage } from "../types";
+import { cn } from "../utils/cn";
 
 // Common Components
 import Button from "../components/common/Button";
@@ -205,7 +213,7 @@ function ManageDeck() {
         await deckService.updateDeckPages(deckRecord.id, pages);
       }
 
-      setProgress("Success! Redirecting...");
+      setProgress("Successful! Building your room...");
       setTimeout(() => navigate("/"), 1500);
     } catch (err: any) {
       console.error("Operation failed:", err);
@@ -216,152 +224,146 @@ function ManageDeck() {
   };
 
   return (
-    <div className="home-page">
-      <header className="hero-section hero-section-manage">
-        <div className="hero-content">
-          <h1>{editId ? "Update Deck" : "Upload New Deck"}</h1>
-        </div>
-      </header>
-
-      <main
-        className="home-container"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          paddingBottom: "4rem",
-        }}
-      >
-        <Card
-          className="manage-deck-content manage-card-premium"
-          style={{
-            width: "100%",
-            maxWidth: "640px",
-            padding: "3.5rem",
-            marginTop: "-4rem",
-            position: "relative",
-            zIndex: 10,
-            borderRadius: "32px",
-          }}
-        >
-          <form
-            onSubmit={handleSubmit}
-            style={{ display: "flex", flexDirection: "column", gap: "2rem" }}
+    <div className="flex flex-col min-h-screen bg-deckly-background">
+      {/* Decorative header */}
+      <div className="relative w-full h-[240px] flex items-center justify-center text-center overflow-hidden border-b border-white/5 bg-slate-900">
+        <div className="absolute inset-0 bg-gradient-to-b from-deckly-primary/10 to-transparent"></div>
+        <div className="relative z-10 w-full max-w-4xl px-4">
+          <motion.h1
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-4xl md:text-5xl font-black text-white tracking-tighter"
           >
-            <Input
-              label="Deck Title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              placeholder="e.g. Q4 Investor Update"
-              icon={FileText}
-            />
+            {editId ? "Refine Deck" : "Add Asset"}
+          </motion.h1>
+          <p className="mt-2 text-slate-400 font-medium">
+            {editId
+              ? "Update your pitch deck and slides"
+              : "Upload a new PDF to your data room"}
+          </p>
+        </div>
+      </div>
 
-            <Input
-              label="Slug (URL Identifier)"
-              value={slug}
-              onChange={(e) => !editId && setSlug(e.target.value)}
-              required
-              placeholder="e.g. q4-update"
-              disabled={!!editId}
-              error={
-                editId ? "Slug is permanent to preserve existing links." : null
-              }
-            />
-
-            <Textarea
-              label="Description (Optional)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief summary of the deck's content..."
-              rows={3}
-            />
-
-            <div className="form-field-wrapper">
-              <label className="form-field-label">
-                {editId ? "Replace PDF (Optional)" : "PDF File"}
-              </label>
+      <main className="max-w-3xl w-full mx-auto px-6 -mt-16 pb-24 relative z-20">
+        <Card
+          variant="glass"
+          hoverable={false}
+          className="p-8 md:p-12 rounded-[40px] shadow-2xl"
+        >
+          <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+            <div className="space-y-6">
               <Input
-                readOnly
-                placeholder={
+                label="Asset Title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                placeholder="e.g. Series A Pitch Deck - v2"
+                icon={FileText}
+              />
+
+              <Input
+                label="URL Slug"
+                value={slug}
+                onChange={(e) => !editId && setSlug(e.target.value)}
+                required
+                placeholder="e.g. series-a-v2"
+                disabled={!!editId}
+                error={
                   editId
-                    ? "Leave empty to keep current file"
-                    : "Select PDF file..."
+                    ? "Links are permanent to prevent broken access."
+                    : null
                 }
-                value={file ? file.name : ""}
-                icon={Upload}
-                onClick={() => fileInputRef.current?.click()}
-                className="cursor-pointer"
               />
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: "none" }}
-                accept=".pdf"
-                onChange={handleFileChange}
+
+              <Textarea
+                label="Description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Briefly explain what this document contains..."
+                rows={3}
               />
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-slate-400 px-1">
+                  {editId ? "Replace Document" : "PDF Document"}
+                </label>
+                <div
+                  onClick={() => !loading && fileInputRef.current?.click()}
+                  className={cn(
+                    "relative group cursor-pointer border-2 border-dashed border-white/10 rounded-2xl p-8 text-center transition-all hover:border-deckly-primary/50 hover:bg-white/5",
+                    file ? "border-deckly-primary/30 bg-deckly-primary/5" : "",
+                    loading ? "opacity-50 cursor-not-allowed" : "",
+                  )}
+                >
+                  <div className="flex flex-col items-center gap-3">
+                    {file ? (
+                      <CheckCircle2 size={32} className="text-deckly-primary" />
+                    ) : (
+                      <Upload
+                        size={32}
+                        className="text-slate-500 group-hover:text-deckly-primary transition-colors"
+                      />
+                    )}
+                    <div>
+                      <p className="text-white font-bold">
+                        {file ? file.name : "Select PDF File"}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Maximum file size: 50MB
+                      </p>
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    hidden
+                    accept=".pdf"
+                    onChange={handleFileChange}
+                  />
+                </div>
+              </div>
             </div>
 
-            {loading && (
-              <div className="progress-status-container">
-                <div className="spinner-small"></div>
-                <p
-                  style={{
-                    color: "var(--accent-primary)",
-                    fontWeight: "600",
-                    margin: 0,
-                  }}
+            <AnimatePresence>
+              {loading && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="flex items-center justify-center gap-3 bg-white/5 p-4 rounded-xl border border-white/5"
                 >
-                  {progress}
-                </p>
-              </div>
-            )}
+                  <div className="w-5 h-5 border-2 border-deckly-primary/30 border-t-deckly-primary rounded-full animate-spin" />
+                  <span className="text-sm font-bold text-deckly-primary uppercase tracking-widest">
+                    {progress}
+                  </span>
+                </motion.div>
+              )}
 
-            {error && (
-              <div
-                style={{
-                  color: "#ef4444",
-                  padding: "1.25rem",
-                  background: "rgba(239,68,68,0.08)",
-                  borderRadius: "12px",
-                  fontSize: "0.95rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  border: "1px solid rgba(239,68,68,0.2)",
-                }}
-              >
-                <X size={18} />
-                {error}
-              </div>
-            )}
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="flex items-center gap-3 bg-red-500/10 p-4 rounded-xl border border-red-500/20 text-red-500"
+                >
+                  <AlertCircle size={20} />
+                  <span className="text-sm font-bold">{error}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "1.25rem",
-                marginTop: "1rem",
-              }}
-            >
+            <div className="flex flex-col gap-3 pt-4">
               <Button
                 type="submit"
-                variant="primary"
                 size="large"
                 fullWidth
                 loading={loading}
-                className="btn-glow-primary"
+                className="shadow-2xl shadow-deckly-primary/20"
               >
-                {loading
-                  ? progress || "Processing..."
-                  : editId
-                    ? "Save Changes"
-                    : "Upload & Process Deck"}
+                {editId ? "Update Asset" : "Publish to Data Room"}
               </Button>
 
-              <Link to="/" style={{ textDecoration: "none" }}>
+              <Link to="/">
                 <Button variant="ghost" fullWidth icon={ArrowLeft}>
-                  Back to Dashboard
+                  Discard Changes
                 </Button>
               </Link>
             </div>

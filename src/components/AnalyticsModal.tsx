@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
-import { X, BarChart3, Clock, Eye, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { X, BarChart3, Clock, Eye, Loader2, Zap } from "lucide-react";
 import { analyticsService } from "../services/analyticsService";
 import { Deck, DeckStats } from "../types";
+import { cn } from "../utils/cn";
+import Button from "./common/Button";
+import Card from "./common/Card";
 
 interface AnalyticsModalProps {
   deck: Deck;
@@ -35,7 +39,6 @@ function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
   const avgTimePerView =
     totalViews > 0 ? (totalSeconds / totalViews).toFixed(1) : 0;
 
-  // Find max views for scaling the bars
   const maxViews = Math.max(...stats.map((s) => s.total_views), 1);
   const maxTime = Math.max(
     ...stats.map((s) => s.total_time_seconds / (s.total_views || 1)),
@@ -43,75 +46,120 @@ function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
   );
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="analytics-modal" onClick={(e) => e.stopPropagation()}>
-        <header className="modal-header">
-          <div className="header-title">
-            <BarChart3 className="header-icon" />
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+      />
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="relative w-full max-w-xl bg-slate-900 border border-white/10 rounded-[32px] overflow-hidden shadow-2xl"
+      >
+        <header className="p-6 md:p-8 border-b border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-deckly-primary/10 text-deckly-primary rounded-2xl flex items-center justify-center">
+              <BarChart3 size={24} />
+            </div>
             <div>
-              <h3>Deck Analytics</h3>
-              <p>{deck.title}</p>
+              <h3 className="text-xl font-bold text-white tracking-tight">
+                Deck Insights
+              </h3>
+              <p className="text-sm text-slate-400 font-medium truncate max-w-[240px]">
+                {deck.title}
+              </p>
             </div>
           </div>
-          <button className="close-btn" onClick={onClose}>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+          >
             <X size={20} />
           </button>
         </header>
 
-        {loading ? (
-          <div className="modal-loading">
-            <Loader2 className="animate-spin" />
-            <p>Gathering insights...</p>
-          </div>
-        ) : (
-          <div className="modal-content">
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-icon-wrapper blue">
-                  <Eye size={20} />
-                </div>
-                <div className="stat-info">
-                  <span className="stat-label">Total Views</span>
-                  <span className="stat-value">{totalViews}</span>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon-wrapper green">
-                  <Clock size={20} />
-                </div>
-                <div className="stat-info">
-                  <span className="stat-label">Avg. Session</span>
-                  <span className="stat-value">{avgTimePerView}s</span>
-                </div>
-              </div>
+        <div className="p-6 md:p-8 max-h-[70vh] overflow-y-auto">
+          {loading ? (
+            <div className="py-20 flex flex-col items-center gap-4">
+              <Loader2 className="animate-spin text-deckly-primary" size={32} />
+              <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">
+                Analyzing Engagement
+              </p>
             </div>
+          ) : (
+            <div className="space-y-8">
+              <div className="grid grid-cols-2 gap-4">
+                <Card
+                  variant="solid"
+                  hoverable={false}
+                  className="p-5 border-white/10 bg-white/[0.02]"
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center">
+                      <Eye size={20} />
+                    </div>
+                    <span className="text-[10px] items uppercase tracking-widest text-slate-500 font-bold">
+                      Total Views
+                    </span>
+                  </div>
+                  <div className="text-3xl font-black text-white leading-none">
+                    {totalViews}
+                  </div>
+                </Card>
 
-            <div className="chart-section">
-              <div className="chart-header">
-                <h4>Engagement per Slide</h4>
-                <div className="chart-tabs">
-                  <button
-                    className={`chart-tab ${activeTab === "views" ? "active" : ""}`}
-                    onClick={() => setActiveTab("views")}
-                  >
-                    Views
-                  </button>
-                  <button
-                    className={`chart-tab ${activeTab === "time" ? "active" : ""}`}
-                    onClick={() => setActiveTab("time")}
-                  >
-                    Avg. Time
-                  </button>
-                </div>
+                <Card
+                  variant="solid"
+                  hoverable={false}
+                  className="p-5 border-white/10 bg-white/[0.02]"
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center">
+                      <Clock size={20} />
+                    </div>
+                    <span className="text-[10px] items uppercase tracking-widest text-slate-500 font-bold">
+                      Avg. Session
+                    </span>
+                  </div>
+                  <div className="text-3xl font-black text-white leading-none">
+                    {avgTimePerView}s
+                  </div>
+                </Card>
               </div>
 
-              <div className="chart-body">
+              <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-8">
+                  <h4 className="text-sm font-bold text-slate-200 uppercase tracking-wider">
+                    Engagement per Slide
+                  </h4>
+                  <div className="flex bg-white/5 p-1 rounded-xl">
+                    {(["views", "time"] as const).map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={cn(
+                          "px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all",
+                          activeTab === tab
+                            ? "bg-slate-800 text-white shadow-lg"
+                            : "text-slate-500 hover:text-slate-300",
+                        )}
+                      >
+                        {tab === "views" ? "Views" : "Time"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {stats.length === 0 ? (
-                  <div className="no-data">
-                    <p>No activity recorded yet for this deck.</p>
+                  <div className="py-12 text-center text-slate-500 italic text-sm font-medium">
+                    No activity recorded yet for this deck.
                   </div>
                 ) : (
-                  <div className="bar-chart">
+                  <div className="space-y-4">
                     {stats.map((s) => {
                       const avgTime =
                         s.total_views > 0
@@ -119,23 +167,35 @@ function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
                           : 0;
                       const viewPercent = (s.total_views / maxViews) * 100;
                       const timePercent = (avgTime / maxTime) * 100;
+                      const percentage =
+                        activeTab === "views" ? viewPercent : timePercent;
 
                       return (
-                        <div className="chart-row" key={s.page_number}>
-                          <div className="row-label">Pg {s.page_number}</div>
-                          <div className="row-bar-container">
-                            <div
-                              className={`row-bar ${activeTab}`}
-                              style={{
-                                width: `${activeTab === "views" ? viewPercent : timePercent}%`,
-                              }}
+                        <div
+                          key={s.page_number}
+                          className="flex items-center gap-4"
+                        >
+                          <span className="text-[10px] font-black text-slate-600 w-8">
+                            Pg {s.page_number}
+                          </span>
+                          <div className="flex-1 h-7 bg-white/5 rounded-lg overflow-hidden relative">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${percentage}%` }}
+                              transition={{ duration: 1, ease: "circOut" }}
+                              className={cn(
+                                "h-full flex items-center justify-end px-3",
+                                activeTab === "views"
+                                  ? "bg-deckly-primary/60"
+                                  : "bg-emerald-500/60",
+                              )}
                             >
-                              <span className="bar-value">
+                              <span className="text-[9px] font-bold text-white shadow-sm">
                                 {activeTab === "views"
                                   ? s.total_views
                                   : `${avgTime.toFixed(1)}s`}
                               </span>
-                            </div>
+                            </motion.div>
                           </div>
                         </div>
                       );
@@ -144,284 +204,18 @@ function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
                 )}
               </div>
             </div>
+          )}
+        </div>
+
+        <footer className="p-6 bg-white/[0.01] border-t border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-slate-500 font-bold text-[10px] uppercase tracking-widest">
+            <Zap size={14} className="text-deckly-primary" /> Real-time Sync
           </div>
-        )}
-
-        <footer className="modal-footer">
-          <p>Real-time data synced with PostHog ⚡</p>
-          <button className="primary-btn" onClick={onClose}>
+          <Button onClick={onClose} size="medium">
             Done
-          </button>
+          </Button>
         </footer>
-      </div>
-
-      <style>{`
-        .modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(15, 17, 21, 0.85);
-          backdrop-filter: blur(8px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 2000;
-          animation: fadeIn 0.2s ease-out;
-        }
-
-        .analytics-modal {
-          background: var(--bg-card);
-          border: 1px solid var(--border-color);
-          border-radius: 24px;
-          width: 90%;
-          max-width: 550px;
-          display: flex;
-          flex-direction: column;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-          overflow: hidden;
-        }
-
-        .modal-header {
-          padding: 1.5rem 2rem;
-          border-bottom: 1px solid var(--border-color);
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .header-title {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .header-icon {
-          color: var(--accent-primary);
-        }
-
-        .header-title h3 {
-          font-size: 1.25rem;
-          font-weight: 700;
-          color: var(--text-primary);
-          line-height: 1.2;
-        }
-
-        .header-title p {
-          font-size: 0.875rem;
-          color: var(--text-secondary);
-        }
-
-        .close-btn {
-          background: rgba(255, 255, 255, 0.05);
-          border: none;
-          color: var(--text-secondary);
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: var(--transition-smooth);
-        }
-
-        .close-btn:hover {
-          background: rgba(255, 255, 255, 0.1);
-          color: var(--text-primary);
-        }
-
-        .modal-content {
-          padding: 2rem;
-          max-height: 60vh;
-          overflow-y: auto;
-        }
-
-        .stats-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1.5rem;
-          margin-bottom: 2rem;
-        }
-
-        .stat-card {
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid var(--border-color);
-          border-radius: 16px;
-          padding: 1.25rem;
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .stat-icon-wrapper {
-          width: 44px;
-          height: 44px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .stat-icon-wrapper.blue { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
-        .stat-icon-wrapper.green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-
-        .stat-label {
-          display: block;
-          font-size: 0.75rem;
-          color: var(--text-secondary);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          margin-bottom: 0.25rem;
-        }
-
-        .stat-value {
-          display: block;
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: var(--text-primary);
-        }
-
-        .chart-section {
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid var(--border-color);
-          border-radius: 16px;
-          padding: 1.5rem;
-        }
-
-        .chart-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 1.5rem;
-        }
-
-        .chart-header h4 {
-          font-size: 1rem;
-          color: var(--text-primary);
-        }
-
-        .chart-tabs {
-          display: flex;
-          background: rgba(255, 255, 255, 0.05);
-          padding: 4px;
-          border-radius: 8px;
-        }
-
-        .chart-tab {
-          padding: 6px 12px;
-          font-size: 0.75rem;
-          font-weight: 600;
-          border: none;
-          background: transparent;
-          color: var(--text-secondary);
-          cursor: pointer;
-          border-radius: 6px;
-          transition: var(--transition-smooth);
-        }
-
-        .chart-tab.active {
-          background: var(--bg-card);
-          color: var(--text-primary);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .no-data {
-          padding: 3rem 1rem;
-          text-align: center;
-          color: var(--text-secondary);
-          font-size: 0.9rem;
-        }
-
-        .bar-chart {
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-        }
-
-        .chart-row {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .row-label {
-          font-size: 0.75rem;
-          color: var(--text-secondary);
-          min-width: 40px;
-        }
-
-        .row-bar-container {
-          flex: 1;
-          height: 24px;
-          background: rgba(255, 255, 255, 0.03);
-          border-radius: 6px;
-          overflow: hidden;
-        }
-
-        .row-bar {
-          height: 100%;
-          transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          padding-right: 8px;
-        }
-
-        .row-bar.views { background: linear-gradient(90deg, #6366f1, #818cf8); }
-        .row-bar.time { background: linear-gradient(90deg, #10b981, #34d399); }
-
-        .bar-value {
-          font-size: 0.7rem;
-          font-weight: 700;
-          color: white;
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-        }
-
-        .modal-footer {
-          padding: 1.5rem 2rem;
-          border-top: 1px solid var(--border-color);
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .modal-footer p {
-          font-size: 0.75rem;
-          color: var(--text-secondary);
-        }
-
-        .modal-loading {
-          padding: 4rem 2rem;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1rem;
-          color: var(--text-secondary);
-        }
-
-        .primary-btn {
-          background: var(--accent-primary);
-          color: white;
-          border: none;
-          padding: 0.75rem 1.5rem;
-          border-radius: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: var(--transition-smooth);
-        }
-
-        .primary-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-      `}</style>
+      </motion.div>
     </div>
   );
 }

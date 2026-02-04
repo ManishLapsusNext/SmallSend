@@ -1,6 +1,8 @@
-import React from "react";
+import { motion, HTMLMotionProps } from "framer-motion";
+import { Loader2 } from "lucide-react";
+import { cn } from "../../utils/cn";
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends HTMLMotionProps<"button"> {
   variant?: "primary" | "secondary" | "danger" | "ghost";
   size?: "small" | "medium" | "large";
   icon?: React.ElementType;
@@ -21,28 +23,46 @@ const Button: React.FC<ButtonProps> = ({
   loading = false,
   ...props
 }) => {
-  const baseClass = "btn-modern";
-  const variantClass = `${baseClass}-${variant}`;
-  const sizeClass = `${baseClass}-${size}`;
-  const widthClass = fullWidth ? "btn-full-width" : "";
+  const variants = {
+    primary:
+      "bg-deckly-primary text-white hover:bg-opacity-90 shadow-lg shadow-deckly-primary/20",
+    secondary:
+      "bg-white/10 text-white hover:bg-white/20 backdrop-blur-md border border-white/10",
+    danger: "bg-deckly-accent text-white hover:bg-opacity-90",
+    ghost: "bg-transparent text-white hover:bg-white/10",
+  };
+
+  const sizes = {
+    small: "px-3 py-1.5 text-sm gap-1.5",
+    medium: "px-4 py-2 gap-2",
+    large: "px-6 py-3 text-lg gap-3",
+  };
 
   return (
-    <button
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
-      className={`${baseClass} ${variantClass} ${sizeClass} ${widthClass} ${className}`}
+      className={cn(
+        "relative flex items-center justify-center font-medium rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed",
+        variants[variant],
+        sizes[size],
+        fullWidth ? "w-full" : "",
+        className,
+      )}
       {...props}
     >
       {loading ? (
-        <span className="btn-spinner"></span>
+        <Loader2 className="w-5 h-5 animate-spin" />
       ) : (
         <>
-          {Icon && <Icon size={size === "large" ? 20 : 18} />}
-          {children && <span>{children}</span>}
+          {Icon && <Icon size={size === "large" ? 22 : 18} />}
+          {children && <span>{children as React.ReactNode}</span>}
         </>
       )}
-    </button>
+    </motion.button>
   );
 };
 

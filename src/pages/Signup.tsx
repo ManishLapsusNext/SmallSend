@@ -1,8 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../services/supabase";
-import { Lock, Mail, Loader2 } from "lucide-react";
+import { Lock, Mail, CheckCircle2 } from "lucide-react";
 import logo from "../assets/Deckly.png";
+import Button from "../components/common/Button";
+import Input from "../components/common/Input";
+import Card from "../components/common/Card";
 
 function Signup() {
   const [email, setEmail] = useState("");
@@ -30,8 +34,7 @@ function Signup() {
 
       if (data.user) {
         setSuccess(true);
-        // Automatically redirect to login after a short delay
-        setTimeout(() => navigate("/login"), 3000);
+        setTimeout(() => navigate("/login"), 4000);
       }
     } catch (err: any) {
       setError(err.message);
@@ -41,84 +44,123 @@ function Signup() {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <div className="login-header">
-          <div className="login-logo">
-            <img src={logo} alt="Deckly" className="logo-img" />
-          </div>
-          <h1>Join Deckly</h1>
-          <p>Create your private Data Room in seconds</p>
-        </div>
+    <div className="min-h-screen relative flex items-center justify-center p-6 overflow-hidden bg-deckly-background">
+      {/* Decorative background blobs */}
+      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-deckly-primary/10 rounded-full blur-[120px]" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-deckly-secondary/10 rounded-full blur-[120px]" />
 
-        {success ? (
-          <div className="signup-success">
-            <div className="success-icon">✅</div>
-            <h2>Account Created!</h2>
-            <p>
-              Please check your email for a confirmation link. Redirecting you
-              to login...
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-[440px] relative z-10"
+      >
+        <Card variant="glass" hoverable={false} className="p-8 md:p-10">
+          <div className="flex flex-col items-center text-center mb-10">
+            <motion.div
+              whileHover={{ rotate: 360, transition: { duration: 1 } }}
+              className="w-20 h-20 bg-white/5 rounded-3xl p-4 mb-6 border border-white/10 shadow-2xl"
+            >
+              <img
+                src={logo}
+                alt="Deckly"
+                className="w-full h-full object-contain"
+              />
+            </motion.div>
+            <h1 className="text-3xl font-black text-white tracking-tight mb-2">
+              Join Deckly
+            </h1>
+            <p className="text-slate-400 font-medium text-sm">
+              Start managing your private data rooms today
             </p>
           </div>
-        ) : (
-          <form onSubmit={handleSignup} className="login-form">
-            <div className="input-group">
-              <label htmlFor="email">Email Address</label>
-              <div className="input-wrapper">
-                <Mail size={18} className="input-icon" />
-                <input
-                  id="email"
+
+          <AnimatePresence mode="wait">
+            {success ? (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col items-center text-center py-6"
+              >
+                <div className="w-16 h-16 bg-deckly-primary/20 text-deckly-primary rounded-full flex items-center justify-center mb-6">
+                  <CheckCircle2 size={32} />
+                </div>
+                <h2 className="text-xl font-bold text-white mb-2">
+                  Check your email
+                </h2>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  We've sent a confirmation link to <strong>{email}</strong>.
+                  Redirecting to login shortly...
+                </p>
+              </motion.div>
+            ) : (
+              <motion.form
+                key="form"
+                exit={{ opacity: 0, x: -20 }}
+                onSubmit={handleSignup}
+                className="flex flex-col gap-5"
+              >
+                <Input
+                  label="Business Email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="name@company.com"
+                  icon={Mail}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
-              </div>
-            </div>
 
-            <div className="input-group">
-              <label htmlFor="password">Password</label>
-              <div className="input-wrapper">
-                <Lock size={18} className="input-icon" />
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                />
-              </div>
-              <p className="help-text">Minimum 6 characters</p>
-            </div>
+                <div className="flex flex-col gap-1.5">
+                  <Input
+                    label="Secure Password"
+                    type="password"
+                    placeholder="••••••••"
+                    icon={Lock}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                  />
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider px-1">
+                    At least 6 characters required
+                  </p>
+                </div>
 
-            {error && <div className="login-error">{error}</div>}
+                {error && (
+                  <div className="bg-deckly-accent/10 border border-deckly-accent/20 text-deckly-accent text-xs font-bold p-3 rounded-xl text-center">
+                    {error}
+                  </div>
+                )}
 
-            <button type="submit" className="login-button" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 size={20} className="animate-spin" />
-                  Creating Account...
-                </>
-              ) : (
-                "Create My Data Room"
-              )}
-            </button>
-          </form>
-        )}
+                <Button
+                  type="submit"
+                  fullWidth
+                  size="large"
+                  loading={loading}
+                  className="mt-2"
+                >
+                  Create My Space
+                </Button>
+              </motion.form>
+            )}
+          </AnimatePresence>
 
-        <div className="login-footer">
-          <p>
-            Already have an account?{" "}
-            <Link to="/login" className="auth-link">
-              Sign In
-            </Link>
-          </p>
-          <p style={{ marginTop: "1rem" }}>© 2026 Deckly by Manish</p>
-        </div>
-      </div>
+          <div className="mt-10 pt-8 border-t border-white/5 text-center flex flex-col gap-4">
+            <p className="text-sm text-slate-400 font-medium">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-deckly-primary hover:text-deckly-primary/80 font-bold transition-colors"
+              >
+                Sign in
+              </Link>
+            </p>
+            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">
+              © 2026 Deckly by Manish
+            </p>
+          </div>
+        </Card>
+      </motion.div>
     </div>
   );
 }

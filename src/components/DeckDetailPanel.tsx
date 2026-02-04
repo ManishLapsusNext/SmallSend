@@ -1,10 +1,22 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Calendar, HardDrive, Upload, Eye, Clock } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  X,
+  Calendar,
+  HardDrive,
+  Upload,
+  Eye,
+  Clock,
+  Trash2,
+  Save,
+  ExternalLink,
+} from "lucide-react";
 import { deckService } from "../services/deckService";
 import { analyticsService } from "../services/analyticsService";
 import { supabase } from "../services/supabase";
 import * as pdfjsLib from "pdfjs-dist";
 import { Deck, DeckWithExpiry } from "../types";
+import { cn } from "../utils/cn";
 
 // Common Components
 import Button from "./common/Button";
@@ -113,7 +125,6 @@ function DeckDetailPanel({
       if (!session) throw new Error("Not authenticated");
       const userId = session.user.id;
 
-      // 1. Handle File Replacement if needed
       if (newFile) {
         setUploadProgress("Uploading new PDF...");
         const fileExt = newFile.name.split(".").pop();
@@ -142,7 +153,6 @@ function DeckDetailPanel({
         }));
       }
 
-      // 2. Update Database Record
       const updates: any = {
         title: editValues.title,
         slug: editValues.slug,
@@ -199,160 +209,244 @@ function DeckDetailPanel({
   };
 
   return (
-    <>
-      <div className="panel-overlay" onClick={onClose} />
-      <div className="side-panel">
-        <header className="panel-header">
-          <button className="close-panel-btn" onClick={onClose}>
-            <X size={24} />
-          </button>
-          <h2>DECK DETAILS</h2>
+    <div className="fixed inset-0 z-[300] flex justify-end">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+      />
+
+      <motion.div
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        className="relative w-full max-w-xl bg-slate-900 h-full shadow-2xl overflow-y-auto border-l border-white/5"
+      >
+        <header className="sticky top-0 z-20 bg-slate-900/80 backdrop-blur-xl p-6 border-b border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onClose}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+            >
+              <X size={24} />
+            </button>
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
+              Asset Intelligence
+            </h2>
+          </div>
+          <a href={`/${deck.slug}`} target="_blank" rel="noreferrer">
+            <Button variant="ghost" size="small" icon={ExternalLink}>
+              View Room
+            </Button>
+          </a>
         </header>
 
-        <div className="panel-content">
-          <div className="panel-preview">
-            {deck.pages && deck.pages.length > 0 ? (
-              <img
-                src={deck.pages[0].image_url}
-                alt={deck.title}
-                className="panel-thumbnail"
-              />
-            ) : (
-              <div className="panel-thumbnail-placeholder">No Preview</div>
-            )}
-          </div>
-
-          <div className="panel-title-row">
-            <h1>{deck.title}</h1>
-            <div className="panel-meta-info">
-              <span>
-                <Calendar size={14} /> Created {formatDate(deck.created_at)}
-              </span>
-              <span>
-                <HardDrive size={14} /> {formatSize(deck.file_size)}
-              </span>
+        <div className="p-8 space-y-12 pb-32">
+          {/* Main Preview */}
+          <section className="space-y-6">
+            <div className="aspect-video w-full rounded-[32px] overflow-hidden bg-slate-800 border-4 border-white/5 shadow-2xl relative">
+              {deck.pages && deck.pages.length > 0 ? (
+                <img
+                  src={deck.pages[0].image_url}
+                  alt={deck.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center font-bold text-slate-700 uppercase tracking-widest text-xs">
+                  No Preview
+                </div>
+              )}
             </div>
-          </div>
 
-          <div className="mockup-form">
-            <Input
-              placeholder="Rename"
-              value={editValues.title}
-              onChange={(e) =>
-                setEditValues({ ...editValues, title: e.target.value })
-              }
-            />
+            <div className="flex flex-col gap-1">
+              <h1 className="text-3xl font-black text-white tracking-tight leading-tight">
+                {deck.title}
+              </h1>
+              <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                <div className="flex items-center gap-1.5">
+                  <Calendar size={14} className="text-deckly-primary" />{" "}
+                  {formatDate(deck.created_at)}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <HardDrive size={14} className="text-deckly-primary" />{" "}
+                  {formatSize(deck.file_size)}
+                </div>
+              </div>
+            </div>
+          </section>
 
-            <Input
-              readOnly
-              placeholder="Replace File"
-              value={
-                newFile
-                  ? `Replace: ${newFile.name}`
-                  : "Replace File (Upload new PDF)"
-              }
-              icon={Upload}
-              onClick={() => fileInputRef.current?.click()}
-              className="cursor-pointer"
-            />
-            <input
-              type="file"
-              ref={fileInputRef}
-              style={{ display: "none" }}
-              accept=".pdf"
-              onChange={handleFileChange}
-            />
-
-            <Input
-              placeholder="Replace Link"
-              value={editValues.slug}
-              error={
-                editValues.slug !== deck.slug
-                  ? "Breaking change: existing links will fail!"
-                  : undefined
-              }
-              onChange={(e) =>
-                setEditValues({ ...editValues, slug: e.target.value })
-              }
-            />
-
-            <Toggle
-              label="Link Expiry"
-              enabled={expiryEnabled}
-              onToggle={setExpiryEnabled}
-            />
-
-            {expiryEnabled && (
+          {/* Quick Edit Actions */}
+          <section className="space-y-6">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deckly-primary">
+              Management
+            </h3>
+            <div className="flex flex-col gap-6">
               <Input
-                type="date"
-                value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
+                label="Asset Name"
+                placeholder="Rename"
+                value={editValues.title}
+                onChange={(e) =>
+                  setEditValues({ ...editValues, title: e.target.value })
+                }
               />
-            )}
 
-            <div className="analytics-section">
-              <h3>Analytics</h3>
-              <div className="analytics-summary-grid">
-                <Card className="analytics-summary-card" hoverable={false}>
-                  <div className="analytics-card-icon eye">
-                    <Eye size={20} />
-                  </div>
-                  <div className="analytics-card-info">
-                    <div className="analytics-card-label">Total Views</div>
-                    <div className="analytics-card-value">
-                      {summaryStats.views}
-                    </div>
-                  </div>
-                </Card>
+              <Input
+                label="Access Path"
+                placeholder="Slug"
+                value={editValues.slug}
+                error={
+                  editValues.slug !== deck.slug
+                    ? "Breaking change: old links will no longer work."
+                    : undefined
+                }
+                onChange={(e) =>
+                  setEditValues({ ...editValues, slug: e.target.value })
+                }
+              />
 
-                <Card className="analytics-summary-card" hoverable={false}>
-                  <div className="analytics-card-icon clock">
-                    <Clock size={20} />
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-slate-400 px-1">
+                  Source Control
+                </label>
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className={cn(
+                    "flex items-center justify-between gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 cursor-pointer hover:bg-white/[0.05] transition-all",
+                    newFile
+                      ? "border-deckly-primary/50 bg-deckly-primary/5"
+                      : "",
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <Upload
+                      size={18}
+                      className={
+                        newFile ? "text-deckly-primary" : "text-slate-500"
+                      }
+                    />
+                    <span className="text-sm font-bold text-slate-200">
+                      {newFile
+                        ? "Replaced: " + newFile.name
+                        : "Replace PDF Source"}
+                    </span>
                   </div>
-                  <div className="analytics-card-info">
-                    <div className="analytics-card-label">Avg. Session</div>
-                    <div className="analytics-card-value">
-                      {Math.round(summaryStats.avgTime)}s
-                    </div>
-                  </div>
-                </Card>
+                  {!newFile && (
+                    <span className="text-[10px] font-black uppercase text-slate-600">
+                      Upload
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  hidden
+                  accept=".pdf"
+                  onChange={handleFileChange}
+                />
               </div>
 
-              <div className="analytics-details-wrapper">
-                <Button
-                  variant="secondary"
-                  size="medium"
-                  onClick={() => onShowAnalytics(deck)}
-                >
-                  Details
-                </Button>
+              <div className="flex flex-col gap-4 p-5 rounded-3xl bg-white/[0.02] border border-white/5">
+                <Toggle
+                  label="Enable Link Expiration"
+                  enabled={expiryEnabled}
+                  onToggle={setExpiryEnabled}
+                />
+                <AnimatePresence>
+                  {expiryEnabled && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      <Input
+                        type="date"
+                        value={expiryDate}
+                        onChange={(e) => setExpiryDate(e.target.value)}
+                        className="mt-2"
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
-          </div>
+          </section>
+
+          {/* Quick Stats Overlay */}
+          <section className="space-y-6">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deckly-primary">
+              Engagement Summary
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Card
+                variant="solid"
+                hoverable={false}
+                className="p-4 bg-white/[0.02] border-white/5 flex items-center gap-4"
+              >
+                <div className="w-10 h-10 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center shrink-0">
+                  <Eye size={20} />
+                </div>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-2xl font-black text-white leading-none">
+                    {summaryStats.views}
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
+                    Interactions
+                  </span>
+                </div>
+              </Card>
+
+              <Card
+                variant="solid"
+                hoverable={false}
+                className="p-4 bg-white/[0.02] border-white/5 flex items-center gap-4"
+              >
+                <div className="w-10 h-10 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center shrink-0">
+                  <Clock size={20} />
+                </div>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-2xl font-black text-white leading-none">
+                    {Math.round(summaryStats.avgTime)}s
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
+                    Retention
+                  </span>
+                </div>
+              </Card>
+            </div>
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={() => onShowAnalytics(deck)}
+            >
+              Full Analytics Report
+            </Button>
+          </section>
         </div>
 
-        <div className="panel-bottom-actions">
+        {/* Global Actions */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 bg-slate-950/80 backdrop-blur-2xl border-t border-white/5 flex gap-4 z-30">
           <Button
             variant="danger"
-            size="large"
-            fullWidth
             onClick={() => onDelete(deck)}
             disabled={isSaving}
-          >
-            DELETE
-          </Button>
+            icon={Trash2}
+            className="px-6"
+          />
           <Button
             variant="primary"
-            size="large"
             fullWidth
             onClick={handleSave}
             loading={isSaving}
+            icon={Save}
           >
-            {uploadProgress || "SAVE"}
+            {isSaving ? uploadProgress || "Saving" : "Sync Changes"}
           </Button>
         </div>
-      </div>
-    </>
+      </motion.div>
+    </div>
   );
 }
 
