@@ -35,6 +35,34 @@ function Login() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleGitHubSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "github",
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-950 overflow-hidden">
       {/* Left Panel - Hero - Hidden on Mobile */}
@@ -80,7 +108,10 @@ function Login() {
 
             {/* Social Logins */}
             <div className="w-full space-y-4 mb-8">
-              <button className="w-full flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/10 rounded-xl text-slate-300 font-bold text-sm hover:bg-white/10 transition-all">
+              <button
+                onClick={handleGoogleSignIn}
+                className="w-full flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/10 rounded-xl text-slate-300 font-bold text-sm hover:bg-white/10 transition-all"
+              >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"
@@ -101,14 +132,17 @@ function Login() {
                 </svg>
                 Continue with google
               </button>
-              <button className="w-full flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/10 rounded-xl text-slate-300 font-bold text-sm hover:bg-white/10 transition-all">
-                <svg className="w-5 h-5 mb-1" viewBox="0 0 24 24">
+              <button
+                onClick={handleGitHubSignIn}
+                className="w-full flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/10 rounded-xl text-slate-300 font-bold text-sm hover:bg-white/10 transition-all"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"
-                    d="M17.05 20.28c-.96.95-2.26 1.11-3.66 1.11-1.31 0-2.31-.08-3.41-1.11C8.75 19.34 7 16.53 7 13.5c0-3.52 2.37-5.58 4.79-5.58 1.15 0 2.22.42 2.89.83.67.41 1.63.41 2.3 0 .67-.41 1.74-.83 2.89-.83 1.95 0 3.73 1.34 4.5 3.12-3.8 1.83-3.19 7.4.38 8.87-.58 1.48-1.55 2.82-2.73 3.96zM15.5 2c.07 1.51-.71 2.82-1.61 3.72-1.04.88-2.63 1.04-3.64.04-.15-1.44.75-2.88 1.62-3.84 1.02-.91 2.56-1.02 3.63.08z"
+                    d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
                   />
                 </svg>
-                Continue with apple
+                Continue with github
               </button>
             </div>
 
