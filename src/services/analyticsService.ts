@@ -1,5 +1,6 @@
 import posthog from "posthog-js";
 import { supabase } from "./supabase";
+import { Deck, DeckStats } from "../types";
 
 // Initialize PostHog
 const posthogKey = import.meta.env.VITE_PUBLIC_POSTHOG_KEY;
@@ -9,12 +10,13 @@ const posthogHost =
 if (posthogKey) {
   posthog.init(posthogKey, {
     api_host: posthogHost,
-    // Default feature flag rollout date
-    defaults: "2025-05-24",
+    defaults: {
+      "release_date": "2025-05-24"
+    } as any,
     autocapture: true,
     capture_pageview: true,
     capture_pageleave: true,
-    capture_exceptions: true, // Enable error tracking
+    capture_exceptions: true, 
     debug: import.meta.env.MODE === "development",
   });
 } else {
@@ -23,19 +25,19 @@ if (posthogKey) {
 
 export const analyticsService = {
   // Track when someone views a deck
-  trackDeckView(deck) {
+  trackDeckView(deck: Deck) {
     if (!posthogKey) return;
 
     posthog.capture("deck_viewed", {
       deck_id: deck.id,
       deck_slug: deck.slug,
       deck_title: deck.title,
-      owner_id: deck.user_id, // The ID of the user who owns the deck
+      owner_id: deck.user_id, 
     });
   },
 
   // Track page navigation in PDF
-  trackPageView(deck, pageNumber, timeSpent = 0) {
+  trackPageView(deck: Deck, pageNumber: number, timeSpent: number = 0) {
     if (!posthogKey) return;
 
     posthog.capture("pdf_page_viewed", {
@@ -49,7 +51,7 @@ export const analyticsService = {
   },
 
   // Track when someone completes viewing a deck
-  trackDeckComplete(deck, totalPages) {
+  trackDeckComplete(deck: Deck, totalPages: number) {
     if (!posthogKey) return;
 
     posthog.capture("deck_completed", {
@@ -61,17 +63,16 @@ export const analyticsService = {
     });
   },
 
-  // Identify user (if you add auth later)
-  identifyUser(userId, traits) {
+  // Identify user
+  identifyUser(userId: string, traits?: Record<string, any>) {
     if (!posthogKey) return;
     posthog.identify(userId, traits);
   },
 
-  // NEW: Get or generate a persistent visitor ID
-  getVisitorId() {
+  // Get or generate a persistent visitor ID
+  getVisitorId(): string {
     let visitorId = localStorage.getItem("deckly_visitor_id");
     if (!visitorId) {
-      // Use crypto.randomUUID() for modern browsers, or a simple polyfill
       visitorId =
         typeof crypto.randomUUID === "function"
           ? crypto.randomUUID()
@@ -81,8 +82,8 @@ export const analyticsService = {
     return visitorId;
   },
 
-  // NEW: Sync stats to Supabase for user dashboard (Refined for uniqueness)
-  async syncSlideStats(deck, pageNumber, timeSpent) {
+  // Sync stats to Supabase for user dashboard
+  async syncSlideStats(deck: Deck, pageNumber: number, timeSpent: number): Promise<void> {
     try {
       const visitorId = this.getVisitorId();
       const twentyFourHoursAgo = new Date(
@@ -115,7 +116,6 @@ export const analyticsService = {
       }
 
       // 3. Update the aggregate stats
-      // We always add time, but only add a view if it's unique today
       const { data: existing, error: fetchError } = await supabase
         .from("deck_stats")
         .select("total_views, total_time_seconds")
@@ -147,8 +147,8 @@ export const analyticsService = {
     }
   },
 
-  // Get stats for a specific deck (Management view - requires ownership)
-  async getDeckStats(deckId) {
+  // Get stats for a specific deck (Management view)
+  async getDeckStats(deckId: string): Promise<DeckStats[]> {
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -158,10 +158,10 @@ export const analyticsService = {
       .from("deck_stats")
       .select("*")
       .eq("deck_id", deckId)
-      .eq("user_id", session.user.id) // Ensure only owner can see stats
+      .eq("user_id", session.user.id) 
       .order("page_number", { ascending: true });
 
     if (error) throw error;
-    return data;
+    return data as DeckStats[];
   },
 };
