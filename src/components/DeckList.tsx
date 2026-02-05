@@ -359,19 +359,49 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
                   {/* Thumbnail area */}
                   <div className="h-44 relative overflow-hidden bg-slate-900 shadow-inner w-full flex-shrink-0">
                     {(() => {
-                      const firstPage =
+                      let firstPage =
                         deck.pages &&
                         Array.isArray(deck.pages) &&
                         deck.pages.length > 0
                           ? deck.pages[0]
                           : null;
-                      const imgSrc =
-                        (firstPage as any)?.image_url ||
-                        (firstPage as any)?.url ||
-                        branding.banner_url ||
-                        defaultBanner ||
-                        "https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=2000";
-                      console.log("Deck ID:", deck.id, "Image Source:", imgSrc);
+
+                      // Handle stringified JSON (common in Supabase responses sometimes)
+                      const pageCandidate = firstPage as any;
+                      if (
+                        typeof pageCandidate === "string" &&
+                        (pageCandidate.startsWith("{") ||
+                          pageCandidate.startsWith("["))
+                      ) {
+                        try {
+                          firstPage = JSON.parse(pageCandidate);
+                        } catch (e) {
+                          console.error(
+                            "Failed to parse page JSON:",
+                            firstPage,
+                          );
+                        }
+                      }
+
+                      // Extremely defensive resolution: handle string, handle object with multiple keys, handle fallback
+                      let imgSrc = "";
+                      if (!firstPage) {
+                        imgSrc = branding.banner_url || defaultBanner;
+                      } else if (typeof firstPage === "string") {
+                        imgSrc = firstPage;
+                      } else {
+                        imgSrc =
+                          (firstPage as any).image_url ||
+                          (firstPage as any).url ||
+                          branding.banner_url ||
+                          defaultBanner;
+                      }
+
+                      // One more safety check for placeholder
+                      if (!imgSrc || imgSrc === "") {
+                        imgSrc = branding.banner_url || defaultBanner;
+                      }
+
                       return (
                         <img
                           src={imgSrc}
@@ -379,16 +409,10 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
                           referrerPolicy="no-referrer"
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           onError={(e: any) => {
-                            console.error(
-                              "Image Load Error for Deck:",
-                              deck.id,
-                              "Source:",
-                              e.target.src,
-                            );
                             if (!e.target.dataset.triedFallback) {
                               e.target.dataset.triedFallback = "true";
                               e.target.src =
-                                "https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=1000";
+                                branding.banner_url || defaultBanner;
                             }
                           }}
                         />

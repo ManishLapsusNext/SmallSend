@@ -248,19 +248,57 @@ function DeckDetailPanel({
           {/* Main Preview */}
           <section className="space-y-6">
             <div className="aspect-video w-full rounded-[32px] overflow-hidden bg-slate-800 border-4 border-white/5 shadow-2xl relative">
-              {deck.pages &&
-              Array.isArray(deck.pages) &&
-              deck.pages.length > 0 ? (
-                <img
-                  src={deck.pages[0].image_url}
-                  alt={deck.title}
-                  className="w-full h-full object-cover"
-                  onError={(e: any) => {
-                    e.target.style.display = "none";
-                    e.target.nextSibling.classList.remove("hidden");
-                  }}
-                />
-              ) : null}
+              {(() => {
+                let firstPage =
+                  deck.pages &&
+                  Array.isArray(deck.pages) &&
+                  deck.pages.length > 0
+                    ? deck.pages[0]
+                    : null;
+
+                // Handle stringified JSON
+                const pageCandidate = firstPage as any;
+                if (
+                  typeof pageCandidate === "string" &&
+                  (pageCandidate.startsWith("{") ||
+                    pageCandidate.startsWith("["))
+                ) {
+                  try {
+                    firstPage = JSON.parse(pageCandidate);
+                  } catch (e) {
+                    console.error(
+                      "Detail: Failed to parse page JSON:",
+                      pageCandidate,
+                    );
+                  }
+                }
+
+                let imgSrc = "";
+                if (firstPage) {
+                  imgSrc =
+                    typeof firstPage === "string"
+                      ? firstPage
+                      : (firstPage as any).image_url ||
+                        (firstPage as any).url ||
+                        "";
+                }
+
+                if (!imgSrc) return null;
+
+                return (
+                  <img
+                    src={imgSrc}
+                    alt={deck.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                    onError={(e: any) => {
+                      e.target.style.display = "none";
+                      const sibling = e.target.nextElementSibling;
+                      if (sibling) sibling.classList.remove("hidden");
+                    }}
+                  />
+                );
+              })()}
               <div
                 className={cn(
                   "w-full h-full flex items-center justify-center font-bold text-slate-700 uppercase tracking-widest text-xs",

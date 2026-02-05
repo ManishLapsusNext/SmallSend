@@ -18,19 +18,42 @@ function ImageDeckViewer({ deck }: ImageDeckViewerProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const startTimeRef = useRef(Date.now());
 
+  // Helper to resolve image URL from potentially stringified slide data
+  const resolveSlideImage = useCallback((pageData: any) => {
+    if (!pageData) return "";
+
+    let processedData = pageData;
+    if (
+      typeof processedData === "string" &&
+      (processedData.startsWith("{") || processedData.startsWith("["))
+    ) {
+      try {
+        processedData = JSON.parse(processedData);
+      } catch (e) {
+        // Fallback for malformed JSON
+      }
+    }
+
+    if (typeof processedData === "string") return processedData;
+    return processedData.image_url || processedData.url || "";
+  }, []);
+
   useEffect(() => {
-    const prefetchPages = [currentPage + 1, currentPage + 2];
-    prefetchPages.forEach((pageIdx) => {
+    // Prefetch next 5 slides for buttery smooth transitions
+    const prefetchOffset = 5;
+    for (let i = 1; i <= prefetchOffset; i++) {
+      const pageIdx = currentPage + i;
       if (pageIdx <= numPages) {
-        const page = pages[pageIdx - 1];
-        const imageUrl = (page as any)?.image_url || (page as any)?.url;
+        const imageUrl = resolveSlideImage(pages[pageIdx - 1]);
         if (imageUrl) {
           const img = new Image();
           img.src = imageUrl;
+          // Note: browser handles the request once src is set,
+          // essentially warming up the cache for the upcoming slides.
         }
       }
-    });
-  }, [currentPage, pages, numPages]);
+    }
+  }, [currentPage, pages, numPages, resolveSlideImage]);
 
   useEffect(() => {
     startTimeRef.current = Date.now();
@@ -75,9 +98,7 @@ function ImageDeckViewer({ deck }: ImageDeckViewerProps) {
     );
   }
 
-  const currentPageData = pages[currentPage - 1];
-  const currentImage =
-    (currentPageData as any)?.image_url || (currentPageData as any)?.url;
+  const currentImage = resolveSlideImage(pages[currentPage - 1]);
 
   return (
     <div className="flex flex-col h-full bg-[#0d0f14] overflow-hidden">
@@ -95,21 +116,12 @@ function ImageDeckViewer({ deck }: ImageDeckViewerProps) {
               const imgSrc =
                 currentImage ||
                 "https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=2000";
-              console.log(
-                "Viewer Current Page:",
-                currentPage,
-                "Image Source:",
-                imgSrc,
-              );
               return (
                 <img
                   src={imgSrc}
                   alt={`Slide ${currentPage}`}
                   referrerPolicy="no-referrer"
                   className="max-h-full max-w-full object-contain shadow-[0_32px_128px_-12px_rgba(0,0,0,1)] rounded-sm"
-                  onError={() => {
-                    console.error("Viewer Image Load Error:", imgSrc);
-                  }}
                 />
               );
             })()}
