@@ -1,0 +1,501 @@
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  X,
+  Calendar,
+  HardDrive,
+  Upload,
+  Eye,
+  Clock,
+  Trash2,
+  Save,
+  ExternalLink,
+} from "lucide-react";
+import { deckService } from "../services/deckService";
+import { analyticsService } from "../services/analyticsService";
+import { supabase } from "../services/supabase";
+import * as pdfjsLib from "pdfjs-dist";
+import { Deck, DeckWithExpiry } from "../types";
+import { cn } from "../utils/cn";
+
+// Common Components
+import Button from "./common/Button";
+import Input from "./common/Input";
+import Toggle from "./common/Toggle";
+import Card from "./common/Card";
+
+// Set worker source for pdfjs-dist
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+
+interface DeckDetailPanelProps {
+  deck: DeckWithExpiry;
+  onClose: () => void;
+  onDelete: (deck: Deck) => void;
+  onShowAnalytics: (deck: Deck) => void;
+  onUpdate: (deck: Deck) => void;
+}
+
+function DeckDetailPanel({
+  deck,
+  onClose,
+  onDelete,
+  onShowAnalytics,
+  onUpdate,
+}: DeckDetailPanelProps) {
+  const [editValues, setEditValues] = useState({
+    title: "",
+    slug: "",
+  });
+  const [expiryEnabled, setExpiryEnabled] = useState(false);
+  const [expiryDate, setExpiryDate] = useState("");
+  const [summaryStats, setSummaryStats] = useState({ views: 0, avgTime: 0 });
+  const [isSaving, setIsSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newFile, setNewFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (deck) {
+      setEditValues({
+        title: deck.title,
+        slug: deck.slug,
+      });
+      setExpiryEnabled(!!deck.expires_at);
+      setExpiryDate(deck.expires_at ? deck.expires_at.split("T")[0] : "");
+      loadStats(deck.id);
+      setNewFile(null);
+      setUploadProgress("");
+    }
+  }, [deck]);
+
+  const loadStats = async (deckId: string) => {
+    try {
+      const pageStats = await analyticsService.getDeckStats(deckId);
+      if (pageStats && pageStats.length > 0) {
+        const totalViews = pageStats.reduce((sum, s) => sum + s.total_views, 0);
+        const totalTime = pageStats.reduce(
+          (sum, s) => sum + s.total_time_seconds,
+          0,
+        );
+        const avgTime = totalViews > 0 ? totalTime / totalViews : 0;
+        setSummaryStats({ views: totalViews, avgTime });
+      }
+    } catch (err) {
+      console.error("Error loading summary stats:", err);
+    }
+  };
+
+  const processPdfToImages = async (pdfFile: File) => {
+    setUploadProgress("Processing PDF...");
+    const arrayBuffer = await pdfFile.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const numPages = pdf.numPages;
+    const imageBlobs: Blob[] = [];
+
+    for (let i = 1; i <= numPages; i++) {
+      setUploadProgress(`Processing slide ${i} of ${numPages}...`);
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      if (!context) continue;
+
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+      await (page as any).render({ canvasContext: context, viewport }).promise;
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/webp", 0.8),
+      );
+      if (blob) imageBlobs.push(blob);
+    }
+    return imageBlobs;
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setUploadProgress("Saving changes...");
+    try {
+      let finalFileUrl = deck.file_url;
+      let finalPages = deck.pages;
+      let fileSize = deck.file_size;
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      const userId = session.user.id;
+
+      if (newFile) {
+        setUploadProgress("Uploading new PDF...");
+        const fileExt = newFile.name.split(".").pop();
+        const fileName = `${userId}/decks/${editValues.slug}-${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("decks")
+          .upload(fileName, newFile);
+        if (uploadError) throw uploadError;
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("decks").getPublicUrl(fileName);
+        finalFileUrl = publicUrl;
+        fileSize = newFile.size;
+
+        const imageBlobs = await processPdfToImages(newFile);
+        setUploadProgress(`Uploading ${imageBlobs.length} new slides...`);
+        const imageUrls = await deckService.uploadSlideImages(
+          userId,
+          editValues.slug,
+          imageBlobs,
+        );
+        finalPages = imageUrls.map((url, idx) => ({
+          image_url: url,
+          page_number: idx + 1,
+        }));
+      }
+
+      const updates: any = {
+        title: editValues.title,
+        slug: editValues.slug,
+        file_url: finalFileUrl,
+        pages: finalPages,
+        file_size: fileSize,
+      };
+
+      if (expiryEnabled && expiryDate) {
+        updates.expires_at = new Date(expiryDate).toISOString();
+      } else if (deck.expires_at) {
+        updates.expires_at = null;
+      }
+
+      const updated = await deckService.updateDeck(deck.id, updates);
+      onUpdate(updated);
+      setUploadProgress("Saved!");
+      setTimeout(() => {
+        onClose();
+        setUploadProgress("");
+      }, 1000);
+    } catch (err: any) {
+      alert("Failed to update deck: " + err.message);
+      setUploadProgress("");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === "application/pdf") {
+      setNewFile(file);
+    } else if (file) {
+      alert("Please select a valid PDF file.");
+    }
+  };
+
+  if (!deck) return null;
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatSize = (bytes?: number) => {
+    if (!bytes) return "Unknown size";
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${Math.round(kb)} KB`;
+    return `${(kb / 1024 || 0).toFixed(1)} MB`;
+  };
+
+  return (
+    <div className="fixed inset-0 z-[300] flex justify-end">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+      />
+
+      <motion.div
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        className="relative w-full max-w-xl bg-slate-900 h-full shadow-2xl overflow-y-auto border-l border-white/5"
+      >
+        <header className="sticky top-0 z-20 bg-slate-900/80 backdrop-blur-xl p-6 border-b border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onClose}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+            >
+              <X size={24} />
+            </button>
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
+              Asset Intelligence
+            </h2>
+          </div>
+          <a href={`/${deck.slug}`} target="_blank" rel="noreferrer">
+            <Button variant="ghost" size="small" icon={ExternalLink}>
+              View Room
+            </Button>
+          </a>
+        </header>
+
+        <div className="p-8 space-y-12 pb-32">
+          {/* Main Preview */}
+          <section className="space-y-6">
+            <div className="aspect-video w-full rounded-[32px] overflow-hidden bg-slate-800 border-4 border-white/5 shadow-2xl relative">
+              {(() => {
+                let firstPage =
+                  deck.pages &&
+                  Array.isArray(deck.pages) &&
+                  deck.pages.length > 0
+                    ? deck.pages[0]
+                    : null;
+
+                // Handle stringified JSON
+                const pageCandidate = firstPage as any;
+                if (
+                  typeof pageCandidate === "string" &&
+                  (pageCandidate.startsWith("{") ||
+                    pageCandidate.startsWith("["))
+                ) {
+                  try {
+                    firstPage = JSON.parse(pageCandidate);
+                  } catch (e) {
+                    console.error(
+                      "Detail: Failed to parse page JSON:",
+                      pageCandidate,
+                    );
+                  }
+                }
+
+                let imgSrc = "";
+                if (firstPage) {
+                  imgSrc =
+                    typeof firstPage === "string"
+                      ? firstPage
+                      : (firstPage as any).image_url ||
+                        (firstPage as any).url ||
+                        "";
+                }
+
+                if (!imgSrc) return null;
+
+                return (
+                  <img
+                    src={imgSrc}
+                    alt={deck.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                    onError={(e: any) => {
+                      e.target.style.display = "none";
+                      const sibling = e.target.nextElementSibling;
+                      if (sibling) sibling.classList.remove("hidden");
+                    }}
+                  />
+                );
+              })()}
+              <div
+                className={cn(
+                  "w-full h-full flex items-center justify-center font-bold text-slate-700 uppercase tracking-widest text-xs",
+                  deck.pages && deck.pages.length > 0 ? "hidden" : "",
+                )}
+              >
+                No Preview Available
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <h1 className="text-3xl font-black text-white tracking-tight leading-tight">
+                {deck.title}
+              </h1>
+              <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                <div className="flex items-center gap-1.5">
+                  <Calendar size={14} className="text-deckly-primary" />{" "}
+                  {formatDate(deck.created_at)}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <HardDrive size={14} className="text-deckly-primary" />{" "}
+                  {formatSize(deck.file_size)}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Quick Edit Actions */}
+          <section className="space-y-6">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deckly-primary">
+              Management
+            </h3>
+            <div className="flex flex-col gap-6">
+              <Input
+                label="Asset Name"
+                placeholder="Rename"
+                value={editValues.title}
+                onChange={(e) =>
+                  setEditValues({ ...editValues, title: e.target.value })
+                }
+              />
+
+              <Input
+                label="Access Path"
+                placeholder="Slug"
+                value={editValues.slug}
+                error={
+                  editValues.slug !== deck.slug
+                    ? "Breaking change: old links will no longer work."
+                    : undefined
+                }
+                onChange={(e) =>
+                  setEditValues({ ...editValues, slug: e.target.value })
+                }
+              />
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-slate-400 px-1">
+                  Source Control
+                </label>
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className={cn(
+                    "flex items-center justify-between gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 cursor-pointer hover:bg-white/[0.05] transition-all",
+                    newFile
+                      ? "border-deckly-primary/50 bg-deckly-primary/5"
+                      : "",
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <Upload
+                      size={18}
+                      className={
+                        newFile ? "text-deckly-primary" : "text-slate-500"
+                      }
+                    />
+                    <span className="text-sm font-bold text-slate-200">
+                      {newFile
+                        ? "Replaced: " + newFile.name
+                        : "Replace PDF Source"}
+                    </span>
+                  </div>
+                  {!newFile && (
+                    <span className="text-[10px] font-black uppercase text-slate-600">
+                      Upload
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  hidden
+                  accept=".pdf"
+                  onChange={handleFileChange}
+                />
+              </div>
+
+              <div className="flex flex-col gap-4 p-5 rounded-3xl bg-white/[0.02] border border-white/5">
+                <Toggle
+                  label="Enable Link Expiration"
+                  enabled={expiryEnabled}
+                  onToggle={setExpiryEnabled}
+                />
+                <AnimatePresence>
+                  {expiryEnabled && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      <Input
+                        type="date"
+                        value={expiryDate}
+                        onChange={(e) => setExpiryDate(e.target.value)}
+                        className="mt-2"
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </section>
+
+          {/* Quick Stats Overlay */}
+          <section className="space-y-6">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deckly-primary">
+              Engagement Summary
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Card
+                variant="solid"
+                hoverable={false}
+                className="p-4 bg-white/[0.02] border-white/5 flex items-center gap-4"
+              >
+                <div className="w-10 h-10 bg-deckly-primary/10 text-deckly-primary rounded-xl flex items-center justify-center shrink-0">
+                  <Eye size={20} />
+                </div>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-2xl font-black text-white leading-none">
+                    {summaryStats.views}
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
+                    Interactions
+                  </span>
+                </div>
+              </Card>
+
+              <Card
+                variant="solid"
+                hoverable={false}
+                className="p-4 bg-white/[0.02] border-white/5 flex items-center gap-4"
+              >
+                <div className="w-10 h-10 bg-deckly-secondary/10 text-deckly-secondary rounded-xl flex items-center justify-center shrink-0">
+                  <Clock size={20} />
+                </div>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-2xl font-black text-white leading-none">
+                    {Math.round(summaryStats.avgTime)}s
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
+                    Retention
+                  </span>
+                </div>
+              </Card>
+            </div>
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={() => onShowAnalytics(deck)}
+            >
+              Full Analytics Report
+            </Button>
+          </section>
+        </div>
+
+        {/* Global Actions */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 bg-slate-950/80 backdrop-blur-2xl border-t border-white/5 flex gap-4 z-30">
+          <Button
+            variant="danger"
+            onClick={() => onDelete(deck)}
+            disabled={isSaving}
+            icon={Trash2}
+            className="px-6"
+          />
+          <Button
+            variant="primary"
+            fullWidth
+            onClick={handleSave}
+            loading={isSaving}
+            icon={Save}
+          >
+            {isSaving ? uploadProgress || "Saving" : "Sync Changes"}
+          </Button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+export default DeckDetailPanel;

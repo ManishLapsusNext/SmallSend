@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 
-export function useKeyboardControls(onPrev, onNext) {
+export function useKeyboardControls(onPrev: () => void, onNext: () => void) {
   useEffect(() => {
-    const handleKeyPress = (e) => {
+    const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') {
         onPrev();
       }
@@ -15,5 +15,5 @@ export function useKeyboardControls(onPrev, onNext) {
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [onPrev, onNext]); // Dependencies are stable thanks to useCallback
+  }, [onPrev, onNext]); 
 }

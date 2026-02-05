@@ -1,16 +1,95 @@
-# React + Vite
+# 🚀 Deckly | Easy Pitchdeck Workspace
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+### A shared deck workspace for founders and investors (https://deckly-xi.vercel.app)
 
-Currently, two official plugins are available:
+**Deckly** is an open-source pitch deck workspace built for both founders and investors. Founders can share and update decks effortlessly, while investors get a clean system to manage, review, and remember what matters. Designed for speed, privacy, and simplicity.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## ✨ Key Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **🎯 Smooth, App-Like Deck Viewing**  
+  A custom slide-based viewer that turns static PDFs into fast, responsive experiences with a native-app feel on any device.
 
-## Expanding the ESLint configuration
+- **⚡ Client-Side Rendering**  
+  Decks are processed directly in the browser into high-resolution slides, reducing backend load and improving privacy and speed.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **🔄 Same-Link Deck Updates**  
+  Replace or update your pitch deck while keeping the **same shareable link** — no need to resend links after small fixes or iterations.
+
+- **🗂 Data Rooms (Multiple Decks)**  
+  Group related decks into data rooms for structured sharing during fundraising or reviews.
+
+- **⏳ Link Expiration & Access Control**  
+  Set expiration dates, disable downloads, and control how your deck is accessed.
+
+- **🔗 One-Click Sharing**  
+  Instant share links with clipboard feedback for a frictionless workflow.
+
+- **🧠 Investor-Friendly Experience**  
+  Investors can save decks, add private notes, tag startups, and revisit decks without losing context.
+
+- **🤖 AI-Powered Deck Summaries**  
+  Automatically generate concise, investor-focused summaries to quickly understand what a deck is about.
+
+- **📊 Built-in Analytics**  
+  Track deck engagement, slide drop-offs, and revisit signals using PostHog — with configurable analytics retention.
+
+- **🔐 Privacy-First by Design**  
+  No forced email capture, optional anonymous viewing, and minimal data collection by default.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React 19 + Vite
+- **Backend**: Supabase (PostgreSQL + Storage)
+- **Processing**: pdf.js (Client-side rendering)
+- **Styling**: Vanilla CSS (Outfit Typography)
+- **Analytics**: PostHog
+
+## 🌍 Open Source & Community
+
+Deckly is **100% Open Source**. We believe that every founder should have access to high-quality investor tools without the "Doc Tax."
+
+Whether you want to self-host your own private Data Room or contribute to the next generation of founder tools, the code is yours to explore, modify, and deploy.
+
+## 🚀 Getting Started
+
+### 1. Supabase Setup
+
+Deckly uses Supabase for database, authentication, and storage.
+
+- Create a new project at [supabase.com](https://supabase.com).
+- Copy-paste the content of [supabase/schema.sql](./supabase/schema.sql) into the Supabase SQL Editor and run it to set up your tables and policies.
+- Create a public storage bucket named `decks`.
+
+### 2. Configure Environment
+
+Create a `.env.local` file in the root:
+
+```env
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### 3. Launch
+
+#### Option A: Standard (Local Node.js)
+
+```bash
+npm install
+npm run dev
+```
+
+#### Option B: Docker (Recommended)
+
+```bash
+docker-compose up
+```
+
+The app will be available at `http://localhost:5173`.
+
+---
+
+Built with ❤️ for the startup community. Star this repo if you find it useful!

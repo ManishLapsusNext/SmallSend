@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { analyticsService } from '../services/analyticsService';
+import { Deck } from '../types';
 
-export function useDeckAnalytics(deck, pageNumber, numPages) {
-  const [viewedPages, setViewedPages] = useState(new Set());
-  const pageStartTime = useRef(Date.now());
+export function useDeckAnalytics(deck: Deck | null, pageNumber: number, numPages: number) {
+  const [viewedPages, setViewedPages] = useState<Set<number>>(new Set());
+  const pageStartTime = useRef<number>(Date.now());
 
   // Effect to track the initial deck view
   useEffect(() => {
@@ -12,11 +13,12 @@ export function useDeckAnalytics(deck, pageNumber, numPages) {
     }
   }, [deck]);
 
-  // Memoized function to track time spent on the current page
+  // Function to track time spent on the current page
   const trackCurrentPage = () => {
-    if (!pageNumber) return;
+    if (!pageNumber || !deck) return;
     const timeSpent = Math.floor((Date.now() - pageStartTime.current) / 1000);
     analyticsService.trackPageView(deck, pageNumber, timeSpent);
+    analyticsService.syncSlideStats(deck, pageNumber, timeSpent);
     setViewedPages(prev => new Set(prev).add(pageNumber));
   };
 
@@ -32,10 +34,10 @@ export function useDeckAnalytics(deck, pageNumber, numPages) {
 
   // Effect to check if the entire deck has been viewed
   useEffect(() => {
-    if (numPages && viewedPages.size === numPages) {
+    if (deck && numPages && viewedPages.size === numPages) {
       analyticsService.trackDeckComplete(deck, numPages);
     }
   }, [viewedPages, numPages, deck]);
 
-  return { trackCurrentPage };
+  return { trackCurrentPage };  
 }
