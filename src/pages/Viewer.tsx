@@ -7,6 +7,7 @@ import DeckViewer from "../components/DeckViewer";
 import AccessGate from "../components/AccessGate";
 import { deckService } from "../services/deckService";
 import { analyticsService } from "../services/analyticsService";
+import { supabase } from "../services/supabase";
 import { Deck } from "../types";
 import Button from "../components/common/Button";
 
@@ -24,8 +25,14 @@ function Viewer() {
       const data = await deckService.getDeckBySlug(slug);
       setDeck(data);
 
-      // If no protection, track view immediately and unlock
-      if (!data.require_email && !data.require_password) {
+      // Check if current user is the owner
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const isOwner = session?.user?.id === data.user_id;
+
+      // If no protection OR user is the owner, track view immediately and unlock
+      if ((!data.require_email && !data.require_password) || isOwner) {
         setIsUnlocked(true);
         analyticsService.trackDeckView(data);
       }
