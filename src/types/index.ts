@@ -37,3 +37,11 @@ export interface DeckStats {
   total_views: number;
   total_time_seconds: number;
 }
+
+export interface UserProfile {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  tier: 'FREE' | 'PRO';
+  updated_at: string | null;
+}
