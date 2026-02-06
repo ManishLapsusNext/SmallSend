@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS public.decks (
     status TEXT DEFAULT 'PENDING', -- PENDING, PROCESSED, ERROR
     file_size BIGINT,
     display_order INTEGER DEFAULT 1,
+    require_email BOOLEAN DEFAULT FALSE,
+    require_password BOOLEAN DEFAULT FALSE,
+    view_password TEXT,
     expires_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
