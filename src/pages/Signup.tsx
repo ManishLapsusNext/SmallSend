@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../services/supabase";
-import { Lock, Mail, CheckCircle2 } from "lucide-react";
+import { Lock, Mail, CheckCircle2, User } from "lucide-react";
 import penguinMascot from "../assets/penguine.png";
 import logo from "../assets/Deckly.png";
 import Button from "../components/common/Button";
@@ -11,6 +11,7 @@ import Input from "../components/common/Input";
 function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -27,6 +28,9 @@ function Signup() {
         password,
         options: {
           emailRedirectTo: window.location.origin + "/login",
+          data: {
+            full_name: fullName,
+          },
         },
       });
 
@@ -189,6 +193,16 @@ function Signup() {
                 onSubmit={handleSignup}
                 className="flex flex-col gap-6"
               >
+                <Input
+                  label="Full Name"
+                  type="text"
+                  placeholder="John Doe"
+                  icon={User}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
+
                 <Input
                   label="Email Address"
                   type="email"

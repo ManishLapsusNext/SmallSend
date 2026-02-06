@@ -22,6 +22,7 @@ import DeckDetailPanel from "./DeckDetailPanel";
 import { Deck } from "../types";
 import { cn } from "../utils/cn";
 import Button from "./common/Button";
+import { useAuth } from "../contexts/AuthContext";
 
 interface DeckListProps {
   decks: Deck[];
@@ -45,6 +46,7 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
     useState<Deck | null>(null);
   const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { profile, isPro } = useAuth();
 
   useEffect(() => {
     loadBranding();
@@ -191,26 +193,60 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
                   Branding
                 </h3>
                 <button
-                  onClick={handleStartEdit}
-                  className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-deckly-primary/10 hover:text-deckly-primary text-sm transition-all text-slate-300 group/item"
+                  onClick={isPro ? handleStartEdit : undefined}
+                  className={cn(
+                    "flex items-center justify-between w-full p-2.5 rounded-xl text-sm transition-all group/item",
+                    isPro
+                      ? "hover:bg-deckly-primary/10 hover:text-deckly-primary text-slate-300"
+                      : "opacity-50 cursor-not-allowed text-slate-500",
+                  )}
+                  title={isPro ? "Edit Room Name" : "Pro Feature"}
                 >
-                  <Pencil
-                    size={14}
-                    strokeWidth={2.5}
-                    className="group-hover/item:scale-110 transition-transform flex-shrink-0"
-                  />
-                  Edit Room Name
+                  <div className="flex items-center gap-3">
+                    <Pencil
+                      size={14}
+                      strokeWidth={2.5}
+                      className={cn(
+                        isPro &&
+                          "group-hover/item:scale-110 transition-transform flex-shrink-0",
+                      )}
+                    />
+                    <span>Edit Room Name</span>
+                  </div>
+                  {!isPro && (
+                    <span className="text-[8px] font-black bg-white/10 px-1.5 py-0.5 rounded text-slate-400">
+                      PRO
+                    </span>
+                  )}
                 </button>
                 <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-deckly-primary/10 hover:text-deckly-primary text-sm transition-all text-slate-300 group/item"
+                  onClick={
+                    isPro ? () => fileInputRef.current?.click() : undefined
+                  }
+                  className={cn(
+                    "flex items-center justify-between w-full p-2.5 rounded-xl text-sm transition-all group/item",
+                    isPro
+                      ? "hover:bg-deckly-primary/10 hover:text-deckly-primary text-slate-300"
+                      : "opacity-50 cursor-not-allowed text-slate-500",
+                  )}
+                  title={isPro ? "Change Banner" : "Pro Feature"}
                 >
-                  <Upload
-                    size={14}
-                    strokeWidth={2.5}
-                    className="group-hover/item:scale-110 transition-transform flex-shrink-0"
-                  />
-                  Change Banner
+                  <div className="flex items-center gap-3">
+                    <Upload
+                      size={14}
+                      strokeWidth={2.5}
+                      className={cn(
+                        isPro &&
+                          "group-hover/item:scale-110 transition-transform flex-shrink-0",
+                      )}
+                    />
+                    <span>Change Banner</span>
+                  </div>
+                  {!isPro && (
+                    <span className="text-[8px] font-black bg-white/10 px-1.5 py-0.5 rounded text-slate-400">
+                      PRO
+                    </span>
+                  )}
                 </button>
                 <button
                   onClick={handleLogout}
@@ -280,14 +316,33 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
                 </div>
               </motion.div>
             ) : (
-              <motion.h1
+              <motion.div
                 key="display"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-4xl md:text-5xl font-black text-white tracking-tighter drop-shadow-2xl"
+                className="flex flex-col items-center gap-2"
               >
-                {branding.room_name}
-              </motion.h1>
+                <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter drop-shadow-2xl">
+                  {branding.room_name}
+                </h1>
+                {profile && (
+                  <div className="flex items-center gap-2 mt-2 px-4 py-1.5 bg-white/5 backdrop-blur-md rounded-full border border-white/10 shadow-lg">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-1">
+                      Welcome, {profile.full_name || "User"}
+                    </span>
+                    <div className="w-px h-3 bg-white/10 mx-1" />
+                    {isPro ? (
+                      <span className="text-[10px] font-black text-deckly-primary bg-deckly-primary/10 px-2 py-0.5 rounded-md border border-deckly-primary/20 tracking-tighter uppercase">
+                        PRO
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-slate-500 bg-white/5 px-2 py-0.5 rounded-md border border-white/10 tracking-tighter uppercase">
+                        FREE
+                      </span>
+                    )}
+                  </div>
+                )}
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
