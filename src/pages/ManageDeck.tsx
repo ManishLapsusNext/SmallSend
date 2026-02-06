@@ -9,6 +9,10 @@ import {
   FileText,
   CheckCircle2,
   AlertCircle,
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import { Deck, SlidePage } from "../types";
@@ -32,6 +36,10 @@ function ManageDeck() {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [requireEmail, setRequireEmail] = useState(false);
+  const [requirePassword, setRequirePassword] = useState(false);
+  const [viewPassword, setViewPassword] = useState("");
+  const [showPasswordField, setShowPasswordField] = useState(false);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +62,9 @@ function ManageDeck() {
         setTitle(deck.title);
         setSlug(deck.slug);
         setDescription(deck.description || "");
+        setRequireEmail(deck.require_email || false);
+        setRequirePassword(deck.require_password || false);
+        setViewPassword(deck.view_password || "");
       }
     } catch (err: any) {
       console.error("Error loading deck:", err);
@@ -182,6 +193,9 @@ function ManageDeck() {
             pages: finalPages,
             status: "PROCESSED",
             file_size: file ? file.size : existingDeck?.file_size,
+            require_email: requireEmail,
+            require_password: requirePassword,
+            view_password: viewPassword,
           })
           .eq("id", editId);
         if (dbError) throw dbError;
@@ -194,6 +208,9 @@ function ManageDeck() {
           display_order: 1,
           user_id: userId,
           file_size: file?.size || 0,
+          require_email: requireEmail,
+          require_password: requirePassword,
+          view_password: viewPassword,
         });
 
         const imageBlobs = await processPdfToImages(file as File);
@@ -321,6 +338,131 @@ function ManageDeck() {
                     onChange={handleFileChange}
                   />
                 </div>
+              </div>
+
+              {/* Protection Settings */}
+              <div className="pt-6 border-t border-white/5 space-y-6">
+                <div className="flex flex-col gap-1 px-1">
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                    <Lock size={14} className="text-deckly-primary" />
+                    Access Protection
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Control who can view your deck
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setRequireEmail(!requireEmail)}
+                    className={cn(
+                      "flex items-center justify-between p-4 rounded-2xl border transition-all",
+                      requireEmail
+                        ? "bg-deckly-primary/5 border-deckly-primary/30 text-white"
+                        : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10",
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Mail
+                        size={18}
+                        className={
+                          requireEmail
+                            ? "text-deckly-primary"
+                            : "text-slate-500"
+                        }
+                      />
+                      <span className="text-sm font-bold">Require Email</span>
+                    </div>
+                    <div
+                      className={cn(
+                        "w-10 h-5 rounded-full relative transition-colors",
+                        requireEmail ? "bg-deckly-primary" : "bg-slate-700",
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "absolute top-1 w-3 h-3 bg-white rounded-full transition-all",
+                          requireEmail ? "left-6" : "left-1",
+                        )}
+                      />
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRequirePassword(!requirePassword)}
+                    className={cn(
+                      "flex items-center justify-between p-4 rounded-2xl border transition-all",
+                      requirePassword
+                        ? "bg-deckly-primary/5 border-deckly-primary/30 text-white"
+                        : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10",
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Lock
+                        size={18}
+                        className={
+                          requirePassword
+                            ? "text-deckly-primary"
+                            : "text-slate-500"
+                        }
+                      />
+                      <span className="text-sm font-bold">
+                        Password Protected
+                      </span>
+                    </div>
+                    <div
+                      className={cn(
+                        "w-10 h-5 rounded-full relative transition-colors",
+                        requirePassword ? "bg-deckly-primary" : "bg-slate-700",
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "absolute top-1 w-3 h-3 bg-white rounded-full transition-all",
+                          requirePassword ? "left-6" : "left-1",
+                        )}
+                      />
+                    </div>
+                  </button>
+                </div>
+
+                <AnimatePresence>
+                  {requirePassword && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, y: -10 }}
+                      animate={{ opacity: 1, height: "auto", y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -10 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="relative">
+                        <Input
+                          label="Viewing Password"
+                          type={showPasswordField ? "text" : "password"}
+                          value={viewPassword}
+                          onChange={(e) => setViewPassword(e.target.value)}
+                          placeholder="Create a strong password"
+                          required={requirePassword}
+                          icon={Lock}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowPasswordField(!showPasswordField)
+                          }
+                          className="absolute bottom-4 right-4 text-slate-500 hover:text-white transition-colors"
+                        >
+                          {showPasswordField ? (
+                            <EyeOff size={18} />
+                          ) : (
+                            <Eye size={18} />
+                          )}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
