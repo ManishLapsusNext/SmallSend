@@ -25,7 +25,7 @@ const Toggle: React.FC<ToggleProps> = ({
       <button
         type="button"
         className={cn(
-          "relative w-11 h-6 rounded-full transition-colors duration-200 outline-none focus:ring-2 focus:ring-deckly-primary/50",
+          "relative w-11 h-6 rounded-full transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-deckly-primary/50",
           enabled ? "bg-deckly-primary" : "bg-slate-700",
         )}
         onClick={() => onToggle(!enabled)}
