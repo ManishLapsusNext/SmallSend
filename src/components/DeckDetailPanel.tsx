@@ -479,20 +479,22 @@ function DeckDetailPanel({
                           placeholder="••••••••"
                           required={requirePassword}
                           icon={Lock}
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setShowPasswordField(!showPasswordField)
+                          rightElement={
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowPasswordField(!showPasswordField)
+                              }
+                              className="text-slate-500 hover:text-white transition-colors p-1"
+                            >
+                              {showPasswordField ? (
+                                <EyeOff size={18} />
+                              ) : (
+                                <Eye size={18} />
+                              )}
+                            </button>
                           }
-                          className="absolute bottom-4 right-4 text-slate-500 hover:text-white transition-colors"
-                        >
-                          {showPasswordField ? (
-                            <EyeOff size={18} />
-                          ) : (
-                            <Eye size={18} />
-                          )}
-                        </button>
+                        />
                       </div>
                     </motion.div>
                   )}
