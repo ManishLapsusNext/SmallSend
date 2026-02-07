@@ -32,6 +32,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLi
 
 interface DeckDetailPanelProps {
   deck: DeckWithExpiry;
+  isPro: boolean;
   onClose: () => void;
   onDelete: (deck: Deck) => void;
   onShowAnalytics: (deck: Deck) => void;
@@ -54,6 +55,7 @@ const SectionHeader = ({ children, icon: Icon, color = "primary" }: any) => (
 
 function DeckDetailPanel({
   deck,
+  isPro,
   onClose,
   onDelete,
   onShowAnalytics,
@@ -94,7 +96,8 @@ function DeckDetailPanel({
 
   const loadStats = async (deckId: string) => {
     try {
-      const pageStats = await analyticsService.getDeckStats(deckId);
+      // Pass isPro to getDeckStats to match the new signature
+      const pageStats = await analyticsService.getDeckStats(deckId, isPro);
       if (pageStats && pageStats.length > 0) {
         const totalViews = pageStats.reduce((sum, s) => sum + s.total_views, 0);
         const totalTime = pageStats.reduce(

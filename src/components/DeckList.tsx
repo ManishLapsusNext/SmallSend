@@ -597,11 +597,9 @@ function DeckList({
         {selectedDeck && (
           <DeckDetailPanel
             deck={selectedDeck}
+            isPro={!!isPro}
             onClose={() => setSelectedDeck(null)}
-            onDelete={(deck) => {
-              onDelete(deck);
-              setSelectedDeck(null);
-            }}
+            onDelete={onDelete}
             onShowAnalytics={(deck) => {
               setSelectedAnalyticsDeck(deck);
             }}
