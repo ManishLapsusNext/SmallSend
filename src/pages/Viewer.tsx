@@ -4,14 +4,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import ImageDeckViewer from "../components/ImageDeckViewer";
 import DeckViewer from "../components/DeckViewer";
+import AccessGate from "../components/AccessGate";
 import { deckService } from "../services/deckService";
 import { analyticsService } from "../services/analyticsService";
+import { supabase } from "../services/supabase";
 import { Deck } from "../types";
 import Button from "../components/common/Button";
 
 function Viewer() {
   const { slug } = useParams<{ slug: string }>();
   const [deck, setDeck] = useState<Deck | null>(null);
+  const [isUnlocked, setIsUnlocked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +24,18 @@ function Viewer() {
       setLoading(true);
       const data = await deckService.getDeckBySlug(slug);
       setDeck(data);
-      analyticsService.trackDeckView(data);
+
+      // Check if current user is the owner
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const isOwner = session?.user?.id === data.user_id;
+
+      // If no protection OR user is the owner, track view immediately and unlock
+      if ((!data.require_email && !data.require_password) || isOwner) {
+        setIsUnlocked(true);
+        analyticsService.trackDeckView(data);
+      }
     } catch (err: any) {
       setError(err.message);
       console.error("Error loading deck:", err);
@@ -78,6 +92,19 @@ function Viewer() {
               </Link>
             </div>
           </motion.div>
+        ) : !isUnlocked ? (
+          <AccessGate
+            deck={deck}
+            onAccessGranted={(email) => {
+              setIsUnlocked(true);
+              if (email) {
+                // Track email capture in analytics if provided
+                analyticsService.trackDeckView(deck, { email_captured: email });
+              } else {
+                analyticsService.trackDeckView(deck);
+              }
+            }}
+          />
         ) : (
           <motion.div
             key="viewer"

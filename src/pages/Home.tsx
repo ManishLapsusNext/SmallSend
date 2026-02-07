@@ -1,24 +1,35 @@
 import { useState, useEffect } from "react";
 import DeckList from "../components/DeckList";
 import { deckService } from "../services/deckService";
-import { Deck } from "../types";
+import { Deck, BrandingSettings } from "../types";
+import { useAuth } from "../contexts/AuthContext";
 
 function Home() {
   const [decks, setDecks] = useState<Deck[]>([]);
+  const [branding, setBranding] = useState<BrandingSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { session } = useAuth();
 
   useEffect(() => {
-    loadDecks();
-  }, []);
+    if (session?.user) {
+      loadInitialData(session.user.id);
+    }
+  }, [session]);
 
-  const loadDecks = async () => {
+  const loadInitialData = async (userId: string) => {
     try {
-      const data = await deckService.getAllDecks();
-      setDecks(data);
+      // Parallel fetch branding and decks
+      const [decksData, brandingData] = await Promise.all([
+        deckService.getAllDecks(userId),
+        deckService.getBrandingSettings(userId),
+      ]);
+
+      setDecks(decksData);
+      setBranding(brandingData);
     } catch (err: any) {
       setError(err.message);
-      console.error("Error loading decks:", err);
+      console.error("Error loading dashboard data:", err);
     } finally {
       setLoading(false);
     }
@@ -42,6 +53,10 @@ function Home() {
     );
   };
 
+  const handleBrandingUpdate = (updatedBranding: Partial<BrandingSettings>) => {
+    setBranding((prev) => (prev ? { ...prev, ...updatedBranding } : null));
+  };
+
   if (error) {
     return (
       <div className="error-container">
@@ -51,12 +66,27 @@ function Home() {
     );
   }
 
+  const defaultBranding = {
+    room_name: "Deckly Data Room",
+    banner_url:
+      "https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=2000",
+  };
+
   return (
     <DeckList
       decks={decks}
+      branding={
+        branding
+          ? {
+              room_name: branding.room_name || defaultBranding.room_name,
+              banner_url: branding.banner_url || defaultBranding.banner_url,
+            }
+          : defaultBranding
+      }
       loading={loading}
       onDelete={handleDelete}
       onUpdate={handleUpdate}
+      onBrandingUpdate={handleBrandingUpdate}
     />
   );
 }

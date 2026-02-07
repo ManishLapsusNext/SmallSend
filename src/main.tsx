@@ -17,7 +17,7 @@ ReactDOM.createRoot(rootElement).render(
           release_date: "2025-05-24",
         } as any, // Cast to any because PostHog types might be strict or mismatched
         capture_exceptions: true,
-        debug: import.meta.env.MODE === "development",
+        debug: false,
       }}
     >
       <App />

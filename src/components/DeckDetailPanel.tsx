@@ -10,6 +10,9 @@ import {
   Trash2,
   Save,
   ExternalLink,
+  Lock,
+  EyeOff,
+  BarChart3,
 } from "lucide-react";
 import { deckService } from "../services/deckService";
 import { analyticsService } from "../services/analyticsService";
@@ -35,6 +38,20 @@ interface DeckDetailPanelProps {
   onUpdate: (deck: Deck) => void;
 }
 
+const SectionHeader = ({ children, icon: Icon, color = "primary" }: any) => (
+  <div className="flex flex-col gap-1.5 px-1 mb-6">
+    <h3
+      className={cn(
+        "text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2",
+        color === "primary" ? "text-deckly-primary" : "text-slate-500",
+      )}
+    >
+      {Icon && <Icon size={12} strokeWidth={3} />}
+      {children}
+    </h3>
+  </div>
+);
+
 function DeckDetailPanel({
   deck,
   onClose,
@@ -48,6 +65,10 @@ function DeckDetailPanel({
   });
   const [expiryEnabled, setExpiryEnabled] = useState(false);
   const [expiryDate, setExpiryDate] = useState("");
+  const [requireEmail, setRequireEmail] = useState(false);
+  const [requirePassword, setRequirePassword] = useState(false);
+  const [viewPassword, setViewPassword] = useState("");
+  const [showPasswordField, setShowPasswordField] = useState(false);
   const [summaryStats, setSummaryStats] = useState({ views: 0, avgTime: 0 });
   const [isSaving, setIsSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
@@ -62,6 +83,9 @@ function DeckDetailPanel({
       });
       setExpiryEnabled(!!deck.expires_at);
       setExpiryDate(deck.expires_at ? deck.expires_at.split("T")[0] : "");
+      setRequireEmail(deck.require_email || false);
+      setRequirePassword(deck.require_password || false);
+      setViewPassword(deck.view_password || "");
       loadStats(deck.id);
       setNewFile(null);
       setUploadProgress("");
@@ -159,6 +183,9 @@ function DeckDetailPanel({
         file_url: finalFileUrl,
         pages: finalPages,
         file_size: fileSize,
+        require_email: requireEmail,
+        require_password: requirePassword,
+        view_password: viewPassword,
       };
 
       if (expiryEnabled && expiryDate) {
@@ -223,9 +250,9 @@ function DeckDetailPanel({
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-        className="relative w-full max-w-xl bg-slate-900 h-full shadow-2xl overflow-y-auto border-l border-white/5"
+        className="relative w-full max-w-xl bg-slate-900 h-full shadow-2xl overflow-y-auto border-l border-white/5 flex flex-col"
       >
-        <header className="sticky top-0 z-20 bg-slate-900/80 backdrop-blur-xl p-6 border-b border-white/5 flex items-center justify-between">
+        <header className="sticky top-0 z-20 bg-slate-900/80 backdrop-blur-xl p-6 border-b border-white/5 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-4">
             <button
               onClick={onClose}
@@ -244,7 +271,7 @@ function DeckDetailPanel({
           </a>
         </header>
 
-        <div className="p-8 space-y-12 pb-32">
+        <div className="p-8 space-y-14 pb-48 relative z-10 flex-grow">
           {/* Main Preview */}
           <section className="space-y-6">
             <div className="aspect-video w-full rounded-[32px] overflow-hidden bg-slate-800 border-4 border-white/5 shadow-2xl relative">
@@ -256,7 +283,6 @@ function DeckDetailPanel({
                     ? deck.pages[0]
                     : null;
 
-                // Handle stringified JSON
                 const pageCandidate = firstPage as any;
                 if (
                   typeof pageCandidate === "string" &&
@@ -266,10 +292,7 @@ function DeckDetailPanel({
                   try {
                     firstPage = JSON.parse(pageCandidate);
                   } catch (e) {
-                    console.error(
-                      "Detail: Failed to parse page JSON:",
-                      pageCandidate,
-                    );
+                    console.error("Detail Error:", e);
                   }
                 }
 
@@ -293,8 +316,6 @@ function DeckDetailPanel({
                     className="w-full h-full object-cover"
                     onError={(e: any) => {
                       e.target.style.display = "none";
-                      const sibling = e.target.nextElementSibling;
-                      if (sibling) sibling.classList.remove("hidden");
                     }}
                   />
                 );
@@ -327,10 +348,8 @@ function DeckDetailPanel({
           </section>
 
           {/* Quick Edit Actions */}
-          <section className="space-y-6">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deckly-primary">
-              Management
-            </h3>
+          <section className="space-y-8">
+            <SectionHeader>Management</SectionHeader>
             <div className="flex flex-col gap-6">
               <Input
                 label="Asset Name"
@@ -419,14 +438,74 @@ function DeckDetailPanel({
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* Advanced Protection */}
+              <div className="flex flex-col gap-1 p-6 rounded-[32px] bg-white/[0.03] border border-white/5 shadow-inner">
+                <div className="flex items-center gap-2 mb-4 px-1">
+                  <Lock size={14} className="text-deckly-primary" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                    Access Protection
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <Toggle
+                    label="Require Email to View"
+                    enabled={requireEmail}
+                    onToggle={setRequireEmail}
+                  />
+                  <div className="h-px bg-white/5 mx-1" />
+                  <Toggle
+                    label="Password Protected"
+                    enabled={requirePassword}
+                    onToggle={setRequirePassword}
+                  />
+                </div>
+
+                <AnimatePresence>
+                  {requirePassword && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                      animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                      exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="relative">
+                        <Input
+                          label="Viewing Password"
+                          type={showPasswordField ? "text" : "password"}
+                          value={viewPassword}
+                          onChange={(e) => setViewPassword(e.target.value)}
+                          placeholder="••••••••"
+                          required={requirePassword}
+                          icon={Lock}
+                          rightElement={
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowPasswordField(!showPasswordField)
+                              }
+                              className="text-slate-500 hover:text-white transition-colors p-1"
+                            >
+                              {showPasswordField ? (
+                                <EyeOff size={18} />
+                              ) : (
+                                <Eye size={18} />
+                              )}
+                            </button>
+                          }
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </section>
 
           {/* Quick Stats Overlay */}
-          <section className="space-y-6">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deckly-primary">
-              Engagement Summary
-            </h3>
+          <section className="space-y-8">
+            <SectionHeader icon={BarChart3}>Engagement Summary</SectionHeader>
             <div className="grid grid-cols-2 gap-4">
               <Card
                 variant="solid"
@@ -467,7 +546,11 @@ function DeckDetailPanel({
             <Button
               variant="secondary"
               fullWidth
-              onClick={() => onShowAnalytics(deck)}
+              onClick={() => {
+                onShowAnalytics(deck);
+                onClose();
+              }}
+              className="bg-deckly-secondary/5 text-deckly-secondary border border-deckly-secondary/20 hover:bg-deckly-secondary hover:text-slate-950 rounded-2xl py-4 font-black uppercase tracking-widest shadow-xl shadow-deckly-secondary/5 transition-all mt-4"
             >
               Full Analytics Report
             </Button>
@@ -475,13 +558,13 @@ function DeckDetailPanel({
         </div>
 
         {/* Global Actions */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 bg-slate-950/80 backdrop-blur-2xl border-t border-white/5 flex gap-4 z-30">
+        <div className="sticky bottom-0 left-0 right-0 p-8 bg-slate-900/60 backdrop-blur-3xl border-t border-white/10 flex gap-4 z-50 mt-auto">
           <Button
             variant="danger"
             onClick={() => onDelete(deck)}
             disabled={isSaving}
             icon={Trash2}
-            className="px-6"
+            className="px-6 rounded-2xl shadow-xl shadow-red-500/10"
           />
           <Button
             variant="primary"
@@ -489,6 +572,7 @@ function DeckDetailPanel({
             onClick={handleSave}
             loading={isSaving}
             icon={Save}
+            className="rounded-2xl py-4 font-black uppercase tracking-widest shadow-2xl shadow-deckly-primary/20"
           >
             {isSaving ? uploadProgress || "Saving" : "Sync Changes"}
           </Button>

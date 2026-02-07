@@ -4,6 +4,7 @@ import { cn } from "../../utils/cn";
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   icon?: React.ElementType;
+  rightElement?: React.ReactNode;
   error?: string | null;
   onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
 }
@@ -15,6 +16,7 @@ const Input: React.FC<InputProps> = ({
   placeholder,
   type = "text",
   icon: Icon,
+  rightElement,
   error,
   className = "",
   onClick,
@@ -54,6 +56,11 @@ const Input: React.FC<InputProps> = ({
           className="bg-transparent border-none outline-none w-full text-white placeholder-slate-600"
           {...props}
         />
+        {rightElement && (
+          <div className="flex items-center justify-center shrink-0">
+            {rightElement}
+          </div>
+        )}
       </div>
       {error && (
         <span className="text-xs text-deckly-accent px-1 font-medium animate-in fade-in slide-in-from-top-1">

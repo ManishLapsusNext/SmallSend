@@ -15,6 +15,9 @@ export interface Deck {
   created_at: string;
   description?: string;
   file_size?: number;
+  require_email?: boolean;
+  require_password?: boolean;
+  view_password?: string;
 }
 
 export interface DeckWithExpiry extends Deck {
@@ -36,4 +39,12 @@ export interface DeckStats {
   page_number: number;
   total_views: number;
   total_time_seconds: number;
+}
+
+export interface UserProfile {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  tier: 'FREE' | 'PRO';
+  updated_at: string | null;
 }

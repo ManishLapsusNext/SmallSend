@@ -4,6 +4,7 @@ import { X, BarChart3, Clock, Eye, Loader2, Zap } from "lucide-react";
 import { analyticsService } from "../services/analyticsService";
 import { Deck, DeckStats } from "../types";
 import { cn } from "../utils/cn";
+import { useAuth } from "../contexts/AuthContext";
 import Button from "./common/Button";
 import Card from "./common/Card";
 
@@ -16,11 +17,13 @@ function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
   const [stats, setStats] = useState<DeckStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"views" | "time">("views");
+  const { session } = useAuth();
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const data = await analyticsService.getDeckStats(deck.id);
+        const userId = session?.user?.id;
+        const data = await analyticsService.getDeckStats(deck.id, userId);
         setStats(data || []);
       } catch (err) {
         console.error("Failed to fetch stats:", err);
@@ -29,7 +32,7 @@ function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
       }
     };
     fetchStats();
-  }, [deck.id]);
+  }, [deck.id, session]);
 
   const totalViews = stats.reduce((acc, curr) => acc + curr.total_views, 0);
   const totalSeconds = stats.reduce(

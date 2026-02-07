@@ -19,50 +19,44 @@ import { supabase } from "../services/supabase";
 import defaultBanner from "../assets/banner.png";
 import AnalyticsModal from "./AnalyticsModal";
 import DeckDetailPanel from "./DeckDetailPanel";
-import { Deck } from "../types";
+import { Deck, BrandingSettings } from "../types";
 import { cn } from "../utils/cn";
 import Button from "./common/Button";
+import { useAuth } from "../contexts/AuthContext";
 
 interface DeckListProps {
   decks: Deck[];
+  branding: { room_name: string; banner_url: string };
   loading: boolean;
   onDelete: (deck: Deck) => void;
   onUpdate: (deck: Deck) => void;
+  onBrandingUpdate: (branding: Partial<BrandingSettings>) => void;
 }
 
-function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
-  const [branding, setBranding] = useState({
-    room_name: "Deckly",
-    banner_url:
-      "https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=2000",
-  });
+function DeckList({
+  decks,
+  branding: initialBranding,
+  loading,
+  onDelete,
+  onUpdate,
+  onBrandingUpdate,
+}: DeckListProps) {
+  const [branding, setBranding] = useState(initialBranding);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editValue, setEditValue] = useState("");
   const [showBrandingMenu, setShowBrandingMenu] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedAnalyticsDeck, setSelectedAnalyticsDeck] =
     useState<Deck | null>(null);
   const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { profile, isPro } = useAuth();
 
   useEffect(() => {
-    loadBranding();
-  }, []);
-
-  const loadBranding = async () => {
-    try {
-      const data = await deckService.getBrandingSettings();
-      if (data) {
-        setBranding({
-          room_name: data.room_name || "Deckly Data Room",
-          banner_url: data.banner_url || "",
-        });
-      }
-    } catch (err) {
-      console.error("Error loading branding:", err);
-    }
-  };
+    setBranding(initialBranding);
+  }, [initialBranding]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -75,15 +69,22 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
   };
 
   const handleSaveTitle = async () => {
-    if (editValue.trim() && editValue !== branding.room_name) {
-      try {
-        await deckService.updateBrandingSettings({ room_name: editValue });
-        setBranding((prev) => ({ ...prev, room_name: editValue }));
-      } catch (err: any) {
-        alert("Failed to update room name: " + err.message);
-      }
+    if (!editValue.trim() || editValue === branding.room_name) {
+      setIsEditingTitle(false);
+      return;
     }
-    setIsEditingTitle(false);
+
+    setSaving(true);
+    try {
+      await deckService.updateBrandingSettings({ room_name: editValue });
+      setBranding((prev) => ({ ...prev, room_name: editValue }));
+      onBrandingUpdate({ room_name: editValue });
+      setIsEditingTitle(false);
+    } catch (err: any) {
+      alert("Failed to update room name: " + err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,26 +192,60 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
                   Branding
                 </h3>
                 <button
-                  onClick={handleStartEdit}
-                  className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-deckly-primary/10 hover:text-deckly-primary text-sm transition-all text-slate-300 group/item"
+                  onClick={isPro ? handleStartEdit : undefined}
+                  className={cn(
+                    "flex items-center justify-between w-full p-2.5 rounded-xl text-sm transition-all group/item",
+                    isPro
+                      ? "hover:bg-deckly-primary/10 hover:text-deckly-primary text-slate-300"
+                      : "opacity-50 cursor-not-allowed text-slate-500",
+                  )}
+                  title={isPro ? "Edit Room Name" : "Pro Feature"}
                 >
-                  <Pencil
-                    size={14}
-                    strokeWidth={2.5}
-                    className="group-hover/item:scale-110 transition-transform flex-shrink-0"
-                  />
-                  Edit Room Name
+                  <div className="flex items-center gap-3">
+                    <Pencil
+                      size={14}
+                      strokeWidth={2.5}
+                      className={cn(
+                        isPro &&
+                          "group-hover/item:scale-110 transition-transform flex-shrink-0",
+                      )}
+                    />
+                    <span>Edit Room Name</span>
+                  </div>
+                  {!isPro && (
+                    <span className="text-[8px] font-black bg-white/10 px-1.5 py-0.5 rounded text-slate-400">
+                      PRO
+                    </span>
+                  )}
                 </button>
                 <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-deckly-primary/10 hover:text-deckly-primary text-sm transition-all text-slate-300 group/item"
+                  onClick={
+                    isPro ? () => fileInputRef.current?.click() : undefined
+                  }
+                  className={cn(
+                    "flex items-center justify-between w-full p-2.5 rounded-xl text-sm transition-all group/item",
+                    isPro
+                      ? "hover:bg-deckly-primary/10 hover:text-deckly-primary text-slate-300"
+                      : "opacity-50 cursor-not-allowed text-slate-500",
+                  )}
+                  title={isPro ? "Change Banner" : "Pro Feature"}
                 >
-                  <Upload
-                    size={14}
-                    strokeWidth={2.5}
-                    className="group-hover/item:scale-110 transition-transform flex-shrink-0"
-                  />
-                  Change Banner
+                  <div className="flex items-center gap-3">
+                    <Upload
+                      size={14}
+                      strokeWidth={2.5}
+                      className={cn(
+                        isPro &&
+                          "group-hover/item:scale-110 transition-transform flex-shrink-0",
+                      )}
+                    />
+                    <span>Change Banner</span>
+                  </div>
+                  {!isPro && (
+                    <span className="text-[8px] font-black bg-white/10 px-1.5 py-0.5 rounded text-slate-400">
+                      PRO
+                    </span>
+                  )}
                 </button>
                 <button
                   onClick={handleLogout}
@@ -262,32 +297,69 @@ function DeckList({ decks, loading, onDelete, onUpdate }: DeckListProps) {
                 />
                 <div className="flex gap-2">
                   <button
+                    type="button"
                     onClick={handleSaveTitle}
-                    className="w-10 h-10 rounded-full bg-deckly-primary flex items-center justify-center text-slate-950 hover:bg-opacity-90 transition-all shadow-lg shadow-deckly-primary/20 flex-shrink-0"
+                    disabled={saving}
+                    className={cn(
+                      "w-10 h-10 rounded-full bg-deckly-primary flex items-center justify-center text-slate-950 transition-all shadow-lg shadow-deckly-primary/20 flex-shrink-0",
+                      saving
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:bg-opacity-90",
+                    )}
                   >
-                    <Check
-                      size={20}
-                      strokeWidth={3}
-                      className="flex-shrink-0"
-                    />
+                    {saving ? (
+                      <div className="w-4 h-4 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
+                    ) : (
+                      <Check
+                        size={20}
+                        strokeWidth={3}
+                        className="flex-shrink-0"
+                      />
+                    )}
                   </button>
                   <button
-                    onClick={() => setIsEditingTitle(false)}
-                    className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white hover:bg-red-600 transition-all shadow-lg shadow-red-500/20 flex-shrink-0"
+                    type="button"
+                    onClick={() => !saving && setIsEditingTitle(false)}
+                    disabled={saving}
+                    className={cn(
+                      "w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white transition-all shadow-lg shadow-red-500/20 flex-shrink-0",
+                      saving
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:bg-red-600",
+                    )}
                   >
                     <X size={20} strokeWidth={3} className="flex-shrink-0" />
                   </button>
                 </div>
               </motion.div>
             ) : (
-              <motion.h1
+              <motion.div
                 key="display"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-4xl md:text-5xl font-black text-white tracking-tighter drop-shadow-2xl"
+                className="flex flex-col items-center gap-2"
               >
-                {branding.room_name}
-              </motion.h1>
+                <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter drop-shadow-2xl">
+                  {branding.room_name}
+                </h1>
+                {profile && (
+                  <div className="flex items-center gap-2 mt-2 px-4 py-1.5 bg-white/5 backdrop-blur-md rounded-full border border-white/10 shadow-lg">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-1">
+                      Welcome, {profile.full_name || "User"}
+                    </span>
+                    <div className="w-px h-3 bg-white/10 mx-1" />
+                    {isPro ? (
+                      <span className="text-[10px] font-black text-deckly-primary bg-deckly-primary/10 px-2 py-0.5 rounded-md border border-deckly-primary/20 tracking-tighter uppercase">
+                        PRO
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-slate-500 bg-white/5 px-2 py-0.5 rounded-md border border-white/10 tracking-tighter uppercase">
+                        FREE
+                      </span>
+                    )}
+                  </div>
+                )}
+              </motion.div>
             )}
           </AnimatePresence>
         </div>

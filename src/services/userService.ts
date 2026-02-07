@@ -1,0 +1,38 @@
+import { supabase } from './supabase';
+import { UserProfile } from '../types';
+
+export const userService = {
+  async getProfile(userId: string): Promise<UserProfile | null> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching profile:', error);
+      return null;
+    }
+
+    return data;
+  },
+
+  async updateProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile | null> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+
+    return data;
+  }
+};
