@@ -33,33 +33,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   useEffect(() => {
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        fetchProfile(session.user.id).finally(() => setLoading(false));
-      } else {
+    let mounted = true;
+
+    // Safety fallback: ensure loading is NEVER stuck for more than 5 seconds
+    const timeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn("Auth initialization timed out, proceeding anyway...");
         setLoading(false);
       }
-    });
+    }, 5000);
 
-    // Listen for auth changes
+    const initialize = async () => {
+      try {
+        // 1. Get initial session
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!mounted) return;
+
+        setSession(session);
+
+        if (session?.user) {
+          await fetchProfile(session.user.id);
+        }
+      } catch (err) {
+        console.error("Auth initialization error:", err);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+          clearTimeout(timeout);
+        }
+      }
+    };
+
+    initialize();
+
+    // 2. Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+
       setSession(session);
       if (session?.user) {
         await fetchProfile(session.user.id);
       } else {
         setProfile(null);
       }
-      setLoading(false);
+
+      // If this was a login/logout event, we definitely want to stop loading
+      if (
+        event === "SIGNED_IN" ||
+        event === "SIGNED_OUT" ||
+        event === "USER_UPDATED"
+      ) {
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const isPro = profile?.tier === "PRO";
+  const isPro = profile?.tier === "PRO" || profile?.tier === "PRO_PLUS";
 
   return (
     <AuthContext.Provider

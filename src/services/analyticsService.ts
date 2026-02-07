@@ -1,6 +1,7 @@
 import posthog from "posthog-js";
 import { supabase } from "./supabase";
 import { Deck, DeckStats } from "../types";
+import { getTierConfig } from "../constants/tiers";
 
 // Initialize PostHog
 const posthogKey = import.meta.env.VITE_PUBLIC_POSTHOG_KEY;
@@ -149,20 +150,39 @@ export const analyticsService = {
   },
 
   // Get stats for a specific deck (Management view)
-  async getDeckStats(deckId: string, providedUserId?: string): Promise<DeckStats[]> {
+  async getDeckStats(
+    deckId: string,
+    providedUserId?: string,
+  ): Promise<DeckStats[]> {
     let userId = providedUserId;
 
     if (!userId) {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
       userId = session.user.id;
     }
+
+    // Determine retention days (optimized check)
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("tier")
+      .eq("id", userId)
+      .single();
+
+    const isPro = profile?.tier === "PRO" || profile?.tier === "PRO_PLUS";
+    const tier = getTierConfig(isPro);
+    const cutoffDate = new Date(
+      Date.now() - tier.days * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
     const { data, error } = await supabase
       .from("deck_stats")
       .select("*")
       .eq("deck_id", deckId)
-      .eq("user_id", userId) 
+      .eq("user_id", userId)
+      .gt("updated_at", cutoffDate)
       .order("page_number", { ascending: true });
 
     if (error) throw error;

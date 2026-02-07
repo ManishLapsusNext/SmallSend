@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { X, BarChart3, Clock, Eye, Loader2, Zap } from "lucide-react";
+import { X, BarChart3, Clock, Eye, Loader2, Zap, History } from "lucide-react";
 import { analyticsService } from "../services/analyticsService";
 import { Deck, DeckStats } from "../types";
 import { cn } from "../utils/cn";
 import { useAuth } from "../contexts/AuthContext";
+import { getTierConfig } from "../constants/tiers";
 import Button from "./common/Button";
 import Card from "./common/Card";
 
@@ -17,12 +18,15 @@ function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
   const [stats, setStats] = useState<DeckStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"views" | "time">("views");
-  const { session } = useAuth();
+  const { session, isPro } = useAuth();
+  const tier = getTierConfig(!!isPro);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const userId = session?.user?.id;
+        // The service will automatically use the tier logic internally,
+        // but we could also pass it explicitly if we wanted to allow overrides.
         const data = await analyticsService.getDeckStats(deck.id, userId);
         setStats(data || []);
       } catch (err) {
@@ -70,9 +74,15 @@ function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
               <BarChart3 size={24} />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white tracking-tight">
-                Deck Insights
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-bold text-white tracking-tight">
+                  Deck Insights
+                </h3>
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                  <History size={10} className="text-deckly-primary" />
+                  {tier.label}
+                </div>
+              </div>
               <p className="text-sm text-slate-400 font-medium truncate max-w-[240px]">
                 {deck.title}
               </p>
