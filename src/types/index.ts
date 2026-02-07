@@ -15,6 +15,9 @@ export interface Deck {
   created_at: string;
   description?: string;
   file_size?: number;
+  require_email?: boolean;
+  require_password?: boolean;
+  view_password?: string;
 }
 
 export interface DeckWithExpiry extends Deck {

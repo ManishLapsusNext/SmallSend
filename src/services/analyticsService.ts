@@ -25,14 +25,15 @@ if (posthogKey) {
 
 export const analyticsService = {
   // Track when someone views a deck
-  trackDeckView(deck: Deck) {
+  trackDeckView(deck: Deck, metadata: Record<string, any> = {}) {
     if (!posthogKey) return;
 
     posthog.capture("deck_viewed", {
       deck_id: deck.id,
       deck_slug: deck.slug,
       deck_title: deck.title,
-      owner_id: deck.user_id, 
+      owner_id: deck.user_id,
+      ...metadata,
     });
   },
 
