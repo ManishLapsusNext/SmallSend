@@ -149,17 +149,20 @@ export const analyticsService = {
   },
 
   // Get stats for a specific deck (Management view)
-  async getDeckStats(deckId: string): Promise<DeckStats[]> {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("Not authenticated");
+  async getDeckStats(deckId: string, providedUserId?: string): Promise<DeckStats[]> {
+    let userId = providedUserId;
+
+    if (!userId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      userId = session.user.id;
+    }
 
     const { data, error } = await supabase
       .from("deck_stats")
       .select("*")
       .eq("deck_id", deckId)
-      .eq("user_id", session.user.id) 
+      .eq("user_id", userId) 
       .order("page_number", { ascending: true });
 
     if (error) throw error;
