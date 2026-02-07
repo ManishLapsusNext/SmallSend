@@ -3,16 +3,19 @@ import { Deck, BrandingSettings, SlidePage } from "../types";
 
 export const deckService = {
   // Get all decks for the logged-in user
-  async getAllDecks(): Promise<Deck[]> {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) return []; 
+  async getAllDecks(providedUserId?: string): Promise<Deck[]> {
+    let userId = providedUserId;
+
+    if (!userId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return [];
+      userId = session.user.id;
+    }
 
     const { data, error } = await supabase
       .from("decks")
       .select("*")
-      .eq("user_id", session.user.id)
+      .eq("user_id", userId)
       .order("display_order", { ascending: true });
 
     if (error) throw error;
@@ -127,27 +130,54 @@ export const deckService = {
   },
 
   // NEW: Upload processing images
-  async uploadSlideImages(userId: string, deckSlug: string, imageBlobs: Blob[]): Promise<string[]> {
-    const imageUrls: string[] = [];
-
+  async uploadSlideImages(
+    userId: string, 
+    deckSlug: string, 
+    imageBlobs: Blob[],
+    onProgress?: (current: number, total: number) => void
+  ): Promise<string[]> {
+    const imageUrls: string[] = new Array(imageBlobs.length);
     const timestamp = Date.now();
-    for (let i = 0; i < imageBlobs.length; i++) {
-      const fileName = `${userId}/deck-images/${deckSlug}/page-${i + 1}-${timestamp}.webp`;
+    const CONCURRENCY_LIMIT = 3;
 
-      const { error } = await supabase.storage
-        .from("decks")
-        .upload(fileName, imageBlobs[i], {
-          contentType: "image/webp",
-          upsert: true,
-        });
+    // Helper for a single upload with retry
+    const uploadSingle = async (index: number) => {
+      const fileName = `${userId}/deck-images/${deckSlug}/page-${index + 1}-${timestamp}.webp`;
+      
+      let attempts = 0;
+      const maxAttempts = 3;
 
-      if (error) throw error;
+      while (attempts < maxAttempts) {
+        try {
+          const { error } = await supabase.storage
+            .from("decks")
+            .upload(fileName, imageBlobs[index], {
+              contentType: "image/webp",
+              upsert: true,
+            });
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("decks").getPublicUrl(fileName);
+          if (error) throw error;
 
-      imageUrls.push(publicUrl);
+          const { data: { publicUrl } } = supabase.storage.from("decks").getPublicUrl(fileName);
+          imageUrls[index] = publicUrl;
+          
+          if (onProgress) {
+            const completedCount = imageUrls.filter(Boolean).length;
+            onProgress(completedCount, imageBlobs.length);
+          }
+          return;
+        } catch (err) {
+          attempts++;
+          if (attempts === maxAttempts) throw err;
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempts)); // Backoff
+        }
+      }
+    };
+
+    // Run in parallel with concurrency limit
+    for (let i = 0; i < imageBlobs.length; i += CONCURRENCY_LIMIT) {
+      const chunk = imageBlobs.slice(i, i + CONCURRENCY_LIMIT).map((_, idx) => uploadSingle(i + idx));
+      await Promise.all(chunk);
     }
 
     return imageUrls;
@@ -192,16 +222,19 @@ export const deckService = {
   },
 
   // Get global branding settings (for the current user)
-  async getBrandingSettings(): Promise<BrandingSettings | null> {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) return null;
+  async getBrandingSettings(providedUserId?: string): Promise<BrandingSettings | null> {
+    let userId = providedUserId;
+
+    if (!userId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
+      userId = session.user.id;
+    }
 
     const { data, error } = await supabase
       .from("branding")
       .select("*")
-      .eq("user_id", session.user.id)
+      .eq("user_id", userId)
       .single();
 
     if (error && error.code !== "PGRST116") throw error; 
@@ -220,7 +253,7 @@ export const deckService = {
       .from("branding")
       .select("id")
       .eq("user_id", session.user.id)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       const { data, error } = await supabase

@@ -159,11 +159,14 @@ function ManageDeck() {
         }
 
         const imageBlobs = await processPdfToImages(file);
-        setProgress(`Uploading ${imageBlobs.length} new slides...`);
+        setProgress(`Uploading slide 1 of ${imageBlobs.length}...`);
         const imageUrls = await deckService.uploadSlideImages(
           userId,
           slug,
           imageBlobs,
+          (current, total) => {
+            setProgress(`Uploading slide ${current} of ${total}...`);
+          },
         );
         finalPages = imageUrls.map((url, idx) => ({
           image_url: url,
@@ -197,11 +200,14 @@ function ManageDeck() {
         });
 
         const imageBlobs = await processPdfToImages(file as File);
-        setProgress(`Uploading ${imageBlobs.length} slides...`);
+        setProgress(`Uploading slide 1 of ${imageBlobs.length}...`);
         const imageUrls = await deckService.uploadSlideImages(
           userId,
           slug,
           imageBlobs,
+          (current, total) => {
+            setProgress(`Uploading slide ${current} of ${total}...`);
+          },
         );
 
         const pages: SlidePage[] = imageUrls.map((url, idx) => ({
