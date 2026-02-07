@@ -22,21 +22,44 @@ function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
   const tier = getTierConfig(!!isPro);
 
   useEffect(() => {
+    let mounted = true;
+
+    // Safety timeout: stop loading after 8 seconds even if request hangs
+    const timeout = setTimeout(() => {
+      if (mounted && loading) {
+        setLoading(false);
+        console.warn("Analytics fetch timed out");
+      }
+    }, 8000);
+
     const fetchStats = async () => {
       try {
         const userId = session?.user?.id;
-        // The service will automatically use the tier logic internally,
-        // but we could also pass it explicitly if we wanted to allow overrides.
-        const data = await analyticsService.getDeckStats(deck.id, userId);
-        setStats(data || []);
+        // Optimization: Pass isPro directly from AuthContext to avoid redundant service-side queries
+        const data = await analyticsService.getDeckStats(
+          deck.id,
+          !!isPro,
+          userId,
+        );
+        if (mounted) {
+          setStats(data || []);
+        }
       } catch (err) {
         console.error("Failed to fetch stats:", err);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          clearTimeout(timeout);
+        }
       }
     };
     fetchStats();
-  }, [deck.id, session]);
+
+    return () => {
+      mounted = false;
+      clearTimeout(timeout);
+    };
+  }, [deck.id, session, isPro]);
 
   const totalViews = stats.reduce((acc, curr) => acc + curr.total_views, 0);
   const totalSeconds = stats.reduce(

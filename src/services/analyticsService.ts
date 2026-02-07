@@ -152,6 +152,7 @@ export const analyticsService = {
   // Get stats for a specific deck (Management view)
   async getDeckStats(
     deckId: string,
+    isPro: boolean = false,
     providedUserId?: string,
   ): Promise<DeckStats[]> {
     let userId = providedUserId;
@@ -164,14 +165,6 @@ export const analyticsService = {
       userId = session.user.id;
     }
 
-    // Determine retention days (optimized check)
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("tier")
-      .eq("id", userId)
-      .single();
-
-    const isPro = profile?.tier === "PRO" || profile?.tier === "PRO_PLUS";
     const tier = getTierConfig(isPro);
     const cutoffDate = new Date(
       Date.now() - tier.days * 24 * 60 * 60 * 1000,
