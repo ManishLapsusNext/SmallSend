@@ -24,6 +24,9 @@ if (posthogKey) {
   console.warn("PostHog key not found - analytics disabled");
 }
 
+const statsCache = new Map<string, { data: DeckStats[]; timestamp: number }>();
+const CACHE_TTL = 30000; // 30 seconds cache
+
 export const analyticsService = {
   // Track when someone views a deck
   trackDeckView(deck: Deck, metadata: Record<string, any> = {}) {
@@ -154,6 +157,7 @@ export const analyticsService = {
     deckId: string,
     isPro: boolean = false,
     providedUserId?: string,
+    forceRefresh: boolean = false,
   ): Promise<DeckStats[]> {
     let userId = providedUserId;
 
@@ -166,6 +170,14 @@ export const analyticsService = {
     }
 
     const tier = getTierConfig(isPro);
+    
+    // Cache check
+    const cacheKey = `${deckId}-${userId}-${tier.days}`;
+    const cached = statsCache.get(cacheKey);
+    if (!forceRefresh && cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.data;
+    }
+
     const cutoffDate = new Date(
       Date.now() - tier.days * 24 * 60 * 60 * 1000,
     ).toISOString();
@@ -179,6 +191,11 @@ export const analyticsService = {
       .order("page_number", { ascending: true });
 
     if (error) throw error;
-    return data as DeckStats[];
+    
+    // Save to cache
+    const result = data as DeckStats[];
+    statsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    
+    return result;
   },
 };
