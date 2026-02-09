@@ -9,17 +9,17 @@ export interface TierConfig {
 export const TIER_CONFIG: Record<Tier, TierConfig> = {
   FREE: {
     days: 7,
-    label: "7-Day History",
+    label: "7 Day Analytics",
     isMaximum: false,
   },
   PRO: {
-    days: 60,
-    label: "60-Day History",
+    days: 90,
+    label: "90 Day Analytics",
     isMaximum: true,
   },
   PRO_PLUS: {
     days: 365,
-    label: "1-Year History",
+    label: "1 Year Analytics",
     isMaximum: true,
   },
 };
