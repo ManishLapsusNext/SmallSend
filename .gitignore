@@ -26,3 +26,6 @@ dist-ssr
 
 
 .env.local
+
+# Documentation Hub (Founder Data Room)
+docs/

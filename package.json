@@ -10,7 +10,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "invoke": "supabase functions invoke pdf-processor --payload-file ./payload.json",
-    "invoke:direct": ".\\node_modules\\.bin\\supabase functions invoke pdf-processor --payload-file ./payload.json"
+    "invoke:direct": ".\\node_modules\\.bin\\supabase functions invoke pdf-processor --payload-file ./payload.json",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.76.1",
@@ -40,6 +43,7 @@
     "supabase": "^2.54.11",
     "tailwindcss": "3.4",
     "typescript": "^5.9.3",
-    "vite": "^7.1.7"
+    "vite": "^7.1.7",
+    "vitepress": "^2.0.0-alpha.16"
   }
 }
