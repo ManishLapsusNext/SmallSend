@@ -76,8 +76,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           error,
         } = await Promise.race([sessionPromise as any, timeoutPromise as any]);
 
-        if (error) throw error;
-        if (!mounted) return;
+        if (error) {
+          throw error;
+        }
+
+        if (!mounted) {
+          return;
+        }
 
         setSession(session);
 

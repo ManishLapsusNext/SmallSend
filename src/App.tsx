@@ -21,11 +21,13 @@ const AppContent = () => {
     let timeout: NodeJS.Timeout;
     if (loading) {
       timeout = setTimeout(() => setShowSlowMessage(true), 8000);
+    } else {
+      setShowSlowMessage(false);
     }
     return () => clearTimeout(timeout);
   }, [loading]);
 
-  if (loading || initializationError === "connection_slow") {
+  if (loading) {
     return (
       <div className="min-h-screen bg-deckly-background flex flex-col items-center justify-center p-6 text-center">
         <div className="w-16 h-16 mb-8 relative">
@@ -34,24 +36,31 @@ const AppContent = () => {
         </div>
 
         <h2 className="text-xl font-bold text-white mb-2">
-          {showSlowMessage || initializationError === "connection_slow"
+          {initializationError === "connection_slow" || showSlowMessage
             ? "Waking up the Database..."
             : "Initializing Deckly..."}
         </h2>
 
         <p className="text-slate-400 text-sm max-w-[280px] leading-relaxed mb-8">
-          {showSlowMessage || initializationError === "connection_slow"
-            ? "Supabase free-tier projects sometimes take a few seconds to wake up after being idle. Thanks for your patience!"
+          {initializationError === "connection_slow" || showSlowMessage
+            ? "Supabase free-tier projects take a few seconds to wake up after being idle. Thanks for your patience!"
             : "Gathering your pitch decks and insights."}
         </p>
 
         {(showSlowMessage || initializationError === "connection_slow") && (
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm font-bold hover:bg-white/10 transition-all active:scale-95"
-          >
-            Refresh if it's too slow
-          </button>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2.5 bg-deckly-primary text-slate-950 rounded-xl text-sm font-bold hover:bg-opacity-90 transition-all active:scale-95"
+            >
+              Refresh App
+            </button>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+              Tip: Press <kbd className="bg-white/10 px-1 rounded">F12</kbd> or{" "}
+              <kbd className="bg-white/10 px-1 rounded">Cmd+Opt+I</kbd> to see
+              diagnostic logs
+            </p>
+          </div>
         )}
       </div>
     );
