@@ -1,6 +1,7 @@
 import posthog from "posthog-js";
 import { supabase } from "./supabase";
 import { Deck, DeckStats } from "../types";
+import { getTierConfig } from "../constants/tiers";
 
 // Initialize PostHog
 const posthogKey = import.meta.env.VITE_PUBLIC_POSTHOG_KEY;
@@ -22,6 +23,9 @@ if (posthogKey) {
 } else {
   console.warn("PostHog key not found - analytics disabled");
 }
+
+const statsCache = new Map<string, { data: DeckStats[]; timestamp: number }>();
+const CACHE_TTL = 30000; // 30 seconds cache
 
 export const analyticsService = {
   // Track when someone views a deck
@@ -149,23 +153,49 @@ export const analyticsService = {
   },
 
   // Get stats for a specific deck (Management view)
-  async getDeckStats(deckId: string, providedUserId?: string): Promise<DeckStats[]> {
+  async getDeckStats(
+    deckId: string,
+    isPro: boolean = false,
+    providedUserId?: string,
+    forceRefresh: boolean = false,
+  ): Promise<DeckStats[]> {
     let userId = providedUserId;
 
     if (!userId) {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
       userId = session.user.id;
     }
+
+    const tier = getTierConfig(isPro);
+    
+    // Cache check
+    const cacheKey = `${deckId}-${userId}-${tier.days}`;
+    const cached = statsCache.get(cacheKey);
+    if (!forceRefresh && cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.data;
+    }
+
+    const cutoffDate = new Date(
+      Date.now() - tier.days * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
     const { data, error } = await supabase
       .from("deck_stats")
       .select("*")
       .eq("deck_id", deckId)
-      .eq("user_id", userId) 
+      .eq("user_id", userId)
+      .gt("updated_at", cutoffDate)
       .order("page_number", { ascending: true });
 
     if (error) throw error;
-    return data as DeckStats[];
+    
+    // Save to cache
+    const result = data as DeckStats[];
+    statsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    
+    return result;
   },
 };
