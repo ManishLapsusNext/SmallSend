@@ -45,6 +45,6 @@ export interface UserProfile {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
-  tier: 'FREE' | 'PRO';
+  tier: 'FREE' | 'PRO' | 'PRO_PLUS';
   updated_at: string | null;
 }
