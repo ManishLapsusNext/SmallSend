@@ -50,6 +50,9 @@ CREATE TABLE IF NOT EXISTS public.deck_stats (
     PRIMARY KEY (deck_id, page_number)
 );
 
+-- Optimized index for dashboard retrieval (filtering by deck, owner, and date)
+CREATE INDEX IF NOT EXISTS idx_deck_stats_dashboard ON public.deck_stats(deck_id, user_id, updated_at);
+
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.decks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.branding ENABLE ROW LEVEL SECURITY;
