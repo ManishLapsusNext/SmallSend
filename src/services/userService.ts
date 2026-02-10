@@ -7,10 +7,10 @@ export const userService = {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      console.error('Error fetching profile:', error);
+      console.error(`[User Service] Error fetching profile:`, error);
       return null;
     }
 

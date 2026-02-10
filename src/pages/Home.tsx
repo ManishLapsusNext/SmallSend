@@ -29,7 +29,6 @@ function Home() {
       setBranding(brandingData);
     } catch (err: any) {
       setError(err.message);
-      console.error("Error loading dashboard data:", err);
     } finally {
       setLoading(false);
     }

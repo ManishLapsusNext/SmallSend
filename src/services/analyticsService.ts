@@ -3,29 +3,12 @@ import { supabase } from "./supabase";
 import { Deck, DeckStats } from "../types";
 import { getTierConfig } from "../constants/tiers";
 
-// Initialize PostHog
+// Note: posthog.init is handled globally in main.tsx via PostHogProvider
 const posthogKey = import.meta.env.VITE_PUBLIC_POSTHOG_KEY;
-const posthogHost =
-  import.meta.env.VITE_PUBLIC_POSTHOG_HOST || "https://app.posthog.com";
-
-if (posthogKey) {
-  posthog.init(posthogKey, {
-    api_host: posthogHost,
-    defaults: {
-      "release_date": "2025-05-24"
-    } as any,
-    autocapture: true,
-    capture_pageview: true,
-    capture_pageleave: true,
-    capture_exceptions: true, 
-    debug: import.meta.env.MODE === "development",
-  });
-} else {
-  console.warn("PostHog key not found - analytics disabled");
-}
 
 const statsCache = new Map<string, { data: DeckStats[]; timestamp: number }>();
-const CACHE_TTL = 30000; // 30 seconds cache
+const pendingRequests = new Map<string, Promise<DeckStats[]>>();
+const CACHE_TTL = 120000; // 2 minutes cache
 
 export const analyticsService = {
   // Track when someone views a deck
@@ -88,7 +71,11 @@ export const analyticsService = {
   },
 
   // Sync stats to Supabase for user dashboard
-  async syncSlideStats(deck: Deck, pageNumber: number, timeSpent: number): Promise<void> {
+  async syncSlideStats(
+    deck: Deck,
+    pageNumber: number,
+    timeSpent: number,
+  ): Promise<void> {
     try {
       const visitorId = this.getVisitorId();
       const twentyFourHoursAgo = new Date(
@@ -170,7 +157,7 @@ export const analyticsService = {
     }
 
     const tier = getTierConfig(isPro);
-    
+
     // Cache check
     const cacheKey = `${deckId}-${userId}-${tier.days}`;
     const cached = statsCache.get(cacheKey);
@@ -178,24 +165,36 @@ export const analyticsService = {
       return cached.data;
     }
 
-    const cutoffDate = new Date(
-      Date.now() - tier.days * 24 * 60 * 60 * 1000,
-    ).toISOString();
+    // Request collapsing: if a request for this key is already in flight, reuse its promise
+    if (!forceRefresh && pendingRequests.has(cacheKey)) {
+      return pendingRequests.get(cacheKey)!;
+    }
 
-    const { data, error } = await supabase
-      .from("deck_stats")
-      .select("*")
-      .eq("deck_id", deckId)
-      .eq("user_id", userId)
-      .gt("updated_at", cutoffDate)
-      .order("page_number", { ascending: true });
+    const fetchPromise = (async () => {
+      try {
+        const cutoffDate = new Date(
+          Date.now() - tier.days * 24 * 60 * 60 * 1000,
+        ).toISOString();
 
-    if (error) throw error;
-    
-    // Save to cache
-    const result = data as DeckStats[];
-    statsCache.set(cacheKey, { data: result, timestamp: Date.now() });
-    
-    return result;
+        const { data, error } = await supabase
+          .from("deck_stats")
+          .select("*")
+          .eq("deck_id", deckId)
+          .eq("user_id", userId)
+          .gt("updated_at", cutoffDate)
+          .order("page_number", { ascending: true });
+
+        if (error) throw error;
+
+        const result = data as DeckStats[];
+        statsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+        return result;
+      } finally {
+        pendingRequests.delete(cacheKey);
+      }
+    })();
+
+    pendingRequests.set(cacheKey, fetchPromise);
+    return fetchPromise;
   },
 };

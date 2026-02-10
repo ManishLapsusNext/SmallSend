@@ -35,17 +35,19 @@ export const deckService = {
   },
 
   // Get single deck by ID (management use)
-  async getDeckById(id: string): Promise<Deck> {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("Not authenticated");
+  async getDeckById(id: string, providedUserId?: string): Promise<Deck> {
+    let userId = providedUserId;
+    if (!userId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      userId = session.user.id;
+    }
 
     const { data, error } = await supabase
       .from("decks")
       .select("*")
       .eq("id", id)
-      .eq("user_id", session.user.id) 
+      .eq("user_id", userId) 
       .single();
 
     if (error) throw error;
@@ -93,12 +95,13 @@ export const deckService = {
   },
 
   // Delete deck
-  async deleteDeck(id: string, fileUrl: string, slug: string): Promise<void> {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("Not authenticated");
-    const userId = session.user.id;
+  async deleteDeck(id: string, fileUrl: string, slug: string, providedUserId?: string): Promise<void> {
+    let userId = providedUserId;
+    if (!userId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      userId = session.user.id;
+    }
 
     // 1. Delete the PDF file
     const urlParts = fileUrl.split("/storage/v1/object/public/decks/");
@@ -184,17 +187,19 @@ export const deckService = {
   },
 
   // NEW: Update deck with processed pages (with ownership check)
-  async updateDeckPages(deckId: string, pages: SlidePage[]): Promise<Deck> {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("Not authenticated");
+  async updateDeckPages(deckId: string, pages: SlidePage[], providedUserId?: string): Promise<Deck> {
+    let userId = providedUserId;
+    if (!userId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      userId = session.user.id;
+    }
 
     const { data, error } = await supabase
       .from("decks")
       .update({ pages, status: "PROCESSED" })
       .eq("id", deckId)
-      .eq("user_id", session.user.id) 
+      .eq("user_id", userId) 
       .select()
       .single();
 
@@ -203,17 +208,19 @@ export const deckService = {
   },
 
   // Update deck generic
-  async updateDeck(deckId: string, updates: Partial<Deck>): Promise<Deck> {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("Not authenticated");
+  async updateDeck(deckId: string, updates: Partial<Deck>, providedUserId?: string): Promise<Deck> {
+    let userId = providedUserId;
+    if (!userId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      userId = session.user.id;
+    }
 
     const { data, error } = await supabase
       .from("decks")
       .update(updates)
       .eq("id", deckId)
-      .eq("user_id", session.user.id)
+      .eq("user_id", userId)
       .select()
       .single();
 
@@ -242,17 +249,19 @@ export const deckService = {
   },
 
   // Update global branding settings
-  async updateBrandingSettings(settings: Partial<BrandingSettings>): Promise<BrandingSettings> {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("Not authenticated");
+  async updateBrandingSettings(settings: Partial<BrandingSettings>, providedUserId?: string): Promise<BrandingSettings> {
+    let userId = providedUserId;
+    if (!userId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      userId = session.user.id;
+    }
 
     // Get existing record if any
     const { data: existing } = await supabase
       .from("branding")
       .select("id")
-      .eq("user_id", session.user.id)
+      .eq("user_id", userId)
       .maybeSingle();
 
     if (existing) {
@@ -267,7 +276,7 @@ export const deckService = {
     } else {
       const { data, error } = await supabase
         .from("branding")
-        .insert([{ ...settings, user_id: session.user.id }])
+        .insert([{ ...settings, user_id: userId }])
         .select()
         .single();
       if (error) throw error;

@@ -25,6 +25,8 @@ interface AnalyticsModalProps {
 }
 
 function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
+  const { session, isPro } = useAuth();
+  const userId = session?.user?.id;
   const [stats, setStats] = useState<DeckStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<"timeout" | "failed" | null>(null);
@@ -32,7 +34,6 @@ function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
     "views",
   );
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const { session, isPro } = useAuth();
   const tier = getTierConfig(!!isPro);
 
   useEffect(() => {
@@ -53,15 +54,14 @@ function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
       }, 15000);
 
       try {
-        const userId = session?.user?.id;
-        const data = await analyticsService.getDeckStats(
+        const pageStats = await analyticsService.getDeckStats(
           deck.id,
-          !!isPro,
+          isPro,
           userId,
           refreshTrigger > 0, // Force refresh if triggered manually
         );
         if (mounted) {
-          setStats(data || []);
+          setStats(pageStats || []);
           setError(null);
         }
       } catch (err) {
