@@ -1,4 +1,5 @@
 import posthog from "posthog-js";
+import { withRetry } from "../utils/resilience";
 import { supabase } from "./supabase";
 import { Deck, DeckStats } from "../types";
 import { getTierConfig } from "../constants/tiers";
@@ -170,7 +171,7 @@ export const analyticsService = {
       return pendingRequests.get(cacheKey)!;
     }
 
-    const fetchPromise = (async () => {
+    const fetchPromise = withRetry(async () => {
       try {
         const cutoffDate = new Date(
           Date.now() - tier.days * 24 * 60 * 60 * 1000,
@@ -192,7 +193,7 @@ export const analyticsService = {
       } finally {
         pendingRequests.delete(cacheKey);
       }
-    })();
+    });
 
     pendingRequests.set(cacheKey, fetchPromise);
     return fetchPromise;

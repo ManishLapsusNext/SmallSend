@@ -1,25 +1,28 @@
 import { supabase } from "./supabase";
 import { Deck, BrandingSettings, SlidePage } from "../types";
+import { withRetry } from "../utils/resilience";
 
 export const deckService = {
   // Get all decks for the logged-in user
   async getAllDecks(providedUserId?: string): Promise<Deck[]> {
-    let userId = providedUserId;
+    return withRetry(async () => {
+      let userId = providedUserId;
 
-    if (!userId) {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return [];
-      userId = session.user.id;
-    }
+      if (!userId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return [];
+        userId = session.user.id;
+      }
 
-    const { data, error } = await supabase
-      .from("decks")
-      .select("*")
-      .eq("user_id", userId)
-      .order("display_order", { ascending: true });
+      const { data, error } = await supabase
+        .from("decks")
+        .select("*")
+        .eq("user_id", userId)
+        .order("display_order", { ascending: true });
 
-    if (error) throw error;
-    return data as Deck[];
+      if (error) throw error;
+      return data as Deck[];
+    });
   },
 
   // Get single deck by slug
@@ -230,22 +233,24 @@ export const deckService = {
 
   // Get global branding settings (for the current user)
   async getBrandingSettings(providedUserId?: string): Promise<BrandingSettings | null> {
-    let userId = providedUserId;
+    return withRetry(async () => {
+      let userId = providedUserId;
 
-    if (!userId) {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return null;
-      userId = session.user.id;
-    }
+      if (!userId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return null;
+        userId = session.user.id;
+      }
 
-    const { data, error } = await supabase
-      .from("branding")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
+      const { data, error } = await supabase
+        .from("branding")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
 
-    if (error && error.code !== "PGRST116") throw error; 
-    return data as BrandingSettings;
+      if (error && error.code !== "PGRST116") throw error; 
+      return data as BrandingSettings;
+    });
   },
 
   // Update global branding settings
