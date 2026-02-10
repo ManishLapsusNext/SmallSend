@@ -20,12 +20,14 @@ const AppContent = () => {
   useEffect(() => {
     let timeout: NodeJS.Timeout;
     if (loading) {
-      timeout = setTimeout(() => setShowSlowMessage(true), 8000);
+      timeout = setTimeout(() => {
+        setShowSlowMessage(true);
+      }, 8000);
     } else {
       setShowSlowMessage(false);
     }
     return () => clearTimeout(timeout);
-  }, [loading]);
+  }, [loading, initializationError, !!session]);
 
   if (loading) {
     return (

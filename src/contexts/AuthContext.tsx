@@ -49,92 +49,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     let mounted = true;
 
-    // Safety fallback: ensure loading is NEVER stuck for more than 12 seconds
+    // Safety fallback: ensure loading is NEVER stuck for more than 15 seconds
     const safetyTimeout = setTimeout(() => {
       if (mounted && loadingRef.current) {
-        console.warn("Auth initialization timed out (12s safety fallback)");
+        console.warn(
+          "[Auth Context] Initialization timed out (15s safety fallback)",
+        );
         setLoading(false);
       }
-    }, 12000);
+    }, 15000);
 
     const initialize = async () => {
-      try {
-        // 1. Get initial session with a race to prevent indefinite hangs
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise<{
-          data: { session: null };
-          error: Error;
-        }>((_, reject) =>
-          setTimeout(
-            () => reject(new Error("Supabase session timeout (10s)")),
-            10000,
-          ),
-        );
-
-        const {
-          data: { session },
-          error,
-        } = await Promise.race([sessionPromise as any, timeoutPromise as any]);
-
-        if (error) {
-          throw error;
-        }
-
-        if (!mounted) {
-          return;
-        }
+      // 1. Listen for auth changes (handles both initial and updates)
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (_, session) => {
+        if (!mounted) return;
 
         setSession(session);
 
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          // Fetch profile but don't strictly block the UI if it's slow
+          fetchProfile(session.user.id);
+        } else {
+          setProfile(null);
         }
-      } catch (err: any) {
-        console.error("Auth initialization error:", err);
-        if (mounted) {
-          // If it's a cold start/timeout, we don't necessarily treat it as a hard failure
-          // but we log it. The app will proceed to login screen or dashboard.
-          if (err.message?.includes("timeout")) {
-            setInitializationError("connection_slow");
-          }
-        }
-      } finally {
-        if (mounted) {
+
+        // Always stop loading after the first session discovery or event
+        if (mounted && loadingRef.current) {
           setLoading(false);
           clearTimeout(safetyTimeout);
         }
+      });
+
+      // 2. Race the initial session fetch to detect slow connections
+      try {
+        const racePromise = Promise.race([
+          supabase.auth.getSession(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("timeout")), 8000),
+          ),
+        ]);
+        await (racePromise as any);
+      } catch (err: any) {
+        if (err.message === "timeout" && mounted) {
+          setInitializationError("connection_slow");
+        }
       }
+
+      return subscription;
     };
 
-    initialize();
-
-    // 2. Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
-
-      setSession(session);
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
-
-      // If this was a login/logout event, we definitely want to stop loading
-      if (
-        event === "SIGNED_IN" ||
-        event === "SIGNED_OUT" ||
-        event === "USER_UPDATED"
-      ) {
-        setLoading(false);
-      }
+    let authSubscription: { unsubscribe: () => void } | null = null;
+    initialize().then((sub) => {
+      authSubscription = sub;
     });
 
     return () => {
       mounted = false;
       clearTimeout(safetyTimeout);
-      subscription.unsubscribe();
+      if (authSubscription) authSubscription.unsubscribe();
     };
   }, []);
 
