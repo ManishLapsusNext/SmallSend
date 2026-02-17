@@ -1,20 +1,23 @@
 import { supabase } from './supabase';
 import { UserProfile } from '../types';
+import { withRetry } from '../utils/resilience';
 
 export const userService = {
   async getProfile(userId: string): Promise<UserProfile | null> {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    return withRetry(async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
 
-    if (error) {
-      console.error('Error fetching profile:', error);
-      return null;
-    }
+      if (error) {
+        console.error(`[User Service] Error fetching profile:`, error);
+        return null;
+      }
 
-    return data;
+      return data;
+    });
   },
 
   async updateProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile | null> {
