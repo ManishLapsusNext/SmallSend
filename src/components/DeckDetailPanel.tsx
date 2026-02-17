@@ -17,6 +17,7 @@ import {
 import { deckService } from "../services/deckService";
 import { analyticsService } from "../services/analyticsService";
 import { supabase } from "../services/supabase";
+import { useAuth } from "../contexts/AuthContext";
 import * as pdfjsLib from "pdfjs-dist";
 import { Deck, DeckWithExpiry } from "../types";
 import { cn } from "../utils/cn";
@@ -61,6 +62,8 @@ function DeckDetailPanel({
   onShowAnalytics,
   onUpdate,
 }: DeckDetailPanelProps) {
+  const { session } = useAuth();
+  const userId = session?.user?.id;
   const [editValues, setEditValues] = useState({
     title: "",
     slug: "",
@@ -96,8 +99,12 @@ function DeckDetailPanel({
 
   const loadStats = async (deckId: string) => {
     try {
-      // Pass isPro to getDeckStats to match the new signature
-      const pageStats = await analyticsService.getDeckStats(deckId, isPro);
+      // Pass isPro and userId to getDeckStats to match the new signature
+      const pageStats = await analyticsService.getDeckStats(
+        deckId,
+        isPro,
+        userId,
+      );
       if (pageStats && pageStats.length > 0) {
         const totalViews = pageStats.reduce((sum, s) => sum + s.total_views, 0);
         const totalTime = pageStats.reduce(
@@ -146,11 +153,7 @@ function DeckDetailPanel({
       let finalPages = deck.pages;
       let fileSize = deck.file_size;
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-      const userId = session.user.id;
+      if (!userId) throw new Error("Not authenticated");
 
       if (newFile) {
         setUploadProgress("Uploading new PDF...");
@@ -197,7 +200,7 @@ function DeckDetailPanel({
         updates.expires_at = null;
       }
 
-      const updated = await deckService.updateDeck(deck.id, updates);
+      const updated = await deckService.updateDeck(deck.id, updates, userId);
       onUpdate(updated);
       setUploadProgress("Saved!");
       setTimeout(() => {

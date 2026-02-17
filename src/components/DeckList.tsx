@@ -76,7 +76,10 @@ function DeckList({
 
     setSaving(true);
     try {
-      await deckService.updateBrandingSettings({ room_name: editValue });
+      await deckService.updateBrandingSettings(
+        { room_name: editValue },
+        profile?.id,
+      );
       setBranding((prev) => ({ ...prev, room_name: editValue }));
       onBrandingUpdate({ room_name: editValue });
       setIsEditingTitle(false);
@@ -114,7 +117,10 @@ function DeckList({
         data: { publicUrl },
       } = supabase.storage.from("decks").getPublicUrl(fileName);
 
-      await deckService.updateBrandingSettings({ banner_url: publicUrl });
+      await deckService.updateBrandingSettings(
+        { banner_url: publicUrl },
+        profile?.id,
+      );
       setBranding((prev) => ({ ...prev, banner_url: publicUrl }));
     } catch (err: any) {
       alert("Failed to upload banner: " + err.message);
