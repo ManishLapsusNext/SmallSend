@@ -289,6 +289,68 @@ export const deckService = {
     }
   },
 
+  // Get all decks with aggregated stats for Content management
+  async getDecksWithAnalytics(providedUserId?: string): Promise<any[]> {
+    return withRetry(async () => {
+      let userId = providedUserId;
+      if (!userId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return [];
+        userId = session.user.id;
+      }
+
+      // 1. Fetch decks
+      const { data: decks, error: decksError } = await supabase
+        .from("decks")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (decksError) throw decksError;
+      if (!decks || decks.length === 0) return [];
+
+      const deckIds = decks.map(d => d.id);
+
+      // 2. Fetch aggregated views and time from deck_stats
+      const { data: stats, error: statsError } = await supabase
+        .from("deck_stats")
+        .select("deck_id, total_views")
+        .in("deck_id", deckIds);
+
+      if (statsError) throw statsError;
+
+      // 3. Fetch Last Viewed (Max viewed_at) from deck_page_views
+      const { data: lastViews, error: lastViewError } = await supabase
+        .from("deck_page_views")
+        .select("deck_id, viewed_at")
+        .in("deck_id", deckIds)
+        .order("viewed_at", { ascending: false });
+
+      if (lastViewError) throw lastViewError;
+
+      // Group last views by deck_id (taking the first one since we ordered descending)
+      const lastViewMap: Record<string, string> = {};
+      (lastViews || []).forEach(v => {
+        if (!lastViewMap[v.deck_id]) {
+          lastViewMap[v.deck_id] = v.viewed_at;
+        }
+      });
+
+      // Sum stats by deck_id
+      const statsMap: Record<string, number> = {};
+      (stats || []).forEach(s => {
+        statsMap[s.deck_id] = (statsMap[s.deck_id] || 0) + s.total_views;
+      });
+
+      // 4. Merge data
+      return decks.map(deck => ({
+        ...deck,
+        total_views: statsMap[deck.id] || 0,
+        last_viewed_at: lastViewMap[deck.id] || null
+      }));
+    });
+  },
+
   // Helper for user-specific storage path
   async getStoragePath(slug: string, filename: string): Promise<string> {
     const {

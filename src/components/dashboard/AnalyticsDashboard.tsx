@@ -121,7 +121,6 @@ export function AnalyticsDashboard() {
             <SimpleBarChart
               labels={daily.labels}
               data={daily.visits}
-              maxVal={Math.max(...daily.visits, 10)}
               loading={loading}
             />
           </TabsContent>
@@ -133,7 +132,6 @@ export function AnalyticsDashboard() {
             <SimpleBarChart
               labels={daily.labels}
               data={daily.timeSpent}
-              maxVal={Math.max(...daily.timeSpent, 60)}
               loading={loading}
               isTime
             />
@@ -174,28 +172,59 @@ export function AnalyticsDashboard() {
   );
 }
 
+/**
+ * Finds a "nice" maximum value for the Y-axis to avoid awkward labels.
+ * E.g., for 46, returns 50. For 110, returns 150.
+ */
+function findNiceMax(val: number, minCeiling: number = 10): number {
+  if (val <= 0) return minCeiling;
+  const max = Math.max(val, minCeiling);
+
+  // For small numbers, round to nearest 5 or 10
+  if (max <= 50) return Math.ceil(max / 5) * 5;
+  if (max <= 100) return Math.ceil(max / 10) * 10;
+
+  // For larger numbers, find the magnitude
+  const magnitude = Math.pow(10, Math.floor(Math.log10(max)));
+  const normalized = max / magnitude;
+
+  let nice;
+  if (normalized <= 1) nice = 1;
+  else if (normalized <= 2) nice = 2;
+  else if (normalized <= 5) nice = 5;
+  else nice = 10;
+
+  return nice * magnitude;
+}
+
 function SimpleBarChart({
   labels,
   data,
-  maxVal,
   loading,
   isTime = false,
 }: {
   labels: string[];
   data: number[];
-  maxVal: number;
   loading: boolean;
   isTime?: boolean;
 }) {
+  const maxVal = Math.max(...data, 0);
+  const niceMax = findNiceMax(maxVal, isTime ? 60 : 10);
+
+  const formatYLabel = (val: number) => {
+    if (!isTime) return val;
+    if (val === 0) return "0";
+    if (val >= 60) return `${Math.round(val / 60)}m`;
+    return `${val}s`;
+  };
+
   return (
-    <div className="relative h-80 w-full flex items-end justify-between px-4 pb-2 border-l border-b border-slate-200">
-      {/* Y-Axis mock labels */}
-      <div className="absolute -left-8 bottom-0 top-0 flex flex-col justify-between text-[10px] font-bold text-slate-400 py-2">
-        <span>{Math.round(maxVal)}</span>
-        <span>{Math.round(maxVal * 0.75)}</span>
-        <span>{Math.round(maxVal * 0.5)}</span>
-        <span>{Math.round(maxVal * 0.25)}</span>
-        <span>0</span>
+    <div className="relative h-80 w-full flex items-end justify-center gap-8 px-4 pb-2 border-l border-b border-slate-200">
+      {/* Y-Axis labels - Dynamic */}
+      <div className="absolute -left-12 bottom-0 top-0 flex flex-col justify-between text-[10px] font-bold text-slate-400 py-2 text-right w-10">
+        {[1, 0.75, 0.5, 0.25, 0].map((ratio) => (
+          <span key={ratio}>{formatYLabel(Math.round(niceMax * ratio))}</span>
+        ))}
       </div>
 
       {loading
@@ -210,24 +239,32 @@ function SimpleBarChart({
         : data.map((val, i) => (
             <div
               key={i}
-              className="flex flex-col items-center gap-4 w-12 group relative"
+              className="flex flex-col items-center gap-2 w-12 group relative h-full"
             >
-              <div
-                className="w-8 bg-slate-900 rounded-full transition-all group-hover:bg-deckly-primary cursor-pointer peer"
-                style={{
-                  height: `${(val / maxVal) * 100}%`,
-                  minHeight: val > 0 ? "4px" : "0",
-                }}
-              ></div>
-              <span className="text-[10px] font-bold text-slate-400">
+              <div className="flex-1 w-full flex flex-col justify-end pb-1">
+                <div
+                  className="w-8 mx-auto bg-slate-900 rounded-full transition-all group-hover:bg-deckly-primary cursor-pointer peer flex flex-col justify-end overflow-hidden"
+                  style={{
+                    height: `${(val / niceMax) * 100}%`,
+                    minHeight: val > 0 ? "4px" : "0",
+                  }}
+                >
+                  {/* Subtle fill effect */}
+                  <div className="w-full h-1/2 bg-white/5" />
+                </div>
+              </div>
+
+              <span className="text-[10px] font-bold text-slate-400 shrink-0 group-hover:text-deckly-primary transition-colors">
                 {labels[i]}
               </span>
 
               {/* Tooltip */}
-              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-xl">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 peer-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap z-10 shadow-2xl scale-90 peer-hover:scale-100 origin-bottom border border-white/10">
                 {isTime
-                  ? `${Math.round(val / 60)}m ${Math.round(val % 60)}s`
-                  : val}
+                  ? `${Math.floor(val / 60)}m ${Math.round(val % 60)}s`
+                  : `${val} Visits`}
+                {/* Tooltip Arrow */}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
               </div>
             </div>
           ))}

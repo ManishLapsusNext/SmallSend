@@ -235,20 +235,25 @@ export const analyticsService = {
     const labels: string[] = [];
     const visits: number[] = [];
     const timeSpent: number[] = [];
+    const dateKeys: string[] = []; // YYYY-MM-DD for matching
 
-    // Initialize days
+    // Initialize days (Mon-Sun style, ending today)
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
+      
       labels.push(d.toLocaleDateString('en-US', { weekday: 'short' }));
+      dateKeys.push(d.toISOString().split('T')[0]);
       visits.push(0);
       timeSpent.push(0);
     }
 
     try {
-        const sevenDaysAgo = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
 
-        // 1. Fetch user's deck IDs first
+        // 1. Fetch user's deck IDs
         const { data: userDecks } = await supabase
             .from("decks")
             .select("id")
@@ -259,28 +264,24 @@ export const analyticsService = {
 
         const { data: vData, error: vError } = await supabase
             .from("deck_page_views")
-            .select("viewed_at, deck_id")
+            .select("viewed_at")
             .in("deck_id", deckIds)
-            .gt("viewed_at", sevenDaysAgo);
+            .gt("viewed_at", sevenDaysAgo.toISOString());
 
         if (vError) throw vError;
 
-        // Map visits to days
+        // Map visits to days using date keys
         (vData || []).forEach(v => {
-            const date = new Date(v.viewed_at);
-            const dayDiff = Math.floor((new Date().getTime() - date.getTime()) / (1000 * 3600 * 24));
-            const index = (days - 1) - dayDiff;
-            if (index >= 0 && index < days) {
+            const vDate = new Date(v.viewed_at).toISOString().split('T')[0];
+            const index = dateKeys.indexOf(vDate);
+            if (index !== -1) {
                 visits[index]++;
             }
         });
 
-        // 2. For time spent, we'll have to use deck_stats for now or a similar source
-        // Since deck_stats is current aggregate, we can't get history unless we have a history table.
-        // For this sprint, we'll simulate daily time spent relative to visits to show a "live" feel,
-        // while fetching the TOTAL accurately.
+        // 2. Simulate time spent relative to visits for now
         visits.forEach((v, i) => {
-            timeSpent[i] = v * (Math.random() * 60 + 30); // Simulated history
+            timeSpent[i] = v * (Math.random() * 60 + 30);
         });
 
     } catch (err) {
