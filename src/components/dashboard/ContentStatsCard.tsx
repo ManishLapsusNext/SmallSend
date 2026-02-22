@@ -39,14 +39,14 @@ export function ContentStatsCard({
   }, [totalViews, totalTimeSeconds]);
 
   return (
-    <DashboardCard className="py-12 px-8">
-      <div className="flex flex-col md:flex-row items-center justify-around gap-12">
+    <DashboardCard className="py-4 md:py-12 px-4 md:px-8">
+      <div className="flex flex-row items-center justify-around gap-2 md:gap-12">
         {stats.map((stat, i) => (
-          <div key={i} className="text-center group">
-            <div className="flex items-start justify-center gap-2 mb-1">
+          <div key={i} className="text-center group flex-1 min-w-0">
+            <div className="flex items-start justify-center gap-1 md:gap-2 mb-1">
               <span
                 className={cn(
-                  "text-6xl font-bold tracking-tighter transition-transform group-hover:scale-105 duration-300 text-deckly-primary",
+                  "text-2xl md:text-6xl font-bold tracking-tighter transition-transform group-hover:scale-105 duration-300 text-deckly-primary",
                 )}
               >
                 {loading ? "..." : stat.value}
@@ -54,13 +54,13 @@ export function ContentStatsCard({
               {stat.sub && (
                 <Badge
                   variant="outline"
-                  className="bg-slate-50 text-[8px] font-black uppercase text-slate-400 border-slate-200 mt-2"
+                  className="bg-slate-50 text-[8px] font-black uppercase text-slate-400 border-slate-200 mt-1 md:mt-2 hidden md:inline-flex"
                 >
                   {stat.sub}
                 </Badge>
               )}
             </div>
-            <p className="text-xs font-bold text-slate-900 uppercase tracking-widest">
+            <p className="text-[9px] md:text-xs font-bold text-slate-900 uppercase tracking-widest leading-tight">
               {stat.label}
             </p>
           </div>

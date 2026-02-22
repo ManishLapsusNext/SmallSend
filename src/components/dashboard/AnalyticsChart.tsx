@@ -1,5 +1,3 @@
-import { cn } from "@/lib/utils";
-
 interface AnalyticsChartProps {
   labels: string[];
   data: number[];
@@ -61,30 +59,30 @@ export function AnalyticsChart({
         </div>
 
         {/* Chart Grid Area */}
-        <div className="flex-1 border-l border-b border-slate-200 relative flex items-end justify-center gap-8 px-4">
+        <div className="flex-1 border-l border-b border-slate-200 relative flex items-end justify-between gap-1 px-2">
           {loading
             ? Array(7)
                 .fill(0)
                 .map((_, i) => (
                   <div
                     key={i}
-                    className="w-12 h-full flex flex-col justify-end pb-1"
+                    className="flex-1 max-w-12 h-full flex flex-col justify-end pb-1"
                   >
-                    <div className="w-8 mx-auto bg-slate-50 rounded-full h-32 animate-pulse" />
+                    <div className="w-full bg-slate-50 rounded-full h-32 animate-pulse" />
                   </div>
                 ))
             : data.map((val, i) => (
                 <div
                   key={i}
-                  className="w-12 h-full group relative flex flex-col justify-end"
+                  className="flex-1 max-w-12 h-full group relative flex flex-col justify-end"
                 >
-                  <div className="absolute inset-x-0 bottom-0 top-0 bg-slate-50/0 group-hover:bg-slate-50/50 transition-colors rounded-t-xl -mx-2 pointer-events-none" />
+                  <div className="absolute inset-x-0 bottom-0 top-0 bg-slate-50/0 group-hover:bg-slate-50/50 transition-colors rounded-t-xl pointer-events-none" />
 
                   <div
                     className="w-full flex flex-col justify-end pb-1 relative z-10 transition-all duration-500 ease-out"
                     style={{ height: `${(val / niceMax) * 100}%` }}
                   >
-                    <div className="w-8 mx-auto bg-slate-900 rounded-full transition-all group-hover:bg-deckly-primary cursor-pointer flex flex-col justify-end overflow-hidden shadow-sm group-hover:shadow-lg group-hover:shadow-deckly-primary/20 h-full">
+                    <div className="w-3/4 mx-auto bg-slate-900 rounded-full transition-all group-hover:bg-deckly-primary cursor-pointer flex flex-col justify-end overflow-hidden shadow-sm group-hover:shadow-lg group-hover:shadow-deckly-primary/20 h-full">
                       <div className="w-full h-1/2 bg-white/5" />
                     </div>
                   </div>
@@ -102,11 +100,14 @@ export function AnalyticsChart({
       </div>
 
       {/* X-Axis Labels */}
-      <div className="flex items-start mt-6 pl-12 h-6">
-        <div className="flex-1 flex justify-center gap-8 px-4">
+      <div className="flex items-start mt-2 pl-12 h-6">
+        <div className="flex-1 flex justify-between gap-1 px-2">
           {labels.map((label, i) => (
-            <div key={i} className="w-12 text-center group">
-              <span className="text-[10px] font-bold text-slate-400 group-hover:text-deckly-primary transition-colors block">
+            <div
+              key={i}
+              className="flex-1 max-w-12 text-center group overflow-hidden"
+            >
+              <span className="text-[9px] font-bold text-slate-400 group-hover:text-deckly-primary transition-colors block truncate">
                 {label}
               </span>
             </div>

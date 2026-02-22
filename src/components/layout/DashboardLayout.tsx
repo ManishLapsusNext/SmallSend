@@ -1,5 +1,6 @@
 import React from "react";
 import { Sidebar } from "./Sidebar";
+import { BottomNav } from "./BottomNav";
 import { Plus, Pencil, Check, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { deckService } from "../../services/deckService";
@@ -73,11 +74,14 @@ export function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-[#F8F9FA] overflow-hidden">
-      <Sidebar />
+      {/* Sidebar - desktop only */}
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Top Header */}
-        <header className="h-16 flex items-center justify-between px-8 bg-white border-b border-slate-200 shrink-0">
+        <header className="h-14 md:h-16 flex items-center justify-between px-4 md:px-8 bg-white border-b border-slate-200 shrink-0">
           <div className="flex items-center gap-4 flex-1">
             {isEditing ? (
               <div className="flex items-center gap-2 group">
@@ -110,7 +114,7 @@ export function DashboardLayout({
                 className="flex items-center gap-3 group cursor-pointer"
                 onClick={() => setIsEditing(true)}
               >
-                <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                <h1 className="text-lg md:text-2xl font-bold text-slate-900 flex items-center gap-3">
                   {loading && !roomName ? "..." : roomName}
                   {isRefreshing && !loading && (
                     <div className="w-1.5 h-1.5 bg-deckly-primary rounded-full animate-ping" />
@@ -124,7 +128,7 @@ export function DashboardLayout({
             )}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4">
             {/* Founder Mode Toggle Mockup */}
             <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full border border-slate-200">
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">
@@ -139,23 +143,28 @@ export function DashboardLayout({
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#F8F9FA]">
-          <div className="max-w-full px-4 md:px-12 mx-auto">{children}</div>
+          <div className="max-w-full px-2 md:px-12 mx-auto pb-20 md:pb-0">
+            {children}
+          </div>
         </div>
 
         {/* Floating Action Button */}
         {showFab && (
           <Link
             to="/upload"
-            className="fixed bottom-10 right-10 w-16 h-16 bg-deckly-primary rounded-full flex items-center justify-center text-white shadow-2xl shadow-deckly-primary/40 hover:scale-110 active:scale-95 transition-all z-[100] group"
+            className="fixed bottom-24 md:bottom-10 right-6 md:right-10 w-20 h-20 bg-deckly-primary rounded-full flex items-center justify-center text-white shadow-2xl shadow-deckly-primary/40 hover:scale-110 active:scale-95 transition-all z-[100] group"
           >
             <Plus
-              size={32}
+              size={36}
               strokeWidth={3}
               className="group-hover:rotate-90 transition-transform duration-300"
             />
           </Link>
         )}
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <BottomNav />
     </div>
   );
 }

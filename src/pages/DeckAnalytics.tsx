@@ -117,25 +117,27 @@ export default function DeckAnalytics() {
 
   return (
     <DashboardLayout title="Deck Analytics">
-      <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full">
+      <div className="flex-1 p-4 md:p-8 space-y-4 md:space-y-8 max-w-7xl mx-auto w-full">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <Button
             variant="ghost"
             onClick={() => navigate("/content")}
-            className="text-slate-400 hover:text-slate-900 px-2"
+            className="text-slate-400 hover:text-slate-900 px-2 self-start"
           >
             <ChevronLeft size={16} className="mr-2" />
             <span className="text-xs font-bold uppercase tracking-widest">
-              Back to Content
+              Back
             </span>
           </Button>
-          <h2 className="text-2xl font-bold text-slate-900">{deck?.title}</h2>
-          <div className="w-24" /> {/* Spacer */}
+          <h2 className="text-lg md:text-2xl font-bold text-slate-900 truncate">
+            {deck?.title}
+          </h2>
+          <div className="hidden md:block w-24" /> {/* Spacer */}
         </div>
 
         {/* Top Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
           <SummaryCard
             icon={<Eye />}
             label="Total Visit"
@@ -163,9 +165,9 @@ export default function DeckAnalytics() {
         </div>
 
         {/* Detailed Chart Section */}
-        <DashboardCard className="p-10">
-          <div className="flex flex-col space-y-12">
-            <div className="flex flex-col items-center space-y-8">
+        <DashboardCard className="p-4 md:p-10">
+          <div className="flex flex-col space-y-6 md:space-y-12">
+            <div className="flex flex-col items-center space-y-4 md:space-y-8">
               <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">
                 Engagement per Slide
               </h3>
@@ -184,7 +186,7 @@ export default function DeckAnalytics() {
                       key={tab.id}
                       value={tab.id}
                       className={cn(
-                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative overflow-hidden data-[state=active]:bg-deckly-primary data-[state=active]:text-white shadow-none",
+                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative overflow-hidden text-slate-700 data-[state=active]:bg-deckly-primary data-[state=active]:text-white shadow-none",
                         tab.comingSoon &&
                           "opacity-50 cursor-not-allowed grayscale",
                       )}
@@ -323,11 +325,11 @@ function SummaryCard({
   isPlaceholder = false,
 }: any) {
   return (
-    <DashboardCard className="p-8 group hover:border-slate-300 transition-all cursor-default">
-      <div className="flex items-start justify-between mb-6">
+    <DashboardCard className="p-4 md:p-8 group hover:border-slate-300 transition-all cursor-default">
+      <div className="flex items-start justify-between mb-3 md:mb-6">
         <div
           className={cn(
-            "w-12 h-12 rounded-2xl flex items-center justify-center text-white transition-transform group-hover:scale-110",
+            "w-8 h-8 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center text-white transition-transform group-hover:scale-110",
             color === "primary"
               ? "bg-deckly-primary"
               : color === "secondary"
@@ -336,13 +338,13 @@ function SummaryCard({
           )}
         >
           {React.isValidElement(icon)
-            ? React.cloneElement(icon as React.ReactElement<any>, { size: 24 })
+            ? React.cloneElement(icon as React.ReactElement<any>, { size: 16 })
             : icon}
         </div>
         {isPlaceholder && (
           <Badge
             variant="outline"
-            className="bg-slate-50 text-[7px] font-black uppercase text-slate-400 border-slate-200"
+            className="bg-slate-50 text-[7px] font-black uppercase text-slate-400 border-slate-200 hidden md:inline-flex"
           >
             Coming Soon
           </Badge>
@@ -352,14 +354,16 @@ function SummaryCard({
         <div className="flex items-baseline gap-1">
           <p
             className={cn(
-              "text-5xl font-bold mb-1 tracking-tighter",
-              isPlaceholder ? "text-slate-300 text-3xl" : "text-deckly-primary",
+              "text-2xl md:text-5xl font-bold mb-1 tracking-tighter",
+              isPlaceholder
+                ? "text-slate-300 text-xl md:text-3xl"
+                : "text-deckly-primary",
             )}
           >
             {value}
           </p>
         </div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+        <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight">
           {label}
         </p>
       </div>
