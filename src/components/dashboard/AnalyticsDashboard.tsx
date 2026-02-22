@@ -4,8 +4,11 @@ import { useAuth } from "../../contexts/AuthContext";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { DashboardCard } from "../ui/DashboardCard";
 import { Badge } from "../ui/badge";
+import { useSearchParams } from "react-router-dom";
 
 export function AnalyticsDashboard() {
+  const [searchParams] = useSearchParams();
+  const deckId = searchParams.get("deckId");
   const [stats, setStats] = useState({ totalViews: 0, totalTimeSeconds: 0 });
   const [daily, setDaily] = useState<{
     labels: string[];
@@ -17,9 +20,13 @@ export function AnalyticsDashboard() {
 
   useEffect(() => {
     if (session?.user?.id) {
+      setLoading(true);
       Promise.all([
-        analyticsService.getUserTotalStats(session.user.id),
-        analyticsService.getDailyMetrics(session.user.id),
+        analyticsService.getUserTotalStats(
+          session.user.id,
+          deckId || undefined,
+        ),
+        analyticsService.getDailyMetrics(session.user.id, deckId || undefined),
       ])
         .then(([total, dailyData]) => {
           setStats(total);
@@ -27,7 +34,7 @@ export function AnalyticsDashboard() {
         })
         .finally(() => setLoading(false));
     }
-  }, [session]);
+  }, [session, deckId]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -116,7 +123,7 @@ export function AnalyticsDashboard() {
 
           <TabsContent
             value="VISITS"
-            className="flex-1 m-0 p-8 flex flex-col justify-end"
+            className="flex-1 m-0 p-8 pb-12 flex flex-col justify-end"
           >
             <SimpleBarChart
               labels={daily.labels}
@@ -127,7 +134,7 @@ export function AnalyticsDashboard() {
 
           <TabsContent
             value="TIME"
-            className="flex-1 m-0 p-8 flex flex-col justify-end"
+            className="flex-1 m-0 p-8 pb-12 flex flex-col justify-end"
           >
             <SimpleBarChart
               labels={daily.labels}
@@ -219,55 +226,76 @@ function SimpleBarChart({
   };
 
   return (
-    <div className="relative h-80 w-full flex items-end justify-center gap-8 px-4 pb-2 border-l border-b border-slate-200">
-      {/* Y-Axis labels - Dynamic */}
-      <div className="absolute -left-12 bottom-0 top-0 flex flex-col justify-between text-[10px] font-bold text-slate-400 py-2 text-right w-10">
-        {[1, 0.75, 0.5, 0.25, 0].map((ratio) => (
-          <span key={ratio}>{formatYLabel(Math.round(niceMax * ratio))}</span>
-        ))}
+    <div className="w-full flex flex-col justify-end">
+      <div className="flex items-stretch h-64">
+        {/* Y-Axis Labels */}
+        <div className="w-12 flex flex-col justify-between py-0 pr-3 text-right">
+          {[1, 0.75, 0.5, 0.25, 0].map((ratio) => (
+            <span
+              key={ratio}
+              className="text-[10px] font-bold text-slate-400 leading-none h-0 flex items-center justify-end"
+            >
+              {formatYLabel(Math.round(niceMax * ratio))}
+            </span>
+          ))}
+        </div>
+
+        {/* Chart Grid Area */}
+        <div className="flex-1 border-l border-b border-slate-200 relative flex items-end justify-center gap-8 px-4">
+          {loading
+            ? Array(7)
+                .fill(0)
+                .map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-12 h-full flex flex-col justify-end pb-1"
+                  >
+                    <div className="w-8 mx-auto bg-slate-50 rounded-full h-32 animate-pulse" />
+                  </div>
+                ))
+            : data.map((val, i) => (
+                <div
+                  key={i}
+                  className="w-12 h-full group relative flex flex-col justify-end"
+                >
+                  {/* Column Hover Background */}
+                  <div className="absolute inset-x-0 bottom-0 top-0 bg-slate-50/0 group-hover:bg-slate-50/50 transition-colors rounded-t-xl -mx-2 pointer-events-none" />
+
+                  <div
+                    className="w-full flex flex-col justify-end pb-1 relative z-10 transition-all duration-500 ease-out"
+                    style={{ height: `${(val / niceMax) * 100}%` }}
+                  >
+                    <div className="w-8 mx-auto bg-slate-900 rounded-full transition-all group-hover:bg-deckly-primary cursor-pointer flex flex-col justify-end overflow-hidden shadow-sm group-hover:shadow-lg group-hover:shadow-deckly-primary/20 h-full">
+                      {/* Subtle fill effect */}
+                      <div className="w-full h-1/2 bg-white/5" />
+                    </div>
+                  </div>
+
+                  {/* Tooltip */}
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap z-20 shadow-2xl scale-90 group-hover:scale-100 origin-bottom border border-white/10">
+                    {isTime
+                      ? `${Math.floor(val / 60)}m ${Math.round(val % 60)}s`
+                      : `${val} Visits`}
+                    {/* Tooltip Arrow */}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
+                  </div>
+                </div>
+              ))}
+        </div>
       </div>
 
-      {loading
-        ? Array(7)
-            .fill(0)
-            .map((_, i) => (
-              <div key={i} className="flex flex-col items-center gap-4 w-12">
-                <div className="w-8 bg-slate-50 rounded-full h-32 animate-pulse" />
-                <div className="h-3 w-8 bg-slate-50 rounded animate-pulse" />
-              </div>
-            ))
-        : data.map((val, i) => (
-            <div
-              key={i}
-              className="flex flex-col items-center gap-2 w-12 group relative h-full"
-            >
-              <div className="flex-1 w-full flex flex-col justify-end pb-1">
-                <div
-                  className="w-8 mx-auto bg-slate-900 rounded-full transition-all group-hover:bg-deckly-primary cursor-pointer peer flex flex-col justify-end overflow-hidden"
-                  style={{
-                    height: `${(val / niceMax) * 100}%`,
-                    minHeight: val > 0 ? "4px" : "0",
-                  }}
-                >
-                  {/* Subtle fill effect */}
-                  <div className="w-full h-1/2 bg-white/5" />
-                </div>
-              </div>
-
-              <span className="text-[10px] font-bold text-slate-400 shrink-0 group-hover:text-deckly-primary transition-colors">
-                {labels[i]}
+      {/* X-Axis Labels */}
+      <div className="flex items-start mt-6 pl-12 h-6">
+        <div className="flex-1 flex justify-center gap-8 px-4">
+          {labels.map((label, i) => (
+            <div key={i} className="w-12 text-center group">
+              <span className="text-[10px] font-bold text-slate-400 group-hover:text-deckly-primary transition-colors block">
+                {label}
               </span>
-
-              {/* Tooltip */}
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 peer-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap z-10 shadow-2xl scale-90 peer-hover:scale-100 origin-bottom border border-white/10">
-                {isTime
-                  ? `${Math.floor(val / 60)}m ${Math.round(val % 60)}s`
-                  : `${val} Visits`}
-                {/* Tooltip Arrow */}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
-              </div>
             </div>
           ))}
+        </div>
+      </div>
     </div>
   );
 }

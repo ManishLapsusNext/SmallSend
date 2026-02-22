@@ -11,8 +11,9 @@ export function ContentView() {
   const [loading, setLoading] = useState(true);
   const { session } = useAuth();
 
-  useEffect(() => {
+  const fetchDecks = () => {
     if (session?.user?.id) {
+      setLoading(true);
       Promise.all([
         analyticsService.getUserTotalStats(session.user.id),
         deckService.getDecksWithAnalytics(session.user.id),
@@ -23,7 +24,21 @@ export function ContentView() {
         })
         .finally(() => setLoading(false));
     }
+  };
+
+  useEffect(() => {
+    fetchDecks();
   }, [session]);
+
+  const handleDelete = async (deck: any) => {
+    try {
+      await deckService.deleteDeck(deck.id, deck.file_url, deck.slug);
+      fetchDecks(); // Refresh list
+    } catch (err) {
+      console.error("Failed to delete deck:", err);
+      alert("Error deleting deck. Please try again.");
+    }
+  };
 
   return (
     <div className="space-y-12 pb-12">
@@ -33,7 +48,7 @@ export function ContentView() {
         loading={loading}
       />
 
-      <DecksTable decks={decks} loading={loading} />
+      <DecksTable decks={decks} loading={loading} onDelete={handleDelete} />
     </div>
   );
 }

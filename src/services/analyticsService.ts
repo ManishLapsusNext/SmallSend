@@ -229,8 +229,8 @@ export const analyticsService = {
       .slice(0, limit);
   },
 
-  // Get daily metrics for the last 7 days
-  async getDailyMetrics(userId: string) {
+  // Get daily metrics for the last 7 days (optionally filtered by deck)
+  async getDailyMetrics(userId: string, deckId?: string) {
     const days = 7;
     const labels: string[] = [];
     const visits: number[] = [];
@@ -254,10 +254,16 @@ export const analyticsService = {
         sevenDaysAgo.setHours(0, 0, 0, 0);
 
         // 1. Fetch user's deck IDs
-        const { data: userDecks } = await supabase
+        let deckIdsQuery = supabase
             .from("decks")
             .select("id")
             .eq("user_id", userId);
+        
+        if (deckId) {
+            deckIdsQuery = deckIdsQuery.eq("id", deckId);
+        }
+
+        const { data: userDecks } = await deckIdsQuery;
         
         const deckIds = (userDecks || []).map(d => d.id);
         if (deckIds.length === 0) return { labels, visits, timeSpent };
@@ -291,13 +297,18 @@ export const analyticsService = {
     return { labels, visits, timeSpent };
   },
 
-  // Get total stats for the user dashboard
-  async getUserTotalStats(userId: string) {
-    const { data, error } = await supabase
+  // Get total stats for the user dashboard (optionally filtered by deck)
+  async getUserTotalStats(userId: string, deckId?: string) {
+    let query = supabase
         .from("deck_stats")
         .select("total_views, total_time_seconds")
         .eq("user_id", userId);
 
+    if (deckId) {
+        query = query.eq("deck_id", deckId);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
 
     return (data || []).reduce((acc, curr) => ({

@@ -18,21 +18,37 @@ interface Deck {
   created_at: string;
   total_views: number;
   last_viewed_at: string | null;
+  file_url: string;
 }
 
 interface DecksTableProps {
   decks: Deck[];
   loading?: boolean;
+  onDelete?: (deck: Deck) => Promise<void>;
 }
 
-export function DecksTable({ decks, loading }: DecksTableProps) {
+export function DecksTable({ decks, loading, onDelete }: DecksTableProps) {
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
   const handleCopyLink = (slug: string, id: string) => {
     const url = `${window.location.origin}/${slug}`;
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleDelete = async (deck: Deck) => {
+    if (window.confirm(`Are you sure you want to delete "${deck.title}"?`)) {
+      setDeletingId(deck.id);
+      try {
+        if (onDelete) await onDelete(deck);
+      } catch (err) {
+        console.error("Delete failed:", err);
+      } finally {
+        setDeletingId(null);
+      }
+    }
   };
 
   return (
@@ -56,7 +72,7 @@ export function DecksTable({ decks, loading }: DecksTableProps) {
               Last Viewed
             </TableHead>
             <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-400 py-6 text-right px-8">
-              ...
+              Actions
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -99,7 +115,10 @@ export function DecksTable({ decks, loading }: DecksTableProps) {
             decks.map((deck) => (
               <TableRow
                 key={deck.id}
-                className="group hover:bg-slate-50/50 border-slate-50 transition-colors"
+                className={clsx(
+                  "group hover:bg-slate-50/50 border-slate-50 transition-colors",
+                  deletingId === deck.id && "opacity-50 pointer-events-none",
+                )}
               >
                 <TableCell className="px-8 py-6">
                   <Link
@@ -159,13 +178,26 @@ export function DecksTable({ decks, loading }: DecksTableProps) {
                 </TableCell>
                 <TableCell className="px-8 py-6 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <button className="p-2 text-slate-400 hover:text-deckly-primary hover:bg-white rounded-lg transition-all">
+                    <Link
+                      to={`/?deckId=${deck.id}`}
+                      className="p-2 text-slate-400 hover:text-deckly-primary hover:bg-white rounded-lg transition-all"
+                      title="View Analytics"
+                    >
                       <BarChart3 size={18} />
-                    </button>
-                    <button className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white rounded-lg transition-all">
+                    </Link>
+                    <Link
+                      to={`/upload?edit=${deck.id}`}
+                      className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white rounded-lg transition-all"
+                      title="Edit Deck"
+                    >
                       <Pencil size={18} />
-                    </button>
-                    <button className="p-2 text-slate-400 hover:text-red-500 hover:bg-white rounded-lg transition-all">
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(deck)}
+                      disabled={deletingId === deck.id}
+                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-white rounded-lg transition-all"
+                      title="Delete Deck"
+                    >
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -179,6 +211,6 @@ export function DecksTable({ decks, loading }: DecksTableProps) {
   );
 }
 
-function clsx(...classes: string[]) {
+function clsx(...classes: any[]) {
   return classes.filter(Boolean).join(" ");
 }
