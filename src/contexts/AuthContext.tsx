@@ -20,7 +20,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(() => {
+    try {
+      const cached = localStorage.getItem("deckly-user-profile");
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [initializationError, setInitializationError] = useState<string | null>(
     null,
@@ -36,6 +43,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const data = await userService.getProfile(userId);
       setProfile(data);
+      if (data) {
+        localStorage.setItem("deckly-user-profile", JSON.stringify(data));
+      }
     } catch (err) {
       console.error("Profile fetch error:", err);
     }

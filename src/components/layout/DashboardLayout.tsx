@@ -15,23 +15,34 @@ export function DashboardLayout({
   title: initialTitle = "Dashboard",
   showFab = true,
 }: DashboardLayoutProps) {
-  const [roomName, setRoomName] = React.useState<string>(initialTitle);
+  const [roomName, setRoomName] = React.useState<string>(() => {
+    try {
+      const cached = localStorage.getItem("deckly-room-name");
+      return cached || initialTitle;
+    } catch {
+      return initialTitle;
+    }
+  });
   const [isEditing, setIsEditing] = React.useState(false);
-  const [tempName, setTempName] = React.useState(initialTitle);
+  const [tempName, setTempName] = React.useState(roomName);
   const [loading, setLoading] = React.useState(true);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   React.useEffect(() => {
     async function fetchName() {
+      setIsRefreshing(true);
       try {
         const settings = await deckService.getBrandingSettings();
         if (settings?.room_name) {
           setRoomName(settings.room_name);
           setTempName(settings.room_name);
+          localStorage.setItem("deckly-room-name", settings.room_name);
         }
       } catch (err) {
         console.error("Error fetching room name:", err);
       } finally {
         setLoading(false);
+        setIsRefreshing(false);
       }
     }
     fetchName();
@@ -99,8 +110,11 @@ export function DashboardLayout({
                 className="flex items-center gap-3 group cursor-pointer"
                 onClick={() => setIsEditing(true)}
               >
-                <h1 className="text-2xl font-bold text-slate-900">
-                  {loading ? "..." : roomName}
+                <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                  {loading && !roomName ? "..." : roomName}
+                  {isRefreshing && !loading && (
+                    <div className="w-1.5 h-1.5 bg-deckly-primary rounded-full animate-ping" />
+                  )}
                 </h1>
                 <Pencil
                   size={16}
