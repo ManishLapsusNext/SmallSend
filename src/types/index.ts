@@ -18,9 +18,6 @@ export interface Deck {
   require_email?: boolean;
   require_password?: boolean;
   view_password?: string;
-}
-
-export interface DeckWithExpiry extends Deck {
   expires_at?: string | null;
 }
 

@@ -2,8 +2,16 @@ import { supabase } from './supabase';
 import { UserProfile } from '../types';
 import { withRetry } from '../utils/resilience';
 
+const profileCache = new Map<string, { data: UserProfile | null; timestamp: number }>();
+
 export const userService = {
   async getProfile(userId: string): Promise<UserProfile | null> {
+    const cacheKey = `profile-${userId}`;
+    const cached = profileCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < 300000) { // 5 min cache
+      return cached.data;
+    }
+
     return withRetry(async () => {
       const { data, error } = await supabase
         .from('profiles')
@@ -16,7 +24,9 @@ export const userService = {
         return null;
       }
 
-      return data;
+      const result = data as UserProfile | null;
+      profileCache.set(cacheKey, { data: result, timestamp: Date.now() });
+      return result;
     });
   },
 
@@ -36,6 +46,8 @@ export const userService = {
       throw error;
     }
 
+    // Clear cache on update
+    profileCache.delete(`profile-${userId}`);
     return data;
   }
 };

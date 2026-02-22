@@ -10,6 +10,7 @@ interface AuthContextType {
   loading: boolean;
   isPro: boolean;
   refreshProfile: () => Promise<void>;
+  signOut: () => Promise<void>;
   initializationError: string | null;
 }
 
@@ -19,7 +20,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(() => {
+    try {
+      const cached = localStorage.getItem("deckly-user-profile");
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [initializationError, setInitializationError] = useState<string | null>(
     null,
@@ -35,6 +43,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const data = await userService.getProfile(userId);
       setProfile(data);
+      if (data) {
+        localStorage.setItem("deckly-user-profile", JSON.stringify(data));
+      }
     } catch (err) {
       console.error("Profile fetch error:", err);
     }
@@ -114,6 +125,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const isPro = profile?.tier === "PRO" || profile?.tier === "PRO_PLUS";
 
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -122,6 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         loading,
         isPro,
         refreshProfile,
+        signOut,
         initializationError,
       }}
     >

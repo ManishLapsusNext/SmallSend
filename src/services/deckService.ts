@@ -1,6 +1,8 @@
 import { supabase } from "./supabase";
 import { Deck, BrandingSettings, SlidePage } from "../types";
 import { withRetry } from "../utils/resilience";
+ 
+const brandingCache = new Map<string, { data: BrandingSettings | null; timestamp: number }>();
 
 export const deckService = {
   // Get all decks for the logged-in user
@@ -233,23 +235,33 @@ export const deckService = {
 
   // Get global branding settings (for the current user)
   async getBrandingSettings(providedUserId?: string): Promise<BrandingSettings | null> {
+    const userIdPromise = (async () => {
+      if (providedUserId) return providedUserId;
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.user?.id || null;
+    })();
+
+    const userId = await userIdPromise;
+    if (!userId) return null;
+
+    const cacheKey = `branding-${userId}`;
+    const cached = brandingCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < 300000) { // 5 min cache
+      return cached.data;
+    }
+
     return withRetry(async () => {
-      let userId = providedUserId;
-
-      if (!userId) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return null;
-        userId = session.user.id;
-      }
-
       const { data, error } = await supabase
         .from("branding")
         .select("*")
         .eq("user_id", userId)
         .single();
 
-      if (error && error.code !== "PGRST116") throw error; 
-      return data as BrandingSettings;
+      if (error && error.code !== "PGRST116") throw error;
+      
+      const result = data as BrandingSettings;
+      brandingCache.set(cacheKey, { data: result, timestamp: Date.now() });
+      return result;
     });
   },
 
@@ -285,8 +297,67 @@ export const deckService = {
         .select()
         .single();
       if (error) throw error;
+      
+      // Clear cache on update
+      brandingCache.delete(`branding-${userId}`);
       return data as BrandingSettings;
     }
+  },
+
+  // Get all decks with aggregated stats for Content management
+  async getDecksWithAnalytics(providedUserId?: string): Promise<any[]> {
+    return withRetry(async () => {
+      let userId = providedUserId;
+      if (!userId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return [];
+        userId = session.user.id;
+      }
+
+      // 1. Fetch decks
+      const { data: decks, error: decksError } = await supabase
+        .from("decks")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (decksError) throw decksError;
+      if (!decks || decks.length === 0) return [];
+
+      const deckIds = decks.map(d => d.id);
+
+      // 2. Fetch aggregated views and latest activity from deck_stats
+      const { data: stats, error: statsError } = await supabase
+        .from("deck_stats")
+        .select("deck_id, total_views, updated_at")
+        .in("deck_id", deckIds);
+
+      if (statsError) throw statsError;
+
+      // 3. Aggregate stats and find latest activity in JS
+      const statsMap: Record<string, { views: number; lastActive: string | null }> = {};
+      
+      (stats || []).forEach(s => {
+        const id = s.deck_id;
+        if (!statsMap[id]) {
+          statsMap[id] = { views: 0, lastActive: null };
+        }
+        
+        statsMap[id].views += s.total_views;
+        
+        // Use updated_at as a proxy for last_viewed_at
+        if (!statsMap[id].lastActive || (s.updated_at && s.updated_at > statsMap[id].lastActive)) {
+          statsMap[id].lastActive = s.updated_at;
+        }
+      });
+
+      // 4. Merge data
+      return decks.map(deck => ({
+        ...deck,
+        total_views: statsMap[deck.id]?.views || 0,
+        last_viewed_at: statsMap[deck.id]?.lastActive || null
+      }));
+    });
   },
 
   // Helper for user-specific storage path
