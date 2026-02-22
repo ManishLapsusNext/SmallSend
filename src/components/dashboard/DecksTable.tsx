@@ -179,9 +179,9 @@ export function DecksTable({ decks, loading, onDelete }: DecksTableProps) {
                 <TableCell className="px-8 py-6 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <Link
-                      to={`/?deckId=${deck.id}`}
+                      to={`/analytics/${deck.id}`}
                       className="p-2 text-slate-400 hover:text-deckly-primary hover:bg-white rounded-lg transition-all"
-                      title="View Analytics"
+                      title="View Detailed Analytics"
                     >
                       <BarChart3 size={18} />
                     </Link>

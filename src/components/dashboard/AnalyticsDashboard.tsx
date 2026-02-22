@@ -4,11 +4,8 @@ import { useAuth } from "../../contexts/AuthContext";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { DashboardCard } from "../ui/DashboardCard";
 import { Badge } from "../ui/badge";
-import { useSearchParams } from "react-router-dom";
 
 export function AnalyticsDashboard() {
-  const [searchParams] = useSearchParams();
-  const deckId = searchParams.get("deckId");
   const [stats, setStats] = useState({ totalViews: 0, totalTimeSeconds: 0 });
   const [daily, setDaily] = useState<{
     labels: string[];
@@ -22,11 +19,8 @@ export function AnalyticsDashboard() {
     if (session?.user?.id) {
       setLoading(true);
       Promise.all([
-        analyticsService.getUserTotalStats(
-          session.user.id,
-          deckId || undefined,
-        ),
-        analyticsService.getDailyMetrics(session.user.id, deckId || undefined),
+        analyticsService.getUserTotalStats(session.user.id),
+        analyticsService.getDailyMetrics(session.user.id),
       ])
         .then(([total, dailyData]) => {
           setStats(total);
@@ -34,7 +28,7 @@ export function AnalyticsDashboard() {
         })
         .finally(() => setLoading(false));
     }
-  }, [session, deckId]);
+  }, [session]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

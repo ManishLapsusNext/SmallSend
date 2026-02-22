@@ -11,6 +11,7 @@ import ManageDeck from "./pages/ManageDeck";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ContentPage from "./pages/ContentPage";
+import DeckAnalytics from "./pages/DeckAnalytics";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import "./App.css";
 
@@ -79,6 +80,10 @@ const AppContent = () => {
         <Route
           path="/upload"
           element={session ? <ManageDeck /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/analytics/:deckId"
+          element={session ? <DeckAnalytics /> : <Navigate to="/login" />}
         />
         <Route
           path="/login"
