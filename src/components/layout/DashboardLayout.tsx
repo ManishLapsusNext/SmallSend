@@ -1,7 +1,8 @@
 import React from "react";
 import { Sidebar } from "./Sidebar";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Check, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { deckService } from "../../services/deckService";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -11,9 +12,54 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({
   children,
-  title = "Dashboard",
+  title: initialTitle = "Dashboard",
   showFab = true,
 }: DashboardLayoutProps) {
+  const [roomName, setRoomName] = React.useState<string>(initialTitle);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [tempName, setTempName] = React.useState(initialTitle);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function fetchName() {
+      try {
+        const settings = await deckService.getBrandingSettings();
+        if (settings?.room_name) {
+          setRoomName(settings.room_name);
+          setTempName(settings.room_name);
+        }
+      } catch (err) {
+        console.error("Error fetching room name:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchName();
+  }, []);
+
+  const handleSave = async () => {
+    if (!tempName.trim()) {
+      setTempName(roomName);
+      setIsEditing(false);
+      return;
+    }
+
+    try {
+      await deckService.updateBrandingSettings({ room_name: tempName });
+      setRoomName(tempName);
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Error updating room name:", err);
+      setTempName(roomName);
+      setIsEditing(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setTempName(roomName);
+    setIsEditing(false);
+  };
+
   return (
     <div className="flex h-screen bg-[#F8F9FA] overflow-hidden">
       <Sidebar />
@@ -21,7 +67,48 @@ export function DashboardLayout({
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Top Header */}
         <header className="h-16 flex items-center justify-between px-8 bg-white border-b border-slate-200 shrink-0">
-          <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
+          <div className="flex items-center gap-4 flex-1">
+            {isEditing ? (
+              <div className="flex items-center gap-2 group">
+                <input
+                  autoFocus
+                  type="text"
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSave();
+                    if (e.key === "Escape") handleCancel();
+                  }}
+                  className="text-2xl font-bold text-slate-900 bg-slate-50 border-b-2 border-deckly-primary outline-none px-1 min-w-[200px]"
+                />
+                <button
+                  onClick={handleSave}
+                  className="p-1 hover:bg-slate-100 rounded-md text-deckly-primary"
+                >
+                  <Check size={20} strokeWidth={3} />
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="p-1 hover:bg-slate-100 rounded-md text-slate-400"
+                >
+                  <X size={20} strokeWidth={3} />
+                </button>
+              </div>
+            ) : (
+              <div
+                className="flex items-center gap-3 group cursor-pointer"
+                onClick={() => setIsEditing(true)}
+              >
+                <h1 className="text-2xl font-bold text-slate-900">
+                  {loading ? "..." : roomName}
+                </h1>
+                <Pencil
+                  size={16}
+                  className="text-slate-300 group-hover:text-deckly-primary transition-colors opacity-0 group-hover:opacity-100"
+                />
+              </div>
+            )}
+          </div>
 
           <div className="flex items-center gap-4">
             {/* Founder Mode Toggle Mockup */}
