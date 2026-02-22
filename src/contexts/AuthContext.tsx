@@ -10,6 +10,7 @@ interface AuthContextType {
   loading: boolean;
   isPro: boolean;
   refreshProfile: () => Promise<void>;
+  signOut: () => Promise<void>;
   initializationError: string | null;
 }
 
@@ -114,6 +115,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const isPro = profile?.tier === "PRO" || profile?.tier === "PRO_PLUS";
 
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -122,6 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         loading,
         isPro,
         refreshProfile,
+        signOut,
         initializationError,
       }}
     >
