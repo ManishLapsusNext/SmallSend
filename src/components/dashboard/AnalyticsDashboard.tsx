@@ -95,19 +95,19 @@ export function AnalyticsDashboard() {
             <TabsList className="bg-white border border-slate-200 p-1 h-auto rounded-xl gap-1">
               <TabsTrigger
                 value="VISITS"
-                className="rounded-lg text-[10px] font-black uppercase tracking-widest px-8 py-2.5 data-[state=active]:bg-deckly-primary data-[state=active]:text-white shadow-none"
+                className="rounded-lg text-[10px] font-black uppercase tracking-widest px-8 py-2.5 text-slate-500 data-[state=active]:bg-deckly-primary data-[state=active]:text-white shadow-none transition-colors"
               >
                 Visits
               </TabsTrigger>
               <TabsTrigger
                 value="TIME"
-                className="rounded-lg text-[10px] font-black uppercase tracking-widest px-8 py-2.5 data-[state=active]:bg-deckly-primary data-[state=active]:text-white shadow-none"
+                className="rounded-lg text-[10px] font-black uppercase tracking-widest px-8 py-2.5 text-slate-500 data-[state=active]:bg-deckly-primary data-[state=active]:text-white shadow-none transition-colors"
               >
                 Time Spend
               </TabsTrigger>
               <TabsTrigger
                 value="BOOKMARKS"
-                className="rounded-lg text-[10px] font-black uppercase tracking-widest px-8 py-2.5 data-[state=active]:bg-deckly-primary data-[state=active]:text-white shadow-none"
+                className="rounded-lg text-[10px] font-black uppercase tracking-widest px-8 py-2.5 text-slate-500 data-[state=active]:bg-deckly-primary data-[state=active]:text-white shadow-none transition-colors"
               >
                 Bookmarked
               </TabsTrigger>
