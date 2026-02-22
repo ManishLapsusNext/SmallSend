@@ -22,7 +22,7 @@ export function DashboardCard({
   return (
     <Card
       className={cn(
-        "rounded-card border-slate-200 shadow-sm overflow-hidden h-full bg-white",
+        "rounded-card border-slate-200 overflow-hidden h-full bg-white",
         className,
       )}
     >

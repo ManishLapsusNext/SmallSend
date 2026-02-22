@@ -4,12 +4,11 @@ import { motion } from "framer-motion";
 import {
   Eye,
   ChevronLeft,
-  Loader2,
   Bookmark,
   MessageSquare,
   AlertCircle,
-  Clock, // Added Clock import
-  BarChart3, // Added BarChart3 import
+  Clock,
+  BarChart3,
 } from "lucide-react";
 import { analyticsService } from "../services/analyticsService";
 import { deckService } from "../services/deckService";
@@ -19,6 +18,8 @@ import { cn } from "../utils/cn";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
 import { DashboardCard } from "../components/ui/DashboardCard";
 import { Badge } from "../components/ui/badge";
+import Button from "../components/common/Button";
+import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 
 export default function DeckAnalytics() {
   const { deckId } = useParams<{ deckId: string }>();
@@ -103,11 +104,11 @@ export default function DeckAnalytics() {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex-1 flex flex-col items-center justify-center py-20">
-          <Loader2 className="w-12 h-12 text-deckly-primary animate-spin mb-4" />
-          <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">
-            Loading Analytics...
+      <DashboardLayout title="Deck Analytics">
+        <div className="flex-1 flex flex-col items-center justify-center py-40 gap-4 text-slate-400">
+          <div className="w-10 h-10 border-2 border-deckly-primary/20 border-t-deckly-primary rounded-full animate-spin" />
+          <p className="font-medium font-bold uppercase tracking-widest text-[10px]">
+            Gathering Insights...
           </p>
         </div>
       </DashboardLayout>
@@ -115,23 +116,22 @@ export default function DeckAnalytics() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout title="Deck Analytics">
       <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <button
+          <Button
+            variant="ghost"
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors group"
+            icon={ChevronLeft}
+            className="text-slate-400 hover:text-slate-900 px-2"
           >
-            <div className="w-8 h-8 rounded-full bg-white border border-slate-100 flex items-center justify-center group-hover:bg-slate-50">
-              <ChevronLeft size={16} />
-            </div>
-            <span className="text-sm font-bold uppercase tracking-widest">
+            <span className="text-xs font-bold uppercase tracking-widest">
               Back
             </span>
-          </button>
+          </Button>
           <h2 className="text-2xl font-bold text-slate-900">{deck?.title}</h2>
-          <div className="w-32" /> {/* Spacer */}
+          <div className="w-24" /> {/* Spacer */}
         </div>
 
         {/* Top Summary Cards */}
@@ -170,31 +170,35 @@ export default function DeckAnalytics() {
                 Engagement per Slide
               </h3>
 
-              <div className="flex flex-wrap justify-center bg-slate-50 p-1.5 rounded-2xl gap-1">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() =>
-                      !tab.comingSoon && setActiveTab(tab.id as any)
-                    }
-                    className={cn(
-                      "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative overflow-hidden",
-                      activeTab === tab.id
-                        ? "bg-deckly-primary text-white shadow-lg shadow-deckly-primary/20"
-                        : "text-slate-500 hover:bg-white hover:text-slate-900",
-                      tab.comingSoon &&
-                        "opacity-50 cursor-not-allowed grayscale",
-                    )}
-                  >
-                    {tab.label}
-                    {tab.comingSoon && (
-                      <span className="text-[7px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded ml-1">
-                        CS
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
+              <Tabs
+                value={activeTab}
+                onValueChange={(v) => {
+                  const tab = tabs.find((t) => t.id === v);
+                  if (tab && !tab.comingSoon) setActiveTab(v as any);
+                }}
+                className="w-full flex flex-col items-center"
+              >
+                <TabsList className="bg-white border border-slate-200 p-1.5 h-auto rounded-xl gap-1 flex-wrap justify-center">
+                  {tabs.map((tab) => (
+                    <TabsTrigger
+                      key={tab.id}
+                      value={tab.id}
+                      className={cn(
+                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative overflow-hidden data-[state=active]:bg-deckly-primary data-[state=active]:text-white shadow-none",
+                        tab.comingSoon &&
+                          "opacity-50 cursor-not-allowed grayscale",
+                      )}
+                    >
+                      {tab.label}
+                      {tab.comingSoon && (
+                        <span className="text-[7px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded ml-1 font-bold">
+                          CS
+                        </span>
+                      )}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
             </div>
 
             {/* Slide List / Bar Chart */}
@@ -281,13 +285,13 @@ export default function DeckAnalytics() {
                                   ease: [0.16, 1, 0.3, 1],
                                 }}
                                 className={cn(
-                                  "h-full flex items-center justify-end px-4 rounded-r-2xl shadow-xl shadow-opacity-10",
+                                  "h-full flex items-center justify-end px-4 rounded-r-2xl",
                                   activeTab === "views"
-                                    ? "bg-deckly-primary shadow-deckly-primary/30"
+                                    ? "bg-deckly-primary"
                                     : activeTab === "time"
-                                      ? "bg-slate-900 shadow-slate-900/10"
+                                      ? "bg-slate-900"
                                       : percentage > 30
-                                        ? "bg-red-500 shadow-red-500/30"
+                                        ? "bg-red-500"
                                         : "bg-deckly-primary/60",
                                 )}
                               >
@@ -325,13 +329,15 @@ function SummaryCard({
           className={cn(
             "w-12 h-12 rounded-2xl flex items-center justify-center text-white transition-transform group-hover:scale-110",
             color === "primary"
-              ? "bg-deckly-primary shadow-lg shadow-deckly-primary/20"
+              ? "bg-deckly-primary"
               : color === "secondary"
-                ? "bg-slate-900 shadow-lg shadow-slate-900/20"
+                ? "bg-slate-900"
                 : "bg-slate-50 text-slate-400",
           )}
         >
-          {React.cloneElement(icon, { size: 24 })}
+          {React.isValidElement(icon)
+            ? React.cloneElement(icon as React.ReactElement<any>, { size: 24 })
+            : icon}
         </div>
         {isPlaceholder && (
           <Badge
@@ -343,14 +349,16 @@ function SummaryCard({
         )}
       </div>
       <div>
-        <p
-          className={cn(
-            "text-4xl font-black mb-1 tracking-tighter",
-            isPlaceholder ? "text-slate-300 text-2xl" : "text-slate-900",
-          )}
-        >
-          {value}
-        </p>
+        <div className="flex items-baseline gap-1">
+          <p
+            className={cn(
+              "text-5xl font-bold mb-1 tracking-tighter",
+              isPlaceholder ? "text-slate-300 text-3xl" : "text-deckly-primary",
+            )}
+          >
+            {value}
+          </p>
+        </div>
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
           {label}
         </p>
