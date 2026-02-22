@@ -10,6 +10,9 @@ import Viewer from "./pages/Viewer";
 import ManageDeck from "./pages/ManageDeck";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ContentPage from "./pages/ContentPage";
+import DeckAnalytics from "./pages/DeckAnalytics";
+import EditDeck from "./pages/EditDeck";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import "./App.css";
 
@@ -72,6 +75,22 @@ const AppContent = () => {
     <div className="min-h-screen bg-deckly-background text-slate-200 selection:bg-deckly-primary/30 selection:text-deckly-primary">
       <Routes>
         <Route
+          path="/content"
+          element={session ? <ContentPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/upload"
+          element={session ? <ManageDeck /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/analytics/:deckId"
+          element={session ? <DeckAnalytics /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/edit/:deckId"
+          element={session ? <EditDeck /> : <Navigate to="/login" />}
+        />
+        <Route
           path="/login"
           element={!session ? <Login /> : <Navigate to="/" />}
         />
@@ -82,10 +101,6 @@ const AppContent = () => {
         <Route
           path="/"
           element={session ? <Home /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/upload"
-          element={session ? <ManageDeck /> : <Navigate to="/login" />}
         />
         <Route path="/:slug" element={<Viewer />} />
       </Routes>

@@ -76,32 +76,32 @@ function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-slate-950 overflow-hidden">
+    <div className="min-h-screen flex flex-col md:flex-row bg-black p-4 md:p-6 gap-4 md:gap-6 overflow-hidden">
       {/* Left Panel - Hero - Hidden on Mobile */}
-      <div className="hidden md:flex md:w-5/12 bg-deckly-primary p-12 flex-col items-center justify-center text-center">
+      <div className="hidden md:flex md:w-5/12 bg-deckly-primary p-12 flex-col items-center justify-center text-center rounded-3xl overflow-hidden">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8 }}
-          className="relative mb-12"
+          className="relative mb-8"
         >
           <img
             src={penguinMascot}
             alt="Mascot"
-            className="w-48 sm:w-64 md:w-80 h-auto object-contain"
+            className="w-24 sm:w-40 md:w-42 h-auto object-contain"
           />
         </motion.div>
-        <div className="max-w-md">
-          <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight mb-6">
+        <div className="max-w-[540px]">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 leading-tight mb-8">
             A pitchdeck management space build for founders and investors
           </h1>
-          <p className="text-slate-800 text-lg font-semibold leading-relaxed">
+          <p className="text-slate-800 text-lg md:text-xl font-medium leading-relaxed max-w-[400px] mx-auto">
             Free yourself from clutter of pitchdeck and focus on what matters
           </p>
         </div>
       </div>
 
-      <div className="w-full md:w-7/12 bg-deckly-background p-8 md:p-24 flex flex-col items-center justify-center overflow-y-auto">
+      <div className="w-full md:w-7/12 bg-deckly-background p-8 md:p-12 lg:p-24 flex flex-col items-center justify-center overflow-y-auto rounded-3xl overflow-hidden">
         <div className="w-full max-w-[440px]">
           <div className="flex flex-col items-center text-center mb-8">
             <div className="w-24 h-24 mb-8 flex items-center justify-center">
