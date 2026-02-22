@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
 import { DashboardCard } from "../components/ui/DashboardCard";
-import Button from "../components/common/Button";
+import { Button } from "../components/ui/button";
 import { DeckSettingsForm } from "../components/dashboard/DeckSettingsForm";
 import { deckService } from "../services/deckService";
 import { Deck } from "../types";
@@ -63,9 +63,9 @@ export default function EditDeck() {
           <Button
             variant="ghost"
             onClick={() => navigate("/")}
-            icon={ChevronLeft}
             className="text-slate-400 hover:text-slate-900 px-2"
           >
+            <ChevronLeft size={16} className="mr-2" />
             <span className="text-xs font-bold uppercase tracking-widest">
               Back to Content
             </span>

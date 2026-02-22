@@ -271,10 +271,10 @@ export default function DeckAnalytics() {
                             key={s.page_number}
                             className="flex items-center gap-6 group"
                           >
-                            <span className="text-[10px] font-black text-slate-300 w-10 uppercase tracking-tighter group-hover:text-slate-900 transition-colors">
+                            <span className="text-[10px] font-black text-slate-400 w-10 uppercase tracking-tighter group-hover:text-slate-900 transition-colors">
                               Pg {s.page_number}
                             </span>
-                            <div className="flex-1 h-10 bg-slate-50 rounded-2xl overflow-hidden relative border border-slate-100/50">
+                            <div className="flex-1 h-11 bg-slate-50 rounded-xl overflow-hidden relative border border-slate-100/50">
                               <motion.div
                                 initial={{ width: 0 }}
                                 animate={{
@@ -285,7 +285,7 @@ export default function DeckAnalytics() {
                                   ease: [0.16, 1, 0.3, 1],
                                 }}
                                 className={cn(
-                                  "h-full flex items-center justify-end px-4 rounded-r-2xl",
+                                  "h-full flex items-center justify-end px-4 rounded-r-xl",
                                   activeTab === "views"
                                     ? "bg-deckly-primary"
                                     : activeTab === "time"
@@ -295,7 +295,7 @@ export default function DeckAnalytics() {
                                         : "bg-deckly-primary/60",
                                 )}
                               >
-                                <span className="text-[11px] font-black text-white">
+                                <span className="text-[10px] font-black text-white uppercase tracking-widest">
                                   {value}
                                 </span>
                               </motion.div>
