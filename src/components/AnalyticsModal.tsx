@@ -18,6 +18,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { getTierConfig } from "../constants/tiers";
 import Button from "./common/Button";
 import Card from "./common/Card";
+import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 
 interface AnalyticsModalProps {
   deck: Deck;
@@ -248,26 +249,28 @@ function AnalyticsModal({ deck, onClose }: AnalyticsModalProps) {
                       ? "Drop-off Analysis"
                       : "Engagement per Slide"}
                   </h4>
-                  <div className="flex bg-white/5 p-1 rounded-xl">
-                    {(["views", "time", "retention"] as const).map((tab) => (
-                      <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={cn(
-                          "px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all",
-                          activeTab === tab
-                            ? "bg-slate-800 text-white shadow-lg"
-                            : "text-slate-500 hover:text-slate-300",
-                        )}
-                      >
-                        {tab === "views"
-                          ? "Views"
-                          : tab === "time"
-                            ? "Time"
-                            : "Drop-off"}
-                      </button>
-                    ))}
-                  </div>
+                  <Tabs
+                    value={activeTab}
+                    onValueChange={(v) => setActiveTab(v as any)}
+                  >
+                    <TabsList className="bg-white/5 p-1 h-auto rounded-xl gap-1">
+                      {(["views", "time", "retention"] as const).map((tab) => (
+                        <TabsTrigger
+                          key={tab}
+                          value={tab}
+                          className={cn(
+                            "px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all data-[state=active]:bg-deckly-primary data-[state=active]:text-white shadow-none",
+                          )}
+                        >
+                          {tab === "views"
+                            ? "Views"
+                            : tab === "time"
+                              ? "Time"
+                              : "Drop-off"}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </Tabs>
                 </div>
 
                 {stats.length === 0 ? (
