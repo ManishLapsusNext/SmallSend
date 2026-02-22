@@ -57,12 +57,12 @@ export default function EditDeck() {
 
   return (
     <DashboardLayout title="Edit Asset">
-      <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full animate-in fade-in duration-700">
+      <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full">
         {/* Header */}
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/content")}
             className="text-slate-400 hover:text-slate-900 px-2"
           >
             <ChevronLeft size={16} className="mr-2" />

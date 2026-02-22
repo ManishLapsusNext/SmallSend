@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { analyticsService } from "../../services/analyticsService";
 import { useAuth } from "../../contexts/AuthContext";
 import { DashboardCard } from "../ui/DashboardCard";
@@ -20,33 +20,74 @@ interface DeckStat {
 }
 
 export function TopDecksCard() {
-  const [stats, setStats] = useState<DeckStat[]>([]);
-  const [loading, setLoading] = useState(true);
   const { session } = useAuth();
 
-  useEffect(() => {
-    if (session?.user?.id) {
-      analyticsService
-        .getTopPerformingDecks(session.user.id)
-        .then((data: any[]) => {
-          const mapped = data.map((d: any) => ({
-            id: d.id,
-            title: d.title,
-            views: d.views,
-            time: d.time,
-            completion: "84%",
-          }));
-          setStats(mapped);
-        })
-        .finally(() => setLoading(false));
+  const getCachedData = () => {
+    try {
+      const cached = localStorage.getItem(
+        `top-decks-cache-${session?.user?.id}`,
+      );
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
     }
-  }, [session]);
+  };
+
+  const initialCache = getCachedData();
+  const [stats, setStats] = useState<DeckStat[]>(initialCache || []);
+  const [loading, setLoading] = useState(!initialCache);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchTopDecks = useCallback(async () => {
+    if (!session?.user?.id) return;
+
+    if (stats.length === 0) setLoading(true);
+    setIsRefreshing(true);
+
+    try {
+      const data = await analyticsService.getTopPerformingDecks(
+        session.user.id,
+      );
+      const mapped = data.map((d: any) => ({
+        id: d.id,
+        title: d.title,
+        views: d.views,
+        time: d.time,
+        completion: "84%", // Placeholder for future metric
+      }));
+      setStats(mapped);
+
+      localStorage.setItem(
+        `top-decks-cache-${session.user.id}`,
+        JSON.stringify(mapped),
+      );
+    } catch (err) {
+      console.error("Failed to fetch top decks:", err);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [session?.user?.id]); // Remove initialCache dependency
+
+  useEffect(() => {
+    fetchTopDecks();
+  }, [fetchTopDecks]);
 
   return (
     <DashboardCard
       title="Top Performing Decks"
       headerAction={
-        <div className="w-2 h-2 rounded-full bg-deckly-primary"></div>
+        <div className="flex items-center gap-3">
+          {isRefreshing && !loading && (
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-deckly-primary rounded-full animate-ping" />
+              <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">
+                Syncing
+              </span>
+            </div>
+          )}
+          <div className="w-2 h-2 rounded-full bg-deckly-primary animate-pulse shadow-[0_0_8px_rgba(42,212,133,0.5)]"></div>
+        </div>
       }
     >
       <Table>
@@ -61,7 +102,10 @@ export function TopDecksCard() {
             Array(3)
               .fill(0)
               .map((_, i) => (
-                <TableRow key={i}>
+                <TableRow
+                  key={i}
+                  className="border-b border-slate-50 last:border-0"
+                >
                   <TableCell className="p-6">
                     <div className="h-4 w-32 bg-slate-100 animate-pulse rounded" />
                   </TableCell>
@@ -74,16 +118,16 @@ export function TopDecksCard() {
             <TableRow>
               <TableCell
                 colSpan={2}
-                className="p-12 text-center text-slate-400 text-sm"
+                className="p-12 text-center text-slate-400 text-[10px] font-black uppercase tracking-widest"
               >
-                No data yet
+                No statistical data available yet
               </TableCell>
             </TableRow>
           ) : (
             stats.map((deck) => (
               <TableRow
                 key={deck.id}
-                className="hover:bg-slate-50 border-b border-slate-50 last:border-0 group transition-colors"
+                className="hover:bg-slate-50/50 border-b border-slate-50 last:border-0 group transition-all duration-300"
               >
                 <TableCell className="px-6 py-6 min-w-[200px]">
                   <span className="font-bold text-slate-900 group-hover:text-deckly-primary transition-colors">
@@ -93,7 +137,7 @@ export function TopDecksCard() {
                 <TableCell className="px-6 py-6 text-right">
                   <div className="flex gap-8 justify-end">
                     <div className="text-right">
-                      <p className="text-xl font-bold text-deckly-primary leading-none">
+                      <p className="text-xl font-bold text-slate-900 group-hover:text-deckly-primary transition-colors leading-none tracking-tighter">
                         {deck.views.toLocaleString()}
                       </p>
                       <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">
@@ -101,7 +145,7 @@ export function TopDecksCard() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xl font-bold text-deckly-primary leading-none">
+                      <p className="text-xl font-bold text-slate-900 group-hover:text-deckly-primary transition-colors leading-none tracking-tighter">
                         {deck.completion || "0%"}
                       </p>
                       <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">

@@ -122,12 +122,12 @@ export default function DeckAnalytics() {
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/content")}
             className="text-slate-400 hover:text-slate-900 px-2"
           >
             <ChevronLeft size={16} className="mr-2" />
             <span className="text-xs font-bold uppercase tracking-widest">
-              Back
+              Back to Content
             </span>
           </Button>
           <h2 className="text-2xl font-bold text-slate-900">{deck?.title}</h2>

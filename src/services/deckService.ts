@@ -311,42 +311,36 @@ export const deckService = {
 
       const deckIds = decks.map(d => d.id);
 
-      // 2. Fetch aggregated views and time from deck_stats
+      // 2. Fetch aggregated views and latest activity from deck_stats
       const { data: stats, error: statsError } = await supabase
         .from("deck_stats")
-        .select("deck_id, total_views")
+        .select("deck_id, total_views, updated_at")
         .in("deck_id", deckIds);
 
       if (statsError) throw statsError;
 
-      // 3. Fetch Last Viewed (Max viewed_at) from deck_page_views
-      const { data: lastViews, error: lastViewError } = await supabase
-        .from("deck_page_views")
-        .select("deck_id, viewed_at")
-        .in("deck_id", deckIds)
-        .order("viewed_at", { ascending: false });
-
-      if (lastViewError) throw lastViewError;
-
-      // Group last views by deck_id (taking the first one since we ordered descending)
-      const lastViewMap: Record<string, string> = {};
-      (lastViews || []).forEach(v => {
-        if (!lastViewMap[v.deck_id]) {
-          lastViewMap[v.deck_id] = v.viewed_at;
-        }
-      });
-
-      // Sum stats by deck_id
-      const statsMap: Record<string, number> = {};
+      // 3. Aggregate stats and find latest activity in JS
+      const statsMap: Record<string, { views: number; lastActive: string | null }> = {};
+      
       (stats || []).forEach(s => {
-        statsMap[s.deck_id] = (statsMap[s.deck_id] || 0) + s.total_views;
+        const id = s.deck_id;
+        if (!statsMap[id]) {
+          statsMap[id] = { views: 0, lastActive: null };
+        }
+        
+        statsMap[id].views += s.total_views;
+        
+        // Use updated_at as a proxy for last_viewed_at
+        if (!statsMap[id].lastActive || (s.updated_at && s.updated_at > statsMap[id].lastActive)) {
+          statsMap[id].lastActive = s.updated_at;
+        }
       });
 
       // 4. Merge data
       return decks.map(deck => ({
         ...deck,
-        total_views: statsMap[deck.id] || 0,
-        last_viewed_at: lastViewMap[deck.id] || null
+        total_views: statsMap[deck.id]?.views || 0,
+        last_viewed_at: statsMap[deck.id]?.lastActive || null
       }));
     });
   },

@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import { DashboardCard } from "../ui/DashboardCard";
 import { Badge } from "../ui/badge";
+import { cn } from "@/lib/utils";
 
 interface ContentStatsCardProps {
   totalViews: number;
@@ -12,41 +14,39 @@ export function ContentStatsCard({
   totalTimeSeconds,
   loading,
 }: ContentStatsCardProps) {
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.round(seconds % 60);
-    return `${mins}m ${secs}s`;
-  };
+  const stats = useMemo(() => {
+    const formatTime = (seconds: number) => {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.round(seconds % 60);
+      return `${mins}m ${secs}s`;
+    };
 
-  const stats = [
-    {
-      label: "Total Visit",
-      value: totalViews.toLocaleString(),
-      color: "text-deckly-primary",
-    },
-    {
-      label: "Total Time Spent",
-      value: formatTime(totalTimeSeconds),
-      color: "text-deckly-primary",
-    },
-    {
-      label: "Bookmarked",
-      value: "100",
-      color: "text-deckly-primary",
-      sub: "Coming Soon",
-    },
-  ];
+    return [
+      {
+        label: "Total Visit",
+        value: totalViews.toLocaleString(),
+      },
+      {
+        label: "Total Time Spent",
+        value: formatTime(totalTimeSeconds),
+      },
+      {
+        label: "Bookmarked",
+        value: "0",
+        sub: "Coming Soon",
+      },
+    ];
+  }, [totalViews, totalTimeSeconds]);
 
   return (
     <DashboardCard className="py-12 px-8">
       <div className="flex flex-col md:flex-row items-center justify-around gap-12">
         {stats.map((stat, i) => (
           <div key={i} className="text-center group">
-            <div className="flex items-start justify-center gap-1 mb-1">
+            <div className="flex items-start justify-center gap-2 mb-1">
               <span
-                className={clsx(
-                  "text-6xl font-bold tracking-tighter transition-transform group-hover:scale-105 duration-300",
-                  stat.color,
+                className={cn(
+                  "text-6xl font-bold tracking-tighter transition-transform group-hover:scale-105 duration-300 text-deckly-primary",
                 )}
               >
                 {loading ? "..." : stat.value}
@@ -60,7 +60,7 @@ export function ContentStatsCard({
                 </Badge>
               )}
             </div>
-            <p className="text-xs font-bold text-slate-900 uppercase tracking-wide">
+            <p className="text-xs font-bold text-slate-900 uppercase tracking-widest">
               {stat.label}
             </p>
           </div>
@@ -68,8 +68,4 @@ export function ContentStatsCard({
       </div>
     </DashboardCard>
   );
-}
-
-function clsx(...classes: string[]) {
-  return classes.filter(Boolean).join(" ");
 }

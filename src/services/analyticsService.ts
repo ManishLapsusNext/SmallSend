@@ -10,6 +10,9 @@ const posthogKey = import.meta.env.VITE_PUBLIC_POSTHOG_KEY;
 const statsCache = new Map<string, { data: DeckStats[]; timestamp: number }>();
 const pendingRequests = new Map<string, Promise<DeckStats[]>>();
 const CACHE_TTL = 120000; // 2 minutes cache
+const totalStatsCache = new Map<string, { data: any; timestamp: number }>();
+const dailyMetricsCache = new Map<string, { data: any; timestamp: number }>();
+const topDecksCache = new Map<string, { data: any; timestamp: number }>();
 
 export const analyticsService = {
   // Track when someone views a deck
@@ -201,6 +204,12 @@ export const analyticsService = {
 
   // Get top performing decks based on total views
   async getTopPerformingDecks(userId: string, limit: number = 3) {
+    const cacheKey = `top-${userId}-${limit}`;
+    const cached = topDecksCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < 60000) { // 1 min cache
+      return cached.data;
+    }
+
     const { data, error } = await supabase
       .from("deck_stats")
       .select("deck_id, total_views, total_time_seconds, decks(title)")
@@ -224,13 +233,22 @@ export const analyticsService = {
       return acc;
     }, {});
 
-    return Object.values(aggregated)
+    const result = Object.values(aggregated)
       .sort((a: any, b: any) => b.views - a.views)
       .slice(0, limit);
+
+    topDecksCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    return result;
   },
 
   // Get daily metrics for the last 7 days (optionally filtered by deck)
   async getDailyMetrics(userId: string, deckId?: string) {
+    const cacheKey = `daily-${userId}-${deckId || "all"}`;
+    const cached = dailyMetricsCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < 60000) { // 1 min cache
+      return cached.data;
+    }
+
     const days = 7;
     const labels: string[] = [];
     const visits: number[] = [];
@@ -289,16 +307,23 @@ export const analyticsService = {
         visits.forEach((v, i) => {
             timeSpent[i] = v * (Math.random() * 60 + 30);
         });
-
     } catch (err) {
         console.error("Error fetching daily metrics:", err);
     }
 
-    return { labels, visits, timeSpent };
+    const result = { labels, visits, timeSpent };
+    dailyMetricsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    return result;
   },
 
   // Get total stats for the user dashboard (optionally filtered by deck)
   async getUserTotalStats(userId: string, deckId?: string) {
+    const cacheKey = `total-${userId}-${deckId || "all"}`;
+    const cached = totalStatsCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < 30000) { // 30s cache for total stats
+      return cached.data;
+    }
+
     let query = supabase
         .from("deck_stats")
         .select("total_views, total_time_seconds")
@@ -311,9 +336,12 @@ export const analyticsService = {
     const { data, error } = await query;
     if (error) throw error;
 
-    return (data || []).reduce((acc, curr) => ({
+    const result = (data || []).reduce((acc, curr) => ({
         totalViews: acc.totalViews + curr.total_views,
         totalTimeSeconds: acc.totalTimeSeconds + curr.total_time_seconds,
     }), { totalViews: 0, totalTimeSeconds: 0 });
+
+    totalStatsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    return result;
   }
 };
