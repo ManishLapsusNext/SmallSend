@@ -14,11 +14,11 @@ import { analyticsService } from "../services/analyticsService";
 import { deckService } from "../services/deckService";
 import { Deck, DeckStats } from "../types";
 import { useAuth } from "../contexts/AuthContext";
-import { cn } from "../utils/cn";
+import { cn } from "@/lib/utils";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
 import { DashboardCard } from "../components/ui/DashboardCard";
 import { Badge } from "../components/ui/badge";
-import Button from "../components/common/Button";
+import { Button } from "../components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 
 export default function DeckAnalytics() {
@@ -123,9 +123,9 @@ export default function DeckAnalytics() {
           <Button
             variant="ghost"
             onClick={() => navigate(-1)}
-            icon={ChevronLeft}
             className="text-slate-400 hover:text-slate-900 px-2"
           >
+            <ChevronLeft size={16} className="mr-2" />
             <span className="text-xs font-bold uppercase tracking-widest">
               Back
             </span>
