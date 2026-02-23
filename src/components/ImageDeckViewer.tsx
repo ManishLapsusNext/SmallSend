@@ -6,9 +6,10 @@ import { Deck } from "../types";
 
 interface ImageDeckViewerProps {
   deck: Deck;
+  viewerEmail?: string;
 }
 
-function ImageDeckViewer({ deck }: ImageDeckViewerProps) {
+function ImageDeckViewer({ deck, viewerEmail }: ImageDeckViewerProps) {
   const pages = useMemo(
     () => (Array.isArray(deck?.pages) ? deck.pages : []),
     [deck?.pages],
@@ -62,7 +63,12 @@ function ImageDeckViewer({ deck }: ImageDeckViewerProps) {
       const timeSpent = (endTime - startTimeRef.current) / 1000;
       if (timeSpent > 0.5) {
         analyticsService.trackPageView(deck, currentPage, timeSpent);
-        analyticsService.syncSlideStats(deck, currentPage, timeSpent);
+        analyticsService.syncSlideStats(
+          deck,
+          currentPage,
+          timeSpent,
+          viewerEmail,
+        );
         if (currentPage === numPages) {
           analyticsService.trackDeckComplete(deck, numPages);
         }

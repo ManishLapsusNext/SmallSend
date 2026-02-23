@@ -15,6 +15,7 @@ function Viewer() {
   const { slug } = useParams<{ slug: string }>();
   const [deck, setDeck] = useState<Deck | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [viewerEmail, setViewerEmail] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,7 +99,7 @@ function Viewer() {
             onAccessGranted={(email) => {
               setIsUnlocked(true);
               if (email) {
-                // Track email capture in analytics if provided
+                setViewerEmail(email);
                 analyticsService.trackDeckView(deck, { email_captured: email });
               } else {
                 analyticsService.trackDeckView(deck);
@@ -123,7 +124,7 @@ function Viewer() {
 
             <div className="flex-1 w-full h-full relative">
               {Array.isArray(deck.pages) && deck.pages.length > 0 ? (
-                <ImageDeckViewer deck={deck} />
+                <ImageDeckViewer deck={deck} viewerEmail={viewerEmail} />
               ) : (
                 <DeckViewer deck={deck} />
               )}

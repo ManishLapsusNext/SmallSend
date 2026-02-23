@@ -79,6 +79,7 @@ export const analyticsService = {
     deck: Deck,
     pageNumber: number,
     timeSpent: number,
+    viewerEmail?: string,
   ): Promise<void> {
     try {
       const visitorId = this.getVisitorId();
@@ -101,14 +102,29 @@ export const analyticsService = {
 
       const isUniqueView = !recentView;
 
-      // 2. If it's a unique view, record it in the registry
+      // 2. Record or update the view with time_spent
       if (isUniqueView) {
         await supabase.from("deck_page_views").insert({
           deck_id: deck.id,
           page_number: pageNumber,
           visitor_id: visitorId,
           viewed_at: new Date().toISOString(),
+          time_spent: timeSpent,
+          viewer_email: viewerEmail || null,
         });
+      } else if (recentView?.id) {
+        // Accumulate time on revisit to same slide within 24h
+        const { data: existing } = await supabase
+          .from("deck_page_views")
+          .select("time_spent")
+          .eq("id", recentView.id)
+          .single();
+        await supabase
+          .from("deck_page_views")
+          .update({
+            time_spent: (existing?.time_spent || 0) + timeSpent,
+          })
+          .eq("id", recentView.id);
       }
 
       // 3. Update the aggregate stats

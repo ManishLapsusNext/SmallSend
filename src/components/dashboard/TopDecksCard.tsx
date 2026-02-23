@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { analyticsService } from "../../services/analyticsService";
+import { getDeckSignalCount } from "../../services/interestSignalService";
 import { useAuth } from "../../contexts/AuthContext";
 import { DashboardCard } from "../ui/DashboardCard";
 import {
@@ -37,6 +38,7 @@ export function TopDecksCard() {
   const [stats, setStats] = useState<DeckStat[]>(initialCache || []);
   const [loading, setLoading] = useState(!initialCache);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [signalCounts, setSignalCounts] = useState<Record<string, number>>({});
 
   const fetchTopDecks = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -56,6 +58,15 @@ export function TopDecksCard() {
         completion: "84%", // Placeholder for future metric
       }));
       setStats(mapped);
+
+      // Fetch signal counts for each deck
+      const counts: Record<string, number> = {};
+      await Promise.all(
+        mapped.map(async (d: DeckStat) => {
+          counts[d.id] = await getDeckSignalCount(d.id);
+        }),
+      );
+      setSignalCounts(counts);
 
       localStorage.setItem(
         `top-decks-cache-${session.user.id}`,
@@ -133,6 +144,12 @@ export function TopDecksCard() {
                   <span className="font-bold text-slate-900 group-hover:text-deckly-primary transition-colors">
                     {deck.title}
                   </span>
+                  {signalCounts[deck.id] > 0 && (
+                    <p className="text-[10px] font-bold text-deckly-primary mt-0.5">
+                      {signalCounts[deck.id]} interested viewer
+                      {signalCounts[deck.id] > 1 ? "s" : ""}
+                    </p>
+                  )}
                 </TableCell>
                 <TableCell className="px-6 py-6 text-right">
                   <div className="flex gap-8 justify-end">
