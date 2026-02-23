@@ -436,11 +436,11 @@ export default function DeckAnalytics() {
                             transition={{ duration: 0.25 }}
                             className="overflow-hidden"
                           >
-                            <div className="px-4 md:px-5 pb-4 md:pb-5 pt-2 border-t border-slate-200">
+                            <div className="px-4 md:px-5 pb-4 md:pb-5 pt-2 border-t border-slate-200 max-h-[280px] overflow-y-auto">
                               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
                                 Time per Slide
                               </p>
-                              <div className="space-y-1.5">
+                              <div className="flex items-end gap-1 h-[180px] overflow-x-auto pb-6 relative">
                                 {(() => {
                                   const maxTime = Math.max(
                                     ...visitor.slideBreakdown.map(
@@ -460,42 +460,32 @@ export default function DeckAnalytics() {
                                     return (
                                       <div
                                         key={slide.page}
-                                        className="flex items-center gap-2"
+                                        className="flex flex-col items-center flex-1 min-w-[24px] max-w-[48px] relative h-full justify-end"
                                       >
-                                        <span className="text-[10px] font-bold text-slate-400 w-5 text-right shrink-0">
+                                        <span className="text-[8px] font-bold text-slate-400 mb-1 shrink-0">
+                                          {timeLabel}
+                                        </span>
+                                        <motion.div
+                                          initial={{ height: 0 }}
+                                          animate={{
+                                            height: `${Math.max(percent, 3)}%`,
+                                          }}
+                                          transition={{
+                                            duration: 0.4,
+                                            delay: slide.page * 0.03,
+                                          }}
+                                          className={cn(
+                                            "w-full rounded-t-md",
+                                            percent > 60
+                                              ? "bg-deckly-primary"
+                                              : percent > 30
+                                                ? "bg-deckly-primary/70"
+                                                : "bg-deckly-primary/40",
+                                          )}
+                                        />
+                                        <span className="text-[9px] font-bold text-slate-400 mt-1 absolute -bottom-5">
                                           {slide.page}
                                         </span>
-                                        <div className="flex-1 h-5 bg-slate-100 rounded-md overflow-hidden">
-                                          <motion.div
-                                            initial={{ width: 0 }}
-                                            animate={{
-                                              width: `${Math.max(percent, 2)}%`,
-                                            }}
-                                            transition={{
-                                              duration: 0.4,
-                                              delay: slide.page * 0.03,
-                                            }}
-                                            className={cn(
-                                              "h-full rounded-md flex items-center justify-end pr-1.5",
-                                              percent > 60
-                                                ? "bg-deckly-primary"
-                                                : percent > 30
-                                                  ? "bg-deckly-primary/70"
-                                                  : "bg-deckly-primary/40",
-                                            )}
-                                          >
-                                            {percent > 15 && (
-                                              <span className="text-[9px] font-black text-white">
-                                                {timeLabel}
-                                              </span>
-                                            )}
-                                          </motion.div>
-                                        </div>
-                                        {percent <= 15 && (
-                                          <span className="text-[9px] font-bold text-slate-400 shrink-0">
-                                            {timeLabel}
-                                          </span>
-                                        )}
                                       </div>
                                     );
                                   });
