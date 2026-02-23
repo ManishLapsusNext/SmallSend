@@ -8,6 +8,11 @@ export type SignalLabel =
   | "Returned quickly"
   | "Extended viewing";
 
+export interface SlideTime {
+  page: number;
+  time: number;
+}
+
 export interface VisitorSignal {
   visitorId: string;
   viewerEmail: string | null;
@@ -17,6 +22,7 @@ export interface VisitorSignal {
   deepSlides: number;
   daysBetweenFirstAndLast: number | null;
   signals: SignalLabel[];
+  slideBreakdown: SlideTime[];
 }
 
 interface PageViewRow {
@@ -121,6 +127,15 @@ export async function getVisitorSignals(
       signals.push("Extended viewing");
     }
 
+    // Build per-slide time breakdown (aggregate time per slide for this visitor)
+    const slideMap = new Map<number, number>();
+    for (const r of rows) {
+      slideMap.set(r.page_number, (slideMap.get(r.page_number) || 0) + (r.time_spent || 0));
+    }
+    const slideBreakdown: SlideTime[] = Array.from(slideMap.entries())
+      .map(([page, time]) => ({ page, time: Math.round(time) }))
+      .sort((a, b) => a.page - b.page);
+
     // Only include visitors who triggered at least one signal
     if (signals.length > 0) {
       results.push({
@@ -132,6 +147,7 @@ export async function getVisitorSignals(
         deepSlides,
         daysBetweenFirstAndLast: daysBetween,
         signals,
+        slideBreakdown,
       });
     }
   }

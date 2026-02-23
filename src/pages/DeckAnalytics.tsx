@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye,
   ChevronLeft,
@@ -10,6 +10,7 @@ import {
   Clock,
   BarChart3,
   Users,
+  ChevronDown,
 } from "lucide-react";
 import { analyticsService } from "../services/analyticsService";
 import { deckService } from "../services/deckService";
@@ -39,6 +40,7 @@ export default function DeckAnalytics() {
   >("views");
   const [visitorSignals, setVisitorSignals] = useState<VisitorSignal[]>([]);
   const [signalsLoading, setSignalsLoading] = useState(true);
+  const [expandedVisitor, setExpandedVisitor] = useState<string | null>(null);
 
   useEffect(() => {
     if (deckId && session?.user?.id) {
@@ -370,38 +372,139 @@ export default function DeckAnalytics() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="p-4 md:p-5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:border-slate-300 transition-all space-y-3"
+                    className="rounded-2xl border border-slate-200 bg-slate-50/50 hover:border-slate-300 transition-all overflow-hidden cursor-pointer"
+                    onClick={() =>
+                      setExpandedVisitor(
+                        expandedVisitor === visitor.visitorId
+                          ? null
+                          : visitor.visitorId,
+                      )
+                    }
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-deckly-primary/10 flex items-center justify-center">
-                          <span className="text-xs font-black text-deckly-primary">
-                            #{idx + 1}
-                          </span>
+                    <div className="p-4 md:p-5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-deckly-primary/10 flex items-center justify-center">
+                            <span className="text-xs font-black text-deckly-primary">
+                              #{idx + 1}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">
+                              {visitor.viewerEmail || `Visitor #${idx + 1}`}
+                            </p>
+                            <p className="text-[10px] text-slate-400">
+                              {visitor.totalVisits} slide views ·{" "}
+                              {visitor.totalTime}s total ·{" "}
+                              {visitor.distinctDays} day
+                              {visitor.distinctDays > 1 ? "s" : ""}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-bold text-slate-900">
-                            {visitor.viewerEmail || `Visitor #${idx + 1}`}
-                          </p>
-                          <p className="text-[10px] text-slate-400">
-                            {visitor.totalVisits} slide views ·{" "}
-                            {visitor.totalTime}s total · {visitor.distinctDays}{" "}
-                            day{visitor.distinctDays > 1 ? "s" : ""}
-                          </p>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right hidden md:block">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                              {visitor.signals.length} signal
+                              {visitor.signals.length > 1 ? "s" : ""}
+                            </p>
+                          </div>
+                          <ChevronDown
+                            size={16}
+                            className={cn(
+                              "text-slate-400 transition-transform duration-200",
+                              expandedVisitor === visitor.visitorId &&
+                                "rotate-180",
+                            )}
+                          />
                         </div>
                       </div>
-                      <div className="text-right hidden md:block">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                          {visitor.signals.length} signal
-                          {visitor.signals.length > 1 ? "s" : ""}
-                        </p>
+                      <div className="flex flex-wrap gap-2">
+                        {visitor.signals.map((signal) => (
+                          <InterestSignalBadge key={signal} signal={signal} />
+                        ))}
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {visitor.signals.map((signal) => (
-                        <InterestSignalBadge key={signal} signal={signal} />
-                      ))}
-                    </div>
+
+                    {/* Expandable Slide Time Breakdown */}
+                    <AnimatePresence>
+                      {expandedVisitor === visitor.visitorId &&
+                        visitor.slideBreakdown.length > 0 && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="px-4 md:px-5 pb-4 md:pb-5 pt-2 border-t border-slate-200">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
+                                Time per Slide
+                              </p>
+                              <div className="space-y-1.5">
+                                {(() => {
+                                  const maxTime = Math.max(
+                                    ...visitor.slideBreakdown.map(
+                                      (s) => s.time,
+                                    ),
+                                    1,
+                                  );
+                                  return visitor.slideBreakdown.map((slide) => {
+                                    const percent =
+                                      (slide.time / maxTime) * 100;
+                                    const mins = Math.floor(slide.time / 60);
+                                    const secs = slide.time % 60;
+                                    const timeLabel =
+                                      mins > 0
+                                        ? `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`
+                                        : `${secs}s`;
+                                    return (
+                                      <div
+                                        key={slide.page}
+                                        className="flex items-center gap-2"
+                                      >
+                                        <span className="text-[10px] font-bold text-slate-400 w-5 text-right shrink-0">
+                                          {slide.page}
+                                        </span>
+                                        <div className="flex-1 h-5 bg-slate-100 rounded-md overflow-hidden">
+                                          <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{
+                                              width: `${Math.max(percent, 2)}%`,
+                                            }}
+                                            transition={{
+                                              duration: 0.4,
+                                              delay: slide.page * 0.03,
+                                            }}
+                                            className={cn(
+                                              "h-full rounded-md flex items-center justify-end pr-1.5",
+                                              percent > 60
+                                                ? "bg-deckly-primary"
+                                                : percent > 30
+                                                  ? "bg-deckly-primary/70"
+                                                  : "bg-deckly-primary/40",
+                                            )}
+                                          >
+                                            {percent > 15 && (
+                                              <span className="text-[9px] font-black text-white">
+                                                {timeLabel}
+                                              </span>
+                                            )}
+                                          </motion.div>
+                                        </div>
+                                        {percent <= 15 && (
+                                          <span className="text-[9px] font-bold text-slate-400 shrink-0">
+                                            {timeLabel}
+                                          </span>
+                                        )}
+                                      </div>
+                                    );
+                                  });
+                                })()}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                    </AnimatePresence>
                   </motion.div>
                 ))}
               </div>
