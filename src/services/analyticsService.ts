@@ -340,24 +340,68 @@ export const analyticsService = {
       return cached.data;
     }
 
-    let query = supabase
+    // Get total time from deck_stats
+    let timeQuery = supabase
         .from("deck_stats")
-        .select("total_views, total_time_seconds")
+        .select("total_time_seconds")
         .eq("user_id", userId);
 
     if (deckId) {
-        query = query.eq("deck_id", deckId);
+        timeQuery = timeQuery.eq("deck_id", deckId);
     }
 
-    const { data, error } = await query;
-    if (error) throw error;
+    const { data: timeData, error: timeError } = await timeQuery;
+    if (timeError) throw timeError;
 
-    const result = (data || []).reduce((acc, curr) => ({
-        totalViews: acc.totalViews + curr.total_views,
-        totalTimeSeconds: acc.totalTimeSeconds + curr.total_time_seconds,
-    }), { totalViews: 0, totalTimeSeconds: 0 });
+    const totalTimeSeconds = (timeData || []).reduce(
+      (acc, curr) => acc + curr.total_time_seconds, 0
+    );
+
+    // Get unique visitors from deck_page_views (via decks owned by user)
+    const { data: userDecks } = await supabase
+      .from("decks")
+      .select("id")
+      .eq("user_id", userId);
+
+    let totalViews = 0;
+    if (userDecks && userDecks.length > 0) {
+      const deckIds = deckId ? [deckId] : userDecks.map((d: any) => d.id);
+      const { data: viewData } = await supabase
+        .from("deck_page_views")
+        .select("visitor_id, deck_id")
+        .in("deck_id", deckIds);
+
+      if (viewData) {
+        // Count unique visitors per deck, then sum
+        const visitorsByDeck = new Map<string, Set<string>>();
+        for (const row of viewData) {
+          if (!visitorsByDeck.has(row.deck_id)) {
+            visitorsByDeck.set(row.deck_id, new Set());
+          }
+          visitorsByDeck.get(row.deck_id)!.add(row.visitor_id);
+        }
+        for (const visitors of visitorsByDeck.values()) {
+          totalViews += visitors.size;
+        }
+      }
+    }
+
+    const result = { totalViews, totalTimeSeconds };
 
     totalStatsCache.set(cacheKey, { data: result, timestamp: Date.now() });
     return result;
-  }
+  },
+
+  // Get unique visitor count for a deck (distinct people, not slide views)
+  async getUniqueVisitorCount(deckId: string): Promise<number> {
+    const { data, error } = await supabase
+      .from("deck_page_views")
+      .select("visitor_id")
+      .eq("deck_id", deckId);
+
+    if (error || !data) return 0;
+
+    const uniqueVisitors = new Set(data.map((r: any) => r.visitor_id));
+    return uniqueVisitors.size;
+  },
 };

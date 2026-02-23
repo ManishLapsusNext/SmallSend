@@ -41,6 +41,7 @@ export default function DeckAnalytics() {
   const [visitorSignals, setVisitorSignals] = useState<VisitorSignal[]>([]);
   const [signalsLoading, setSignalsLoading] = useState(true);
   const [expandedVisitor, setExpandedVisitor] = useState<string | null>(null);
+  const [uniqueVisitors, setUniqueVisitors] = useState(0);
 
   useEffect(() => {
     if (deckId && session?.user?.id) {
@@ -60,6 +61,9 @@ export default function DeckAnalytics() {
       getVisitorSignals(deckId)
         .then(setVisitorSignals)
         .finally(() => setSignalsLoading(false));
+
+      // Fetch unique visitor count
+      analyticsService.getUniqueVisitorCount(deckId).then(setUniqueVisitors);
     }
   }, [deckId, session, isPro]);
 
@@ -157,7 +161,7 @@ export default function DeckAnalytics() {
           <SummaryCard
             icon={<Eye />}
             label="Total Visit"
-            value={totalViews}
+            value={uniqueVisitors}
             color="primary"
           />
           <SummaryCard
