@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye,
   ChevronLeft,
@@ -9,6 +9,8 @@ import {
   AlertCircle,
   Clock,
   BarChart3,
+  Users,
+  ChevronDown,
 } from "lucide-react";
 import { analyticsService } from "../services/analyticsService";
 import { deckService } from "../services/deckService";
@@ -20,6 +22,11 @@ import { DashboardCard } from "../components/ui/DashboardCard";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
+import {
+  getVisitorSignals,
+  VisitorSignal,
+} from "../services/interestSignalService";
+import { InterestSignalBadge } from "../components/dashboard/InterestSignalBadge";
 
 export default function DeckAnalytics() {
   const { deckId } = useParams<{ deckId: string }>();
@@ -31,6 +38,10 @@ export default function DeckAnalytics() {
   const [activeTab, setActiveTab] = useState<
     "views" | "time" | "retention" | "downloads" | "viewers" | "comments"
   >("views");
+  const [visitorSignals, setVisitorSignals] = useState<VisitorSignal[]>([]);
+  const [signalsLoading, setSignalsLoading] = useState(true);
+  const [expandedVisitor, setExpandedVisitor] = useState<string | null>(null);
+  const [uniqueVisitors, setUniqueVisitors] = useState(0);
 
   useEffect(() => {
     if (deckId && session?.user?.id) {
@@ -44,6 +55,15 @@ export default function DeckAnalytics() {
           setStats(statsData || []);
         })
         .finally(() => setLoading(false));
+
+      // Fetch interest signals
+      setSignalsLoading(true);
+      getVisitorSignals(deckId)
+        .then(setVisitorSignals)
+        .finally(() => setSignalsLoading(false));
+
+      // Fetch unique visitor count
+      analyticsService.getUniqueVisitorCount(deckId).then(setUniqueVisitors);
     }
   }, [deckId, session, isPro]);
 
@@ -141,7 +161,7 @@ export default function DeckAnalytics() {
           <SummaryCard
             icon={<Eye />}
             label="Total Visit"
-            value={totalViews}
+            value={uniqueVisitors}
             color="primary"
           />
           <SummaryCard
@@ -310,6 +330,179 @@ export default function DeckAnalytics() {
                 </div>
               )}
             </div>
+          </div>
+        </DashboardCard>
+
+        {/* Visitor Engagement Signals */}
+        <DashboardCard className="p-4 md:p-10">
+          <div className="space-y-6">
+            <div className="flex items-center gap-2">
+              <Users size={16} className="text-deckly-primary" />
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                Visitor Engagement Signals
+              </h3>
+              {visitorSignals.length > 0 && (
+                <span className="ml-auto text-[10px] font-bold text-deckly-primary bg-deckly-primary/10 px-2.5 py-1 rounded-full">
+                  {visitorSignals.length} engaged
+                </span>
+              )}
+            </div>
+
+            {signalsLoading ? (
+              <div className="py-12 flex flex-col items-center gap-3 text-slate-400">
+                <div className="w-8 h-8 border-2 border-deckly-primary/20 border-t-deckly-primary rounded-full animate-spin" />
+                <p className="text-[10px] font-black uppercase tracking-widest">
+                  Analyzing engagement...
+                </p>
+              </div>
+            ) : visitorSignals.length === 0 ? (
+              <div className="py-12 text-center space-y-3">
+                <div className="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-300">
+                  <Users size={24} />
+                </div>
+                <p className="text-sm font-bold text-slate-400">
+                  No engagement signals yet
+                </p>
+                <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                  Signals appear when visitors show repeated interest —
+                  revisits, extended viewing, or deep reading.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {visitorSignals.map((visitor, idx) => (
+                  <motion.div
+                    key={visitor.visitorId}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="rounded-2xl border border-slate-200 bg-slate-50/50 hover:border-slate-300 transition-all overflow-hidden cursor-pointer"
+                    onClick={() =>
+                      setExpandedVisitor(
+                        expandedVisitor === visitor.visitorId
+                          ? null
+                          : visitor.visitorId,
+                      )
+                    }
+                  >
+                    <div className="p-4 md:p-5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-deckly-primary/10 flex items-center justify-center">
+                            <span className="text-xs font-black text-deckly-primary">
+                              #{idx + 1}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">
+                              {visitor.viewerEmail || `Visitor #${idx + 1}`}
+                            </p>
+                            <p className="text-[10px] text-slate-400">
+                              {visitor.totalVisits} slide views ·{" "}
+                              {visitor.totalTime}s total ·{" "}
+                              {visitor.distinctDays} day
+                              {visitor.distinctDays > 1 ? "s" : ""}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right hidden md:block">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                              {visitor.signals.length} signal
+                              {visitor.signals.length > 1 ? "s" : ""}
+                            </p>
+                          </div>
+                          <ChevronDown
+                            size={16}
+                            className={cn(
+                              "text-slate-400 transition-transform duration-200",
+                              expandedVisitor === visitor.visitorId &&
+                                "rotate-180",
+                            )}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {visitor.signals.map((signal) => (
+                          <InterestSignalBadge key={signal} signal={signal} />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Expandable Slide Time Breakdown */}
+                    <AnimatePresence>
+                      {expandedVisitor === visitor.visitorId &&
+                        visitor.slideBreakdown.length > 0 && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="px-4 md:px-5 pb-4 md:pb-5 pt-2 border-t border-slate-200 max-h-[280px] overflow-y-auto">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
+                                Time per Slide
+                              </p>
+                              <div className="flex items-end gap-1 h-[180px] overflow-x-auto pb-6 relative">
+                                {(() => {
+                                  const maxTime = Math.max(
+                                    ...visitor.slideBreakdown.map(
+                                      (s) => s.time,
+                                    ),
+                                    1,
+                                  );
+                                  return visitor.slideBreakdown.map((slide) => {
+                                    const percent =
+                                      (slide.time / maxTime) * 100;
+                                    const mins = Math.floor(slide.time / 60);
+                                    const secs = slide.time % 60;
+                                    const timeLabel =
+                                      mins > 0
+                                        ? `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`
+                                        : `${secs}s`;
+                                    return (
+                                      <div
+                                        key={slide.page}
+                                        className="flex flex-col items-center flex-1 min-w-[24px] max-w-[48px] relative h-full justify-end"
+                                      >
+                                        <span className="text-[8px] font-bold text-slate-400 mb-1 shrink-0">
+                                          {timeLabel}
+                                        </span>
+                                        <motion.div
+                                          initial={{ height: 0 }}
+                                          animate={{
+                                            height: `${Math.max(percent, 3)}%`,
+                                          }}
+                                          transition={{
+                                            duration: 0.4,
+                                            delay: slide.page * 0.03,
+                                          }}
+                                          className={cn(
+                                            "w-full rounded-t-md",
+                                            percent > 60
+                                              ? "bg-deckly-primary"
+                                              : percent > 30
+                                                ? "bg-deckly-primary/70"
+                                                : "bg-deckly-primary/40",
+                                          )}
+                                        />
+                                        <span className="text-[9px] font-bold text-slate-400 mt-1 absolute -bottom-5">
+                                          {slide.page}
+                                        </span>
+                                      </div>
+                                    );
+                                  });
+                                })()}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                    </AnimatePresence>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
         </DashboardCard>
       </div>

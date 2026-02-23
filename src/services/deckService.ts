@@ -326,38 +326,43 @@ export const deckService = {
 
       const deckIds = decks.map(d => d.id);
 
-      // 2. Fetch aggregated views and latest activity from deck_stats
-      const { data: stats, error: statsError } = await supabase
-        .from("deck_stats")
-        .select("deck_id, total_views, updated_at")
-        .in("deck_id", deckIds);
+      // 2. Fetch latest activity from deck_stats
+    const { data: stats, error: statsError } = await supabase
+      .from("deck_stats")
+      .select("deck_id, updated_at")
+      .in("deck_id", deckIds);
 
-      if (statsError) throw statsError;
+    if (statsError) throw statsError;
 
-      // 3. Aggregate stats and find latest activity in JS
-      const statsMap: Record<string, { views: number; lastActive: string | null }> = {};
-      
-      (stats || []).forEach(s => {
-        const id = s.deck_id;
-        if (!statsMap[id]) {
-          statsMap[id] = { views: 0, lastActive: null };
-        }
-        
-        statsMap[id].views += s.total_views;
-        
-        // Use updated_at as a proxy for last_viewed_at
-        if (!statsMap[id].lastActive || (s.updated_at && s.updated_at > statsMap[id].lastActive)) {
-          statsMap[id].lastActive = s.updated_at;
-        }
-      });
+    // 3. Fetch unique visitors per deck from deck_page_views
+    const { data: pageViews } = await supabase
+      .from("deck_page_views")
+      .select("deck_id, visitor_id")
+      .in("deck_id", deckIds);
 
-      // 4. Merge data
-      return decks.map(deck => ({
-        ...deck,
-        total_views: statsMap[deck.id]?.views || 0,
-        last_viewed_at: statsMap[deck.id]?.lastActive || null
-      }));
+    // Count unique visitors per deck
+    const viewsMap: Record<string, Set<string>> = {};
+    (pageViews || []).forEach((pv: any) => {
+      if (!viewsMap[pv.deck_id]) viewsMap[pv.deck_id] = new Set();
+      viewsMap[pv.deck_id].add(pv.visitor_id);
     });
+
+    // Find latest activity per deck
+    const lastActiveMap: Record<string, string | null> = {};
+    (stats || []).forEach(s => {
+      const id = s.deck_id;
+      if (!lastActiveMap[id] || (s.updated_at && s.updated_at > lastActiveMap[id]!)) {
+        lastActiveMap[id] = s.updated_at;
+      }
+    });
+
+    // 4. Merge data
+    return decks.map(deck => ({
+      ...deck,
+      total_views: viewsMap[deck.id]?.size || 0,
+      last_viewed_at: lastActiveMap[deck.id] || null
+    }));
+  });
   },
 
   // Helper for user-specific storage path

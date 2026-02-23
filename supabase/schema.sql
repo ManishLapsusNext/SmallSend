@@ -37,7 +37,9 @@ CREATE TABLE IF NOT EXISTS public.deck_page_views (
     deck_id UUID NOT NULL REFERENCES public.decks(id) ON DELETE CASCADE,
     page_number INTEGER NOT NULL,
     visitor_id TEXT NOT NULL,
-    viewed_at TIMESTAMPTZ DEFAULT NOW()
+    viewer_email TEXT,
+    viewed_at TIMESTAMPTZ DEFAULT NOW(),
+    time_spent REAL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS public.deck_stats (
@@ -82,6 +84,9 @@ CREATE POLICY "Owners can view their page views" ON public.deck_page_views
         SELECT 1 FROM public.decks d WHERE d.id = deck_id AND d.user_id = auth.uid()
     ));
 
+CREATE POLICY "Anyone can update their own page views" ON public.deck_page_views
+    FOR UPDATE USING (true) WITH CHECK (true);
+
 CREATE POLICY "Anyone can upsert stats" ON public.deck_stats
     FOR ALL USING (true) WITH CHECK (true); 
 -- NOTE: In a high-security production app, upserts should be handled via Edge Functions.
@@ -97,3 +102,7 @@ CREATE POLICY "Owners can view their stats" ON public.deck_stats
   1. ALL: Authenticated users can upload to their own folder (e.g., userId/...)
   2. SELECT: Anyone can read from the bucket (since it's public)
 */
+
+-- MIGRATIONS (for existing databases)
+ALTER TABLE deck_page_views ADD COLUMN IF NOT EXISTS time_spent REAL DEFAULT 0;
+ALTER TABLE deck_page_views ADD COLUMN IF NOT EXISTS viewer_email TEXT;
