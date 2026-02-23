@@ -4,9 +4,10 @@ import { Deck, BrandingSettings } from "../types";
 import { useAuth } from "../contexts/AuthContext";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
 import { DashboardView } from "../components/DashboardView";
+import { EmptyStateOverlay } from "../components/dashboard/EmptyStateOverlay";
 
 function Home() {
-  const [, setDecks] = useState<Deck[]>([]);
+  const [decks, setDecks] = useState<Deck[]>([]);
   const [, setBranding] = useState<BrandingSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +89,7 @@ function Home() {
 
   return (
     <DashboardLayout title="Dashboard">
-      <DashboardView />
+      {decks.length === 0 ? <EmptyStateOverlay /> : <DashboardView />}
     </DashboardLayout>
   );
 }
