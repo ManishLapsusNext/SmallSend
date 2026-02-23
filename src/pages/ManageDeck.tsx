@@ -13,16 +13,23 @@ import {
   Mail,
   Eye,
   EyeOff,
+  Sparkles,
+  CalendarDays,
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import { Deck, SlidePage } from "../types";
-import { cn } from "../utils/cn";
+import { cn } from "@/lib/utils";
 
-// Common Components
-import Button from "../components/common/Button";
-import Input from "../components/common/Input";
-import Card from "../components/common/Card";
-import Textarea from "../components/common/Textarea";
+// Layout
+import { DashboardLayout } from "../components/layout/DashboardLayout";
+import { DashboardCard } from "../components/ui/DashboardCard";
+
+// shadcn/ui
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Switch } from "../components/ui/switch";
+import { Progress } from "../components/ui/progress";
+import { Button } from "../components/ui/button";
 
 // Set worker source for pdfjs-dist
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -40,8 +47,11 @@ function ManageDeck() {
   const [requirePassword, setRequirePassword] = useState(false);
   const [viewPassword, setViewPassword] = useState("");
   const [showPasswordField, setShowPasswordField] = useState(false);
+  const [expiresAt, setExpiresAt] = useState<string>("");
+  const [enableExpiry, setEnableExpiry] = useState(false);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState("");
+  const [progressPercent, setProgressPercent] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -65,6 +75,8 @@ function ManageDeck() {
         setRequireEmail(deck.require_email || false);
         setRequirePassword(deck.require_password || false);
         setViewPassword(deck.view_password || "");
+        setExpiresAt(deck.expires_at ? deck.expires_at.split("T")[0] : "");
+        setEnableExpiry(!!deck.expires_at);
       }
     } catch (err: any) {
       console.error("Error loading deck:", err);
@@ -104,6 +116,7 @@ function ManageDeck() {
 
     for (let i = 1; i <= numPages; i++) {
       setProgress(`Processing page ${i} of ${numPages}...`);
+      setProgressPercent(Math.round((i / numPages) * 50));
       const page = await pdf.getPage(i);
       const viewport = page.getViewport({ scale: 1.5 });
 
@@ -131,6 +144,7 @@ function ManageDeck() {
 
     setLoading(true);
     setError(null);
+    setProgressPercent(0);
 
     try {
       let finalFileUrl = existingDeck?.file_url;
@@ -144,6 +158,7 @@ function ManageDeck() {
 
       if (file) {
         setProgress("Uploading new PDF...");
+        setProgressPercent(5);
         const fileExt = file.name.split(".").pop();
         const fileName = `${userId}/decks/${slug}-${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
@@ -177,6 +192,7 @@ function ManageDeck() {
           imageBlobs,
           (current, total) => {
             setProgress(`Uploading slide ${current} of ${total}...`);
+            setProgressPercent(50 + Math.round((current / total) * 45));
           },
         );
         finalPages = imageUrls.map((url, idx) => ({
@@ -187,6 +203,7 @@ function ManageDeck() {
 
       if (editId) {
         setProgress("Updating deck record...");
+        setProgressPercent(95);
         const { error: dbError } = await supabase
           .from("decks")
           .update({
@@ -199,11 +216,13 @@ function ManageDeck() {
             require_email: requireEmail,
             require_password: requirePassword,
             view_password: viewPassword,
+            expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
           })
           .eq("id", editId);
         if (dbError) throw dbError;
       } else {
         setProgress("Creating new deck...");
+        setProgressPercent(95);
         const deckRecord = await deckService.uploadDeck(file as File, {
           title,
           slug,
@@ -214,6 +233,7 @@ function ManageDeck() {
           require_email: requireEmail,
           require_password: requirePassword,
           view_password: viewPassword,
+          expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
         });
 
         const imageBlobs = await processPdfToImages(file as File);
@@ -224,6 +244,7 @@ function ManageDeck() {
           imageBlobs,
           (current, total) => {
             setProgress(`Uploading slide ${current} of ${total}...`);
+            setProgressPercent(50 + Math.round((current / total) * 45));
           },
         );
 
@@ -233,10 +254,12 @@ function ManageDeck() {
         }));
 
         setProgress("Finalizing...");
+        setProgressPercent(98);
         await deckService.updateDeckPages(deckRecord.id, pages);
       }
 
       setProgress("Successful! Building your room...");
+      setProgressPercent(100);
       setTimeout(() => navigate("/"), 1500);
     } catch (err: any) {
       console.error("Operation failed:", err);
@@ -247,244 +270,338 @@ function ManageDeck() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-deckly-background">
-      {/* Decorative header */}
-      <div className="relative w-full h-[320px] flex items-center justify-center text-center overflow-hidden border-b border-white/5 bg-slate-900">
-        <div className="absolute inset-0 bg-gradient-to-b from-deckly-primary/10 to-transparent"></div>
-        <div className="relative z-10 w-full max-w-4xl px-4 -mt-10">
-          <motion.h1
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-4xl md:text-5xl font-black text-white tracking-tighter"
-          >
-            {editId ? "Refine Deck" : "Add Asset"}
-          </motion.h1>
-          <p className="mt-2 text-slate-400 font-medium">
+    <DashboardLayout title={editId ? "Refine Deck" : "Add New Asset"}>
+      <div className="flex-1 p-4 md:p-8 max-w-3xl mx-auto w-full space-y-6">
+        {/* Page Header */}
+        <div>
+          <h2 className="text-xl md:text-3xl font-bold text-slate-900 tracking-tight">
+            {editId ? "Refine Deck" : "Add New Asset"}
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">
             {editId
-              ? "Update your pitch deck and slides"
-              : "Upload a new PDF to your data room"}
+              ? "Update your pitch deck details and slides"
+              : "Upload a PDF to your data room"}
           </p>
         </div>
-      </div>
 
-      <main className="max-w-3xl w-full mx-auto px-6 -mt-24 pb-24 relative z-20">
-        <Card
-          variant="glass"
-          hoverable={false}
-          className="p-8 md:p-12 rounded-[40px] shadow-2xl"
-        >
+        {/* Main Form Card */}
+        <DashboardCard className="p-6 md:p-10">
           <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-            <div className="space-y-6">
-              <Input
-                label="Asset Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                placeholder="e.g. Series A Pitch Deck - v2"
-                icon={FileText}
-              />
+            {/* --- Document Details Section --- */}
+            <div className="space-y-5">
+              <div className="flex items-center gap-2 mb-1">
+                <FileText size={16} className="text-deckly-primary" />
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  Document Details
+                </h3>
+              </div>
 
-              <Input
-                label="URL Slug"
-                value={slug}
-                onChange={(e) => !editId && setSlug(e.target.value)}
-                required
-                placeholder="e.g. series-a-v2"
-                disabled={!!editId}
-                error={
-                  editId
-                    ? "Links are permanent to prevent broken access."
-                    : null
-                }
-              />
+              <div className="space-y-2">
+                <Label htmlFor="title" className="text-slate-700 font-semibold">
+                  Asset Title
+                </Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                  placeholder="e.g. Series A Pitch Deck - v2"
+                  className="h-11 rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-deckly-primary text-slate-900 placeholder:text-slate-400"
+                />
+              </div>
 
-              <Textarea
-                label="Description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Briefly explain what this document contains..."
-                rows={3}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="slug" className="text-slate-700 font-semibold">
+                  URL Slug
+                </Label>
+                <Input
+                  id="slug"
+                  value={slug}
+                  onChange={(e) => !editId && setSlug(e.target.value)}
+                  required
+                  placeholder="e.g. series-a-v2"
+                  disabled={!!editId}
+                  className="h-11 rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-deckly-primary text-slate-900 placeholder:text-slate-400"
+                />
+                {editId && (
+                  <p className="text-xs text-slate-400 px-1">
+                    Links are permanent to prevent broken access.
+                  </p>
+                )}
+              </div>
 
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-slate-400 px-1">
-                  {editId ? "Replace Document" : "PDF Document"}
-                </label>
+              <div className="space-y-2">
+                <Label
+                  htmlFor="description"
+                  className="text-slate-700 font-semibold"
+                >
+                  Description
+                </Label>
+                <textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Briefly explain what this document contains..."
+                  rows={3}
+                  className="flex w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-deckly-primary resize-none"
+                />
+              </div>
+            </div>
+
+            {/* --- PDF Upload Zone --- */}
+            <div className="space-y-2">
+              <Label className="text-slate-700 font-semibold">
+                {editId ? "Replace Document" : "PDF Document"}
+              </Label>
+              <div
+                onClick={() => !loading && fileInputRef.current?.click()}
+                className={cn(
+                  "relative group cursor-pointer border-2 border-dashed rounded-2xl p-8 md:p-10 text-center transition-all",
+                  file
+                    ? "border-deckly-primary/40 bg-deckly-primary/5"
+                    : "border-slate-200 hover:border-deckly-primary/40 hover:bg-slate-50",
+                  loading ? "opacity-50 cursor-not-allowed" : "",
+                )}
+              >
+                <div className="flex flex-col items-center gap-3">
+                  {file ? (
+                    <div className="w-14 h-14 rounded-2xl bg-deckly-primary/10 flex items-center justify-center">
+                      <CheckCircle2 size={28} className="text-deckly-primary" />
+                    </div>
+                  ) : (
+                    <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center group-hover:bg-deckly-primary/10 transition-colors">
+                      <Upload
+                        size={28}
+                        className="text-slate-400 group-hover:text-deckly-primary transition-colors"
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">
+                      {file ? file.name : "Click to select a PDF"}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {file
+                        ? `${(file.size / 1024 / 1024).toFixed(1)} MB`
+                        : "Maximum file size: 50MB"}
+                    </p>
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  hidden
+                  accept=".pdf"
+                  onChange={handleFileChange}
+                />
+              </div>
+            </div>
+
+            {/* --- Access Protection Section --- */}
+            <div className="pt-4 border-t border-slate-100 space-y-5">
+              <div className="flex items-center gap-2">
+                <Lock size={16} className="text-deckly-primary" />
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  Access Protection
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Require Email */}
                 <div
-                  onClick={() => !loading && fileInputRef.current?.click()}
                   className={cn(
-                    "relative group cursor-pointer border-2 border-dashed border-white/10 rounded-2xl p-8 text-center transition-all hover:border-deckly-primary/50 hover:bg-white/5",
-                    file ? "border-deckly-primary/30 bg-deckly-primary/5" : "",
-                    loading ? "opacity-50 cursor-not-allowed" : "",
+                    "flex items-center justify-between p-4 rounded-2xl border transition-all",
+                    requireEmail
+                      ? "bg-deckly-primary/5 border-deckly-primary/30"
+                      : "bg-slate-50/50 border-slate-200",
                   )}
                 >
-                  <div className="flex flex-col items-center gap-3">
-                    {file ? (
-                      <CheckCircle2 size={32} className="text-deckly-primary" />
-                    ) : (
-                      <Upload
-                        size={32}
-                        className="text-slate-500 group-hover:text-deckly-primary transition-colors"
-                      />
-                    )}
+                  <div className="flex items-center gap-3">
+                    <Mail
+                      size={18}
+                      className={
+                        requireEmail ? "text-deckly-primary" : "text-slate-400"
+                      }
+                    />
                     <div>
-                      <p className="text-white font-bold">
-                        {file ? file.name : "Select PDF File"}
+                      <p className="text-sm font-bold text-slate-900">
+                        Require Email
                       </p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Maximum file size: 50MB
+                      <p className="text-[11px] text-slate-400">
+                        Capture viewer emails
                       </p>
                     </div>
                   </div>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    hidden
-                    accept=".pdf"
-                    onChange={handleFileChange}
+                  <Switch
+                    checked={requireEmail}
+                    onCheckedChange={setRequireEmail}
+                    className="data-[state=checked]:bg-deckly-primary"
+                  />
+                </div>
+
+                {/* Password Protected */}
+                <div
+                  className={cn(
+                    "flex items-center justify-between p-4 rounded-2xl border transition-all",
+                    requirePassword
+                      ? "bg-deckly-primary/5 border-deckly-primary/30"
+                      : "bg-slate-50/50 border-slate-200",
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <Lock
+                      size={18}
+                      className={
+                        requirePassword
+                          ? "text-deckly-primary"
+                          : "text-slate-400"
+                      }
+                    />
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">
+                        Password
+                      </p>
+                      <p className="text-[11px] text-slate-400">
+                        Restrict with a password
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={requirePassword}
+                    onCheckedChange={setRequirePassword}
+                    className="data-[state=checked]:bg-deckly-primary"
                   />
                 </div>
               </div>
 
-              {/* Protection Settings */}
-              <div className="pt-6 border-t border-white/5 space-y-6">
-                <div className="flex flex-col gap-1 px-1">
-                  <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                    <Lock size={14} className="text-deckly-primary" />
-                    Access Protection
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Control who can view your deck
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setRequireEmail(!requireEmail)}
-                    className={cn(
-                      "flex items-center justify-between p-4 rounded-2xl border transition-all",
-                      requireEmail
-                        ? "bg-deckly-primary/5 border-deckly-primary/30 text-white"
-                        : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10",
-                    )}
+              <AnimatePresence>
+                {requirePassword && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, y: -10 }}
+                    animate={{ opacity: 1, height: "auto", y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -10 }}
+                    className="overflow-hidden"
                   >
-                    <div className="flex items-center gap-3">
-                      <Mail
-                        size={18}
-                        className={
-                          requireEmail
-                            ? "text-deckly-primary"
-                            : "text-slate-500"
-                        }
-                      />
-                      <span className="text-sm font-bold">Require Email</span>
-                    </div>
-                    <div
-                      className={cn(
-                        "w-10 h-5 rounded-full relative transition-colors",
-                        requireEmail ? "bg-deckly-primary" : "bg-slate-700",
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "absolute top-1 w-3 h-3 bg-white rounded-full transition-all",
-                          requireEmail ? "left-6" : "left-1",
-                        )}
-                      />
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setRequirePassword(!requirePassword)}
-                    className={cn(
-                      "flex items-center justify-between p-4 rounded-2xl border transition-all",
-                      requirePassword
-                        ? "bg-deckly-primary/5 border-deckly-primary/30 text-white"
-                        : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10",
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Lock
-                        size={18}
-                        className={
-                          requirePassword
-                            ? "text-deckly-primary"
-                            : "text-slate-500"
-                        }
-                      />
-                      <span className="text-sm font-bold">
-                        Password Protected
-                      </span>
-                    </div>
-                    <div
-                      className={cn(
-                        "w-10 h-5 rounded-full relative transition-colors",
-                        requirePassword ? "bg-deckly-primary" : "bg-slate-700",
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "absolute top-1 w-3 h-3 bg-white rounded-full transition-all",
-                          requirePassword ? "left-6" : "left-1",
-                        )}
-                      />
-                    </div>
-                  </button>
-                </div>
-
-                <AnimatePresence>
-                  {requirePassword && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0, y: -10 }}
-                      animate={{ opacity: 1, height: "auto", y: 0 }}
-                      exit={{ opacity: 0, height: 0, y: -10 }}
-                      className="overflow-hidden"
-                    >
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="password"
+                        className="text-slate-700 font-semibold"
+                      >
+                        Viewing Password
+                      </Label>
                       <div className="relative">
                         <Input
-                          label="Viewing Password"
+                          id="password"
                           type={showPasswordField ? "text" : "password"}
                           value={viewPassword}
                           onChange={(e) => setViewPassword(e.target.value)}
                           placeholder="Create a strong password"
                           required={requirePassword}
-                          icon={Lock}
-                          rightElement={
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setShowPasswordField(!showPasswordField)
-                              }
-                              className="text-slate-500 hover:text-white transition-colors p-1"
-                            >
-                              {showPasswordField ? (
-                                <EyeOff size={18} />
-                              ) : (
-                                <Eye size={18} />
-                              )}
-                            </button>
-                          }
+                          className="h-11 rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-deckly-primary text-slate-900 placeholder:text-slate-400 pr-10"
                         />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowPasswordField(!showPasswordField)
+                          }
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
+                        >
+                          {showPasswordField ? (
+                            <EyeOff size={18} />
+                          ) : (
+                            <Eye size={18} />
+                          )}
+                        </button>
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Expiry Date Toggle */}
+              <div
+                className={cn(
+                  "flex items-center justify-between p-4 rounded-2xl border transition-all",
+                  enableExpiry
+                    ? "bg-deckly-primary/5 border-deckly-primary/30"
+                    : "bg-slate-50/50 border-slate-200",
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <CalendarDays
+                    size={18}
+                    className={
+                      enableExpiry ? "text-deckly-primary" : "text-slate-400"
+                    }
+                  />
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">
+                      Set Expiry Date
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      Auto-disable access after date
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={enableExpiry}
+                  onCheckedChange={(checked) => {
+                    setEnableExpiry(checked);
+                    if (!checked) setExpiresAt("");
+                  }}
+                  className="data-[state=checked]:bg-deckly-primary"
+                />
               </div>
+
+              <AnimatePresence>
+                {enableExpiry && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, y: -10 }}
+                    animate={{ opacity: 1, height: "auto", y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -10 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="expiry"
+                        className="text-slate-700 font-semibold"
+                      >
+                        Expiry Date
+                      </Label>
+                      <Input
+                        id="expiry"
+                        type="date"
+                        value={expiresAt}
+                        onChange={(e) => setExpiresAt(e.target.value)}
+                        min={new Date().toISOString().split("T")[0]}
+                        className="h-11 rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-deckly-primary text-slate-900"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
+            {/* --- Progress & Error --- */}
             <AnimatePresence>
               {loading && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
-                  className="flex items-center justify-center gap-3 bg-white/5 p-4 rounded-xl border border-white/5"
+                  className="space-y-3"
                 >
-                  <div className="w-5 h-5 border-2 border-deckly-primary/30 border-t-deckly-primary rounded-full animate-spin" />
-                  <span className="text-sm font-bold text-deckly-primary uppercase tracking-widest">
-                    {progress}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-deckly-primary uppercase tracking-widest">
+                      {progress}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400">
+                      {progressPercent}%
+                    </span>
+                  </div>
+                  <Progress
+                    value={progressPercent}
+                    className="h-2 bg-slate-100 [&>div]:bg-deckly-primary"
+                  />
                 </motion.div>
               )}
 
@@ -492,7 +609,7 @@ function ManageDeck() {
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
-                  className="flex items-center gap-3 bg-red-500/10 p-4 rounded-xl border border-red-500/20 text-red-500"
+                  className="flex items-center gap-3 bg-red-50 p-4 rounded-xl border border-red-200 text-red-600"
                 >
                   <AlertCircle size={20} />
                   <span className="text-sm font-bold">{error}</span>
@@ -500,27 +617,41 @@ function ManageDeck() {
               )}
             </AnimatePresence>
 
-            <div className="flex flex-col gap-3 pt-4">
+            {/* --- Actions --- */}
+            <div className="flex flex-col gap-3 pt-2">
               <Button
                 type="submit"
-                size="large"
-                fullWidth
-                loading={loading}
-                className="shadow-2xl shadow-deckly-primary/20"
+                disabled={loading}
+                className="h-12 rounded-xl bg-deckly-primary hover:bg-deckly-primary/90 text-white font-bold text-sm uppercase tracking-widest shadow-lg shadow-deckly-primary/20 transition-all"
               >
-                {editId ? "Update Asset" : "Publish to Data Room"}
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Processing...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={16} />
+                    {editId ? "Update Asset" : "Upload"}
+                  </div>
+                )}
               </Button>
 
               <Link to="/">
-                <Button variant="ghost" fullWidth icon={ArrowLeft}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full h-10 text-slate-400 hover:text-slate-700 font-bold text-xs uppercase tracking-widest"
+                >
+                  <ArrowLeft size={14} className="mr-2" />
                   Discard Changes
                 </Button>
               </Link>
             </div>
           </form>
-        </Card>
-      </main>
-    </div>
+        </DashboardCard>
+      </div>
+    </DashboardLayout>
   );
 }
 
