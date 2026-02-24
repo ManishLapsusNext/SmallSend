@@ -13,6 +13,9 @@ import Signup from "./pages/Signup";
 import ContentPage from "./pages/ContentPage";
 import DeckAnalytics from "./pages/DeckAnalytics";
 import EditDeck from "./pages/EditDeck";
+import DataRoomsPage from "./pages/DataRoomsPage";
+import ManageDataRoom from "./pages/ManageDataRoom";
+import DataRoomViewer from "./pages/DataRoomViewer";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import "./App.css";
 
@@ -91,6 +94,18 @@ const AppContent = () => {
           element={session ? <EditDeck /> : <Navigate to="/login" />}
         />
         <Route
+          path="/rooms"
+          element={session ? <DataRoomsPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/rooms/new"
+          element={session ? <ManageDataRoom /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/rooms/:roomId"
+          element={session ? <ManageDataRoom /> : <Navigate to="/login" />}
+        />
+        <Route
           path="/login"
           element={!session ? <Login /> : <Navigate to="/" />}
         />
@@ -102,6 +117,7 @@ const AppContent = () => {
           path="/"
           element={session ? <Home /> : <Navigate to="/login" />}
         />
+        <Route path="/room/:slug" element={<DataRoomViewer />} />
         <Route path="/:slug" element={<Viewer />} />
       </Routes>
     </div>

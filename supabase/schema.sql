@@ -94,6 +94,56 @@ CREATE POLICY "Anyone can upsert stats" ON public.deck_stats
 CREATE POLICY "Owners can view their stats" ON public.deck_stats
     FOR SELECT USING (auth.uid() = user_id);
 
+-- 5. DATA ROOMS TABLE
+CREATE TABLE IF NOT EXISTS public.data_rooms (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE,
+    description TEXT,
+    icon_url TEXT,
+    require_email BOOLEAN DEFAULT FALSE,
+    require_password BOOLEAN DEFAULT FALSE,
+    view_password TEXT,
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. DATA ROOM DOCUMENTS (junction table)
+CREATE TABLE IF NOT EXISTS public.data_room_documents (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    data_room_id UUID NOT NULL REFERENCES public.data_rooms(id) ON DELETE CASCADE,
+    deck_id UUID NOT NULL REFERENCES public.decks(id) ON DELETE CASCADE,
+    display_order INTEGER DEFAULT 0,
+    added_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(data_room_id, deck_id)
+);
+
+-- Indexes for data rooms
+CREATE INDEX IF NOT EXISTS idx_data_rooms_user ON public.data_rooms(user_id);
+CREATE INDEX IF NOT EXISTS idx_data_room_docs_room ON public.data_room_documents(data_room_id, display_order);
+
+-- Enable RLS
+ALTER TABLE public.data_rooms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.data_room_documents ENABLE ROW LEVEL SECURITY;
+
+-- POLICIES FOR DATA ROOMS
+CREATE POLICY "Users can manage their own data rooms" ON public.data_rooms
+    FOR ALL USING (auth.uid() = user_id);
+
+CREATE POLICY "Data rooms are viewable by everyone" ON public.data_rooms
+    FOR SELECT USING (true);
+
+-- POLICIES FOR DATA ROOM DOCUMENTS
+CREATE POLICY "Owners can manage data room documents" ON public.data_room_documents
+    FOR ALL USING (EXISTS (
+        SELECT 1 FROM public.data_rooms dr WHERE dr.id = data_room_id AND dr.user_id = auth.uid()
+    ));
+
+CREATE POLICY "Data room documents are viewable by everyone" ON public.data_room_documents
+    FOR SELECT USING (true);
+
 -- STORAGE BUCKETS
 -- You must manually create a public bucket named 'decks' in the Supabase Dashboard.
 -- Then apply these policies in the Storage tab:
