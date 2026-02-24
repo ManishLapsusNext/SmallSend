@@ -282,17 +282,17 @@ function DataRoomDetail() {
                   {documents.length}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => navigate(`/upload?returnToRoom=${roomId}`)}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-200 transition-all active:scale-95"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-200 transition-all active:scale-95"
                 >
                   <Plus size={14} />
                   Upload New
                 </button>
                 <button
                   onClick={() => setPickerOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-deckly-primary text-slate-900 font-bold text-xs rounded-xl hover:bg-deckly-primary/90 transition-all active:scale-95"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-deckly-primary text-slate-900 font-bold text-xs rounded-xl hover:bg-deckly-primary/90 transition-all active:scale-95"
                 >
                   <Plus size={14} />
                   Add Existing

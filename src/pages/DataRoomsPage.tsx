@@ -56,14 +56,14 @@ function DataRoomsPage() {
     <DashboardLayout title="Data Rooms" showFab={false}>
       <div className="p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold text-slate-800">Data Rooms</h1>
             <p className="text-sm text-slate-500 mt-1">
               Bundle documents into shareable folders with access controls
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
             {/* Usage indicator */}
             {!loading && (
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full">
@@ -93,7 +93,7 @@ function DataRoomsPage() {
             <button
               onClick={() => !isAtLimit && navigate("/rooms/new")}
               disabled={isAtLimit}
-              className={`flex items-center gap-2 px-5 py-2.5 font-bold text-sm rounded-xl transition-all active:scale-95 ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 font-bold text-sm rounded-xl transition-all active:scale-95 ${
                 isAtLimit
                   ? "bg-slate-100 text-slate-400 cursor-not-allowed"
                   : "bg-deckly-primary text-slate-900 hover:bg-deckly-primary/90"

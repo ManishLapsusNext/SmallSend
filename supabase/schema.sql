@@ -1,6 +1,29 @@
 -- DECKLY DATABASE SCHEMA
 -- Copy and paste this into your Supabase SQL Editor
 
+-- 0. PROFILES TABLE
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    full_name TEXT,
+    avatar_url TEXT,
+    tier TEXT DEFAULT 'FREE', -- FREE, PRO, PRO_PLUS
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS for profiles
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- POLICIES FOR PROFILES
+CREATE POLICY "Users can view their own profile" ON public.profiles
+    FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users can update their own profile" ON public.profiles
+    FOR UPDATE USING (auth.uid() = id);
+
+CREATE POLICY "Users can insert their own profile" ON public.profiles
+    FOR INSERT WITH CHECK (auth.uid() = id);
+
 -- 1. DECKS TABLE
 CREATE TABLE IF NOT EXISTS public.decks (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
