@@ -56,7 +56,7 @@ function ManageDataRoom() {
       try {
         const room = await dataRoomService.getDataRoomById(roomId!);
         if (!room) {
-          navigate("/rooms");
+          navigate(isEditMode ? `/rooms/${roomId}` : "/rooms");
           return;
         }
         setName(room.name);
@@ -210,7 +210,7 @@ function ManageDataRoom() {
               ? new Date(expiryDate).toISOString()
               : null,
         });
-        navigate("/rooms");
+        navigate(`/rooms/${roomId}`);
       } else {
         // Check slug availability
         const available = await dataRoomService.checkSlugAvailable(slug);
@@ -246,7 +246,7 @@ function ManageDataRoom() {
           await dataRoomService.addDocuments(room.id, deckIds);
         }
 
-        navigate("/rooms");
+        navigate(`/rooms/${room.id}`);
       }
     } catch (err: any) {
       console.error("Failed to save", err);
@@ -293,7 +293,7 @@ function ManageDataRoom() {
         {/* Back + Title */}
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate("/rooms")}
+            onClick={() => navigate(isEditMode ? `/rooms/${roomId}` : "/rooms")}
             className="p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-lg hover:bg-slate-100"
           >
             <ArrowLeft size={20} />

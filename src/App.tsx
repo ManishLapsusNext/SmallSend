@@ -15,6 +15,7 @@ import DeckAnalytics from "./pages/DeckAnalytics";
 import EditDeck from "./pages/EditDeck";
 import DataRoomsPage from "./pages/DataRoomsPage";
 import ManageDataRoom from "./pages/ManageDataRoom";
+import DataRoomDetail from "./pages/DataRoomDetail";
 import DataRoomViewer from "./pages/DataRoomViewer";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import "./App.css";
@@ -103,6 +104,10 @@ const AppContent = () => {
         />
         <Route
           path="/rooms/:roomId"
+          element={session ? <DataRoomDetail /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/rooms/:roomId/edit"
           element={session ? <ManageDataRoom /> : <Navigate to="/login" />}
         />
         <Route
