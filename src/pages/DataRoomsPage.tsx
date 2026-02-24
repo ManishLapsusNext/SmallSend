@@ -1,18 +1,27 @@
 import { useState, useEffect } from "react";
-import { Plus, Monitor } from "lucide-react";
+import { Plus, Monitor, Lock, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
 import { DataRoomCard } from "../components/dashboard/DataRoomCard";
 import { DataRoom } from "../types";
 import { dataRoomService } from "../services/dataRoomService";
+import { useAuth } from "../contexts/AuthContext";
+import { TIER_CONFIG, Tier } from "../constants/tiers";
 
 function DataRoomsPage() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [rooms, setRooms] = useState<DataRoom[]>([]);
   const [roomMeta, setRoomMeta] = useState<
     Map<string, { docCount: number; visitors: number }>
   >(new Map());
   const [loading, setLoading] = useState(true);
+
+  const tier: Tier = (profile?.tier as Tier) || "FREE";
+  const tierConfig = TIER_CONFIG[tier];
+  const maxRooms = tierConfig.maxDataRooms;
+  const isAtLimit = rooms.length >= maxRooms;
+  const isUnlimited = maxRooms === Infinity;
 
   useEffect(() => {
     async function load() {
@@ -21,7 +30,6 @@ function DataRoomsPage() {
         const data = await dataRoomService.getDataRooms();
         setRooms(data);
 
-        // Load metadata for each room in parallel
         const metaEntries = await Promise.all(
           data.map(async (room) => {
             const [docCount, analytics] = await Promise.all([
@@ -55,14 +63,70 @@ function DataRoomsPage() {
               Bundle documents into shareable folders with access controls
             </p>
           </div>
-          <button
-            onClick={() => navigate("/rooms/new")}
-            className="flex items-center gap-2 px-5 py-2.5 bg-deckly-primary text-slate-900 font-bold text-sm rounded-xl hover:bg-deckly-primary/90 transition-all active:scale-95"
-          >
-            <Plus size={16} />
-            New Room
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Usage indicator */}
+            {!loading && (
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full">
+                <div className="flex gap-0.5">
+                  {Array.from({ length: Math.min(maxRooms, 5) }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        i < rooms.length ? "bg-deckly-primary" : "bg-slate-200"
+                      }`}
+                    />
+                  ))}
+                  {isUnlimited && (
+                    <span className="text-[9px] font-black text-slate-400 ml-1">
+                      ∞
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] font-bold text-slate-500">
+                  {rooms.length}
+                  {!isUnlimited && `/${maxRooms}`} rooms
+                </span>
+              </div>
+            )}
+
+            {/* Create button */}
+            <button
+              onClick={() => !isAtLimit && navigate("/rooms/new")}
+              disabled={isAtLimit}
+              className={`flex items-center gap-2 px-5 py-2.5 font-bold text-sm rounded-xl transition-all active:scale-95 ${
+                isAtLimit
+                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  : "bg-deckly-primary text-slate-900 hover:bg-deckly-primary/90"
+              }`}
+            >
+              {isAtLimit ? <Lock size={16} /> : <Plus size={16} />}
+              New Room
+            </button>
+          </div>
         </div>
+
+        {/* Upgrade banner */}
+        {isAtLimit && !isUnlimited && (
+          <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 rounded-2xl">
+            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+              <Zap size={20} className="text-amber-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-slate-800">
+                {tier === "FREE"
+                  ? "Upgrade to Pro for up to 5 data rooms"
+                  : "Upgrade to Pro+ for unlimited data rooms"}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                You've used all {maxRooms} data room{maxRooms > 1 ? "s" : ""} on
+                your {tier === "FREE" ? "Free" : "Pro"} plan.
+              </p>
+            </div>
+            <button className="px-4 py-2 bg-amber-500 text-white font-bold text-xs rounded-xl hover:bg-amber-600 transition-colors shrink-0">
+              Upgrade
+            </button>
+          </div>
+        )}
 
         {/* Content */}
         {loading ? (

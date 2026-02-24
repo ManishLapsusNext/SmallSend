@@ -18,11 +18,24 @@ import { AccessProtectionSection } from "../components/dashboard/form-sections/A
 import { DangerZoneSection } from "../components/dashboard/form-sections/DangerZoneSection";
 import { DataRoomDocument } from "../types";
 import { dataRoomService } from "../services/dataRoomService";
+import { useAuth } from "../contexts/AuthContext";
+import { TIER_CONFIG, Tier } from "../constants/tiers";
 
 function ManageDataRoom() {
   const { roomId } = useParams();
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const isEditMode = !!roomId && roomId !== "new";
+
+  // Tier limit safety check for create mode
+  useEffect(() => {
+    if (isEditMode) return;
+    const tier: Tier = (profile?.tier as Tier) || "FREE";
+    const max = TIER_CONFIG[tier].maxDataRooms;
+    dataRoomService.getDataRooms().then((rooms) => {
+      if (rooms.length >= max) navigate("/rooms");
+    });
+  }, [isEditMode, profile, navigate]);
 
   // Form state
   const [name, setName] = useState("");

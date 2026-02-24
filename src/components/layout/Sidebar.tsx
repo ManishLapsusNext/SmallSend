@@ -85,9 +85,28 @@ export function Sidebar() {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">
-              {profile?.full_name || "User Name"}
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-semibold text-white truncate">
+                {profile?.full_name || "User Name"}
+              </p>
+              {(() => {
+                const t = profile?.tier || "FREE";
+                return (
+                  <span
+                    className={cn(
+                      "text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 leading-none",
+                      t === "PRO_PLUS"
+                        ? "bg-gradient-to-r from-purple-500/20 to-blue-500/20 text-purple-300 border border-purple-500/20"
+                        : t === "PRO"
+                          ? "bg-amber-500/15 text-amber-400 border border-amber-500/20"
+                          : "bg-white/5 text-slate-500 border border-white/5",
+                    )}
+                  >
+                    {t === "PRO_PLUS" ? "PRO+" : t}
+                  </span>
+                );
+              })()}
+            </div>
             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black truncate">
               {session?.user?.email?.split("@")[0] || "Founder"}
             </p>
