@@ -27,16 +27,26 @@ export const deckService = {
     });
   },
 
-  // Get single deck by slug
+  // Get single deck by slug (uses public view to hide password)
   async getDeckBySlug(slug: string): Promise<Deck> {
     const { data, error } = await supabase
-      .from("decks")
+      .from("decks_public")
       .select("*")
       .eq("slug", slug)
       .single();
 
     if (error) throw error;
     return data as Deck;
+  },
+
+  // NEW: Securely check deck password via RPC
+  async checkDeckPassword(slug: string, password: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc("check_deck_password", {
+      p_slug: slug,
+      p_password: password,
+    });
+    if (error) throw error;
+    return !!data;
   },
 
   // Get single deck by ID (management use)

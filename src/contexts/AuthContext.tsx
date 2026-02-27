@@ -41,7 +41,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchProfile = async (userId: string) => {
     try {
-      const data = await userService.getProfile(userId);
+      let data = await userService.getProfile(userId);
+
+      // Auto-create profile if it doesn't exist (e.g. Google OAuth first sign-in)
+      if (!data) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        const meta = user?.user_metadata;
+        try {
+          const { error } = await supabase.from("profiles").upsert(
+            {
+              id: userId,
+              full_name: meta?.full_name || meta?.name || null,
+              avatar_url: meta?.avatar_url || meta?.picture || null,
+              tier: "FREE",
+            },
+            { onConflict: "id" },
+          );
+          if (!error) {
+            data = await userService.getProfile(userId);
+          }
+        } catch (createErr) {
+          console.error("Profile auto-create failed:", createErr);
+        }
+      }
+
       setProfile(data);
       if (data) {
         localStorage.setItem("deckly-user-profile", JSON.stringify(data));

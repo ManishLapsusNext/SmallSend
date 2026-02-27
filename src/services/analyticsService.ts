@@ -226,31 +226,52 @@ export const analyticsService = {
       return cached.data;
     }
 
-    const { data, error } = await supabase
+    // 1. Get time stats from deck_stats
+    const { data: statsData, error: statsError } = await supabase
       .from("deck_stats")
-      .select("deck_id, total_views, total_time_seconds, decks(title)")
+      .select("deck_id, total_time_seconds, decks(title)")
       .eq("user_id", userId);
 
-    if (error) throw error;
+    if (statsError) throw statsError;
 
-    // Aggregate by deck_id
-    const aggregated = (data as any[]).reduce((acc: any, curr) => {
-      const id = curr.deck_id;
-      if (!acc[id]) {
-        acc[id] = { 
-          id, 
-          title: curr.decks?.title || "Untitled", 
-          views: 0, 
-          time: 0 
-        };
+    // Aggregate time by deck_id and collect titles
+    const deckInfo: Record<string, { title: string; time: number }> = {};
+    for (const row of (statsData as any[])) {
+      const id = row.deck_id;
+      if (!deckInfo[id]) {
+        deckInfo[id] = { title: row.decks?.title || "Untitled", time: 0 };
       }
-      acc[id].views += curr.total_views;
-      acc[id].time += curr.total_time_seconds;
-      return acc;
-    }, {});
+      deckInfo[id].time += row.total_time_seconds;
+    }
 
-    const result = Object.values(aggregated)
-      .sort((a: any, b: any) => b.views - a.views)
+    const deckIds = Object.keys(deckInfo);
+    if (deckIds.length === 0) {
+      topDecksCache.set(cacheKey, { data: [], timestamp: Date.now() });
+      return [];
+    }
+
+    // 2. Get unique visitors per deck from deck_page_views
+    const { data: viewData } = await supabase
+      .from("deck_page_views")
+      .select("deck_id, visitor_id")
+      .in("deck_id", deckIds);
+
+    const visitorsByDeck = new Map<string, Set<string>>();
+    for (const row of (viewData || [])) {
+      if (!visitorsByDeck.has(row.deck_id)) {
+        visitorsByDeck.set(row.deck_id, new Set());
+      }
+      visitorsByDeck.get(row.deck_id)!.add(row.visitor_id);
+    }
+
+    // 3. Merge and sort
+    const result = deckIds.map(id => ({
+      id,
+      title: deckInfo[id].title,
+      views: visitorsByDeck.get(id)?.size || 0,
+      time: deckInfo[id].time,
+    }))
+      .sort((a, b) => b.views - a.views)
       .slice(0, limit);
 
     topDecksCache.set(cacheKey, { data: result, timestamp: Date.now() });

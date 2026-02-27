@@ -45,3 +45,27 @@ export interface UserProfile {
   tier: 'FREE' | 'PRO' | 'PRO_PLUS';
   updated_at: string | null;
 }
+
+export interface DataRoom {
+  id: string;
+  user_id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  icon_url?: string;
+  require_email?: boolean;
+  require_password?: boolean;
+  view_password?: string;
+  expires_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DataRoomDocument {
+  id: string;
+  data_room_id: string;
+  deck_id: string;
+  display_order: number;
+  added_at: string;
+  deck?: Deck;
+}
