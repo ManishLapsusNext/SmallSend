@@ -325,24 +325,29 @@ export const analyticsService = {
 
         const { data: vData, error: vError } = await supabase
             .from("deck_page_views")
-            .select("viewed_at")
+            .select("viewed_at, visitor_id, deck_id, time_spent")
             .in("deck_id", deckIds)
             .gt("viewed_at", sevenDaysAgo.toISOString());
 
         if (vError) throw vError;
+
+        // Tracks unique visitor/deck combos per day to count as "one visit"
+        const dayVisitsMap = dateKeys.map(() => new Set<string>());
 
         // Map visits to days using date keys
         (vData || []).forEach(v => {
             const vDate = new Date(v.viewed_at).toISOString().split('T')[0];
             const index = dateKeys.indexOf(vDate);
             if (index !== -1) {
-                visits[index]++;
+                // Same logic as total views: unique visitor per deck per day
+                dayVisitsMap[index].add(`${v.visitor_id}-${v.deck_id}`);
+                timeSpent[index] += Number(v.time_spent || 0);
             }
         });
 
-        // 2. Simulate time spent relative to visits for now
-        visits.forEach((v, i) => {
-            timeSpent[i] = v * (Math.random() * 60 + 30);
+        // Convert Sets to counts
+        dayVisitsMap.forEach((set, i) => {
+            visits[i] = set.size;
         });
     } catch (err) {
         console.error("Error fetching daily metrics:", err);
