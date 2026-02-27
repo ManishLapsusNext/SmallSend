@@ -179,3 +179,56 @@ CREATE POLICY "Data room documents are viewable by everyone" ON public.data_room
 -- MIGRATIONS (for existing databases)
 ALTER TABLE deck_page_views ADD COLUMN IF NOT EXISTS time_spent REAL DEFAULT 0;
 ALTER TABLE deck_page_views ADD COLUMN IF NOT EXISTS viewer_email TEXT;
+
+-- 7. SECURITY HARDENING: SECURE ACCESS GATE
+-- This section implements server-side password validation to prevent leakage.
+
+-- Public view for decks (excludes sensitive view_password)
+CREATE OR REPLACE VIEW public.decks_public AS
+SELECT 
+    id, user_id, title, slug, description, file_url, pages, status, 
+    file_size, display_order, require_email, require_password, expires_at, 
+    created_at, updated_at
+FROM public.decks;
+
+-- Public view for data rooms (excludes sensitive view_password)
+CREATE OR REPLACE VIEW public.data_rooms_public AS
+SELECT 
+    id, user_id, name, slug, description, icon_url, require_email, 
+    require_password, expires_at, created_at, updated_at
+FROM public.data_rooms;
+
+-- Secure password validation function for Decks
+CREATE OR REPLACE FUNCTION public.check_deck_password(p_slug TEXT, p_password TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER -- runs as owner
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.decks 
+    WHERE slug = p_slug AND view_password = p_password
+  );
+END;
+$$;
+
+-- Secure password validation function for Data Rooms
+CREATE OR REPLACE FUNCTION public.check_data_room_password(p_slug TEXT, p_password TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.data_rooms 
+    WHERE slug = p_slug AND view_password = p_password
+  );
+END;
+$$;
+
+-- Note: In the Supabase dashboard, you should consider revoking SELECT on the 
+-- original tables for anonymous users and only allowing SELECT on the views.
+-- For now, the app will be updated to fetch from these views for public access.
+

@@ -143,6 +143,9 @@ function DataRoomViewer() {
               setIsUnlocked(true);
               if (email) setViewerEmail(email);
             }}
+            onVerifyPassword={(pass) =>
+              dataRoomService.checkDataRoomPassword(room.slug, pass)
+            }
           />
         ) : (
           <motion.div

@@ -104,6 +104,7 @@ export const dataRoomService = {
     });
   },
 
+  // Get single data room by slug (uses public view to hide password)
   async getDataRoomBySlug(slug: string): Promise<DataRoom | null> {
     return withRetry(async () => {
       const cacheKey = `room:slug:${slug}`;
@@ -111,7 +112,7 @@ export const dataRoomService = {
       if (cached) return cached;
 
       const { data, error } = await supabase
-        .from("data_rooms")
+        .from("data_rooms_public")
         .select("*")
         .eq("slug", slug)
         .single();
@@ -123,6 +124,16 @@ export const dataRoomService = {
       setCache(cacheKey, data);
       return data as DataRoom;
     });
+  },
+
+  // NEW: Securely check data room password via RPC
+  async checkDataRoomPassword(slug: string, password: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc("check_data_room_password", {
+      p_slug: slug,
+      p_password: password,
+    });
+    if (error) throw error;
+    return !!data;
   },
 
   async updateDataRoom(
