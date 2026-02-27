@@ -460,7 +460,7 @@ function DataRoomDetail() {
                           {item.visitors}
                         </span>
                       </div>
-                      <div className="col-span-3 flex items-center justify-end gap-2">
+                      <div className="col-span-3 flex items-center justify-end gap-2 group/share relative">
                         <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-deckly-primary rounded-full transition-all"
@@ -470,6 +470,17 @@ function DataRoomDetail() {
                         <span className="text-xs font-bold text-slate-500 w-8 text-right">
                           {pct}%
                         </span>
+
+                        {/* Tooltip */}
+                        <div
+                          className={`absolute ${idx === 0 ? "top-full mt-2" : "bottom-full mb-2"} right-0 w-48 p-2 bg-slate-900 text-[10px] text-white rounded-lg opacity-0 group-hover/share:opacity-100 transition-opacity pointer-events-none z-50 text-center font-medium leading-tight shadow-xl`}
+                        >
+                          Percentage of total room visitors who viewed this
+                          specific document.
+                          <div
+                            className={`absolute ${idx === 0 ? "bottom-full border-b-slate-900" : "top-full border-t-slate-900"} right-4 border-8 border-transparent`}
+                          />
+                        </div>
                       </div>
                     </div>
                   );

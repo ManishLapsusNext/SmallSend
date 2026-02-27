@@ -17,7 +17,6 @@ interface DeckStat {
   title: string;
   views: number;
   time: number;
-  completion?: string;
 }
 
 export function TopDecksCard() {
@@ -39,6 +38,7 @@ export function TopDecksCard() {
   const [loading, setLoading] = useState(!initialCache);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [signalCounts, setSignalCounts] = useState<Record<string, number>>({});
+  const [totalUserViews, setTotalUserViews] = useState<number>(0);
 
   const fetchTopDecks = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -55,7 +55,6 @@ export function TopDecksCard() {
         title: d.title,
         views: d.views,
         time: d.time,
-        completion: "84%", // Placeholder for future metric
       }));
       setStats(mapped);
 
@@ -67,6 +66,12 @@ export function TopDecksCard() {
         }),
       );
       setSignalCounts(counts);
+
+      // Fetch global total views for share calculation
+      const totalStats = await analyticsService.getUserTotalStats(
+        session.user.id,
+      );
+      setTotalUserViews(totalStats.totalViews);
 
       localStorage.setItem(
         `top-decks-cache-${session.user.id}`,
@@ -135,7 +140,7 @@ export function TopDecksCard() {
               </TableCell>
             </TableRow>
           ) : (
-            stats.map((deck) => (
+            stats.map((deck, idx) => (
               <TableRow
                 key={deck.id}
                 className="hover:bg-slate-50/50 border-b border-slate-50 last:border-0 group transition-all duration-300"
@@ -161,13 +166,38 @@ export function TopDecksCard() {
                         Views
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-slate-900 group-hover:text-deckly-primary transition-colors leading-none tracking-tighter">
-                        {deck.completion || "0%"}
-                      </p>
+
+                    {/* Share Metric */}
+                    <div className="text-right flex flex-col items-end group/share relative">
+                      <div className="flex items-center gap-2">
+                        <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-deckly-primary rounded-full transition-all"
+                            style={{
+                              width: `${totalUserViews > 0 ? Math.round((deck.views / totalUserViews) * 100) : 0}%`,
+                            }}
+                          />
+                        </div>
+                        <p className="text-xl font-bold text-slate-900 group-hover:text-deckly-primary transition-colors leading-none tracking-tighter">
+                          {totalUserViews > 0
+                            ? Math.round((deck.views / totalUserViews) * 100)
+                            : 0}
+                          %
+                        </p>
+                      </div>
                       <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">
-                        Completion
+                        Share
                       </p>
+
+                      {/* Tooltip */}
+                      <div
+                        className={`absolute ${idx === 0 ? "top-full mt-2" : "bottom-full mb-2"} right-0 w-48 p-2 bg-slate-900 text-[10px] text-white rounded-lg opacity-0 group-hover/share:opacity-100 transition-opacity pointer-events-none z-50 text-center font-medium leading-tight shadow-xl`}
+                      >
+                        Percentage of your total audience that viewed this deck.
+                        <div
+                          className={`absolute ${idx === 0 ? "bottom-full border-b-slate-900" : "top-full border-t-slate-900"} right-4 border-8 border-transparent`}
+                        />
+                      </div>
                     </div>
                   </div>
                 </TableCell>
