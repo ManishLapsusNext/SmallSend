@@ -11,9 +11,7 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "../../utils/cn";
 import penguinMascot from "../../assets/penguine.png";
 import { useAuth } from "../../contexts/AuthContext";
-import { useEffect, useState } from "react";
-import { BrandingSettings } from "../../types";
-import { deckService } from "../../services/deckService";
+import { useState } from "react";
 import { MascotSettingsModal } from "../dashboard/MascotSettingsModal";
 import { Settings } from "lucide-react";
 
@@ -28,15 +26,8 @@ const navItems = [
 
 export function Sidebar() {
   const location = useLocation();
-  const { profile, signOut, session } = useAuth();
-  const [branding, setBranding] = useState<BrandingSettings | null>(null);
+  const { profile, signOut, session, branding, setBranding } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
-
-  useEffect(() => {
-    if (session?.user?.id) {
-      deckService.getBrandingSettings(session.user.id).then(setBranding);
-    }
-  }, [session?.user?.id]);
 
   return (
     <aside className="w-64 bg-[#121212] flex flex-col h-screen border-r border-white/5 shrink-0">
