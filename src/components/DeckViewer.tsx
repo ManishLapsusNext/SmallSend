@@ -1,6 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useDeckAnalytics } from "../hooks/useDeckAnalytics";
 import { useKeyboardControls } from "../hooks/useKeyboardControls";
 import { Deck } from "../types";
@@ -17,6 +18,24 @@ interface DeckViewerProps {
 function DeckViewer({ deck }: DeckViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
+  const [containerHeight, setContainerHeight] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Set up ResizeObserver to track container dimensions
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      if (entries[0]) {
+        setContainerWidth(entries[0].contentRect.width);
+        setContainerHeight(entries[0].contentRect.height);
+      }
+    });
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // Custom hooks for handling logic
   const { trackCurrentPage } = useDeckAnalytics(
@@ -56,7 +75,10 @@ function DeckViewer({ deck }: DeckViewerProps) {
 
   return (
     <div className="flex flex-col h-full bg-[#0d0f14] overflow-hidden">
-      <div className="flex-1 relative flex items-center justify-center p-4 md:p-8">
+      <div
+        ref={containerRef}
+        className="flex-1 relative flex items-center justify-center p-4 md:p-8 pb-8 md:pb-12 overflow-hidden"
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={pageNumber}
@@ -64,7 +86,28 @@ function DeckViewer({ deck }: DeckViewerProps) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="relative shadow-2xl rounded-sm overflow-hidden bg-white max-h-full"
+            style={(() => {
+              if (!containerWidth || !containerHeight) return {};
+              const targetAspect = 16 / 9;
+              const containerAspect = containerWidth / containerHeight;
+
+              let finalWidth, finalHeight;
+              if (containerAspect > targetAspect) {
+                // Window is wider than 16:9 - height is limit
+                finalHeight = containerHeight;
+                finalWidth = containerHeight * targetAspect;
+              } else {
+                // Window is taller than 16:9 - width is limit
+                finalWidth = containerWidth;
+                finalHeight = containerWidth / targetAspect;
+              }
+
+              return {
+                width: finalWidth,
+                height: finalHeight,
+              };
+            })()}
+            className="bg-white shadow-2xl rounded-sm flex items-center justify-center overflow-hidden"
           >
             <Document
               file={deck.file_url}
@@ -87,25 +130,46 @@ function DeckViewer({ deck }: DeckViewerProps) {
                 pageNumber={pageNumber}
                 renderTextLayer={false}
                 renderAnnotationLayer={false}
-                scale={2.0}
+                width={(() => {
+                  if (!containerWidth || !containerHeight) return undefined;
+                  const targetAspect = 16 / 9;
+                  return containerWidth / containerHeight > targetAspect
+                    ? containerHeight * targetAspect
+                    : containerWidth;
+                })()}
+                height={(() => {
+                  if (!containerWidth || !containerHeight) return undefined;
+                  const targetAspect = 16 / 9;
+                  return containerWidth / containerHeight > targetAspect
+                    ? containerHeight
+                    : containerWidth / targetAspect;
+                })()}
                 loading=""
               />
             </Document>
           </motion.div>
         </AnimatePresence>
 
-        {/* Clickable areas for navigation */}
-        <div className="absolute inset-0 flex">
+        {/* Navigation Overlays & Visual Arrows */}
+        <div className="absolute inset-0 flex pointer-events-none">
           <div
-            className="flex-1 cursor-pointer"
+            className="flex-1 cursor-pointer group/nav overflow-hidden pointer-events-auto relative"
             onClick={() => handleNavigationClick("prev")}
             title="Previous Page"
-          />
+          >
+            <div className="absolute left-8 top-1/2 -translate-y-1/2 w-14 h-14 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white opacity-40 group-hover/nav:opacity-100 -translate-x-2 group-hover/nav:translate-x-0 transition-all duration-300 shadow-2xl">
+              <ChevronLeft size={32} />
+            </div>
+          </div>
           <div
-            className="flex-1 cursor-pointer"
+            className="flex-1 cursor-pointer group/nav overflow-hidden pointer-events-auto relative"
             onClick={() => handleNavigationClick("next")}
             title="Next Page"
-          />
+          >
+            <div className="absolute right-8 top-1/2 -translate-y-1/2 w-14 h-14 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white opacity-40 group-hover/nav:opacity-100 translate-x-2 group-hover/nav:translate-x-0 transition-all duration-300 shadow-2xl">
+              <ChevronRight size={32} />
+            </div>
+          </div>
         </div>
       </div>
 

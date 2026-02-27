@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../services/supabase";
 import { userService } from "../services/userService";
-import { UserProfile } from "../types";
+import { UserProfile, BrandingSettings } from "../types";
 
 interface AuthContextType {
   session: Session | null;
@@ -10,6 +10,9 @@ interface AuthContextType {
   loading: boolean;
   isPro: boolean;
   refreshProfile: () => Promise<void>;
+  branding: BrandingSettings | null;
+  setBranding: React.Dispatch<React.SetStateAction<BrandingSettings | null>>;
+  refreshBranding: () => Promise<void>;
   signOut: () => Promise<void>;
   initializationError: string | null;
 }
@@ -29,6 +32,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   });
   const [loading, setLoading] = useState(true);
+  const [branding, setBranding] = useState<BrandingSettings | null>(() => {
+    try {
+      const cached = localStorage.getItem("deckly-branding-settings");
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [initializationError, setInitializationError] = useState<string | null>(
     null,
   );
@@ -82,6 +93,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const refreshBranding = async (providedUserId?: string) => {
+    const userId = providedUserId || session?.user?.id;
+    if (userId) {
+      const { deckService } = await import("../services/deckService");
+      const data = await deckService.getBrandingSettings(userId);
+      setBranding(data);
+      if (data) {
+        localStorage.setItem("deckly-branding-settings", JSON.stringify(data));
+      }
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -105,8 +128,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setSession(session);
 
         if (session?.user) {
-          // Fetch profile but don't strictly block the UI if it's slow
+          // Fetch profile AND branding but don't strictly block the UI if it's slow
           fetchProfile(session.user.id);
+          refreshBranding(session.user.id);
         } else {
           setProfile(null);
         }
@@ -159,9 +183,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         session,
         profile,
+        branding,
+        setBranding,
         loading,
         isPro,
         refreshProfile,
+        refreshBranding,
         signOut,
         initializationError,
       }}

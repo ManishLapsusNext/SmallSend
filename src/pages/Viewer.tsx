@@ -122,7 +122,7 @@ function Viewer() {
               </div>
             </Link>
 
-            <div className="flex-1 w-full h-full relative">
+            <div className="flex-1 w-full relative min-h-0">
               {Array.isArray(deck.pages) && deck.pages.length > 0 ? (
                 <ImageDeckViewer deck={deck} viewerEmail={viewerEmail} />
               ) : (

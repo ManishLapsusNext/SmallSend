@@ -11,36 +11,83 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "../../utils/cn";
 import penguinMascot from "../../assets/penguine.png";
 import { useAuth } from "../../contexts/AuthContext";
+import { useState } from "react";
+import { MascotSettingsModal } from "../dashboard/MascotSettingsModal";
+import { Settings } from "lucide-react";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   { icon: FileText, label: "Content", href: "/content" },
   { icon: Monitor, label: "Rooms", href: "/rooms" },
-  { icon: BarChart3, label: "Analytics", href: "/analytics" },
-  { icon: Mail, label: "Inbox", href: "/inbox" },
-  { icon: MessageCircle, label: "Requests", href: "/requests" },
+  { icon: BarChart3, label: "Analytics", href: "/analytics", disabled: true },
+  { icon: Mail, label: "Inbox", href: "/inbox", disabled: true },
+  { icon: MessageCircle, label: "Requests", href: "/requests", disabled: true },
 ];
 
 export function Sidebar() {
   const location = useLocation();
-  const { profile, signOut, session } = useAuth();
+  const { profile, signOut, session, branding, setBranding } = useAuth();
+  const [showSettings, setShowSettings] = useState(false);
 
   return (
     <aside className="w-64 bg-[#121212] flex flex-col h-screen border-r border-white/5 shrink-0">
       {/* Brand/Mascot */}
       <div className="p-6">
-        <div className="relative w-full aspect-square bg-[#1a1a1a] rounded-2xl overflow-hidden mb-8 group">
+        <div
+          onClick={() => setShowSettings(true)}
+          className="relative w-full aspect-square bg-[#1a1a1a] rounded-2xl border border-white/5 overflow-hidden mb-8 group cursor-pointer"
+        >
           <img
-            src={penguinMascot}
+            src={branding?.logo_url || penguinMascot}
             alt="Deckly Mascot"
-            className="w-full h-full object-contain p-4 transition-transform group-hover:scale-110"
+            className="w-full h-full object-contain p-4 transition-all group-hover:scale-105 group-hover:opacity-50"
           />
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="bg-deckly-primary p-2 rounded-lg shadow-xl translate-y-2 group-hover:translate-y-0 transition-transform">
+              <Settings size={18} className="text-slate-950" />
+            </div>
+          </div>
         </div>
 
         {/* Nav Items */}
         <nav className="space-y-1">
           {navItems.map((item) => {
             const isActive = location.pathname === item.href;
+            const content = (
+              <>
+                <item.icon
+                  size={20}
+                  className={cn(
+                    "transition-colors",
+                    isActive
+                      ? "text-deckly-primary"
+                      : "text-slate-500 " +
+                          (!item.disabled ? "group-hover:text-white" : ""),
+                  )}
+                />
+                <span className="flex-1">{item.label}</span>
+                {item.disabled && (
+                  <span className="text-[8px] font-black bg-white/5 text-slate-500 border border-white/5 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
+                    COMING SOON
+                  </span>
+                )}
+              </>
+            );
+
+            if (item.disabled) {
+              return (
+                <div
+                  key={item.label}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium opacity-40 grayscale cursor-not-allowed",
+                    "text-slate-500",
+                  )}
+                >
+                  {content}
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.label}
@@ -52,16 +99,7 @@ export function Sidebar() {
                     : "text-slate-400 hover:text-white hover:bg-white/5",
                 )}
               >
-                <item.icon
-                  size={20}
-                  className={cn(
-                    "transition-colors",
-                    isActive
-                      ? "text-deckly-primary"
-                      : "text-slate-500 group-hover:text-white",
-                  )}
-                />
-                {item.label}
+                {content}
               </Link>
             );
           })}
@@ -120,6 +158,13 @@ export function Sidebar() {
           </button>
         </div>
       </div>
+
+      <MascotSettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        branding={branding}
+        onUpdate={(newBranding) => setBranding(newBranding)}
+      />
     </aside>
   );
 }

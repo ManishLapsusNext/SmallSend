@@ -314,6 +314,25 @@ export const deckService = {
     }
   },
 
+  // NEW: Upload a branding logo/mascot
+  async uploadLogo(file: File): Promise<string> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Not authenticated");
+    const userId = session.user.id;
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${userId}/branding/logo-${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("decks")
+      .upload(fileName, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage.from("decks").getPublicUrl(fileName);
+    return publicUrl;
+  },
+
   // Get all decks with aggregated stats for Content management
   async getDecksWithAnalytics(providedUserId?: string): Promise<any[]> {
     return withRetry(async () => {
