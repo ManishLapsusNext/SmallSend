@@ -21,9 +21,9 @@ const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   { icon: FileText, label: "Content", href: "/content" },
   { icon: Monitor, label: "Rooms", href: "/rooms" },
-  { icon: BarChart3, label: "Analytics", href: "/analytics" },
-  { icon: Mail, label: "Inbox", href: "/inbox" },
-  { icon: MessageCircle, label: "Requests", href: "/requests" },
+  { icon: BarChart3, label: "Analytics", href: "/analytics", disabled: true },
+  { icon: Mail, label: "Inbox", href: "/inbox", disabled: true },
+  { icon: MessageCircle, label: "Requests", href: "/requests", disabled: true },
 ];
 
 export function Sidebar() {
@@ -62,6 +62,41 @@ export function Sidebar() {
         <nav className="space-y-1">
           {navItems.map((item) => {
             const isActive = location.pathname === item.href;
+            const content = (
+              <>
+                <item.icon
+                  size={20}
+                  className={cn(
+                    "transition-colors",
+                    isActive
+                      ? "text-deckly-primary"
+                      : "text-slate-500 " +
+                          (!item.disabled ? "group-hover:text-white" : ""),
+                  )}
+                />
+                <span className="flex-1">{item.label}</span>
+                {item.disabled && (
+                  <span className="text-[8px] font-black bg-white/5 text-slate-500 border border-white/5 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
+                    COMING SOON
+                  </span>
+                )}
+              </>
+            );
+
+            if (item.disabled) {
+              return (
+                <div
+                  key={item.label}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium opacity-40 grayscale cursor-not-allowed",
+                    "text-slate-500",
+                  )}
+                >
+                  {content}
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.label}
@@ -73,16 +108,7 @@ export function Sidebar() {
                     : "text-slate-400 hover:text-white hover:bg-white/5",
                 )}
               >
-                <item.icon
-                  size={20}
-                  className={cn(
-                    "transition-colors",
-                    isActive
-                      ? "text-deckly-primary"
-                      : "text-slate-500 group-hover:text-white",
-                  )}
-                />
-                {item.label}
+                {content}
               </Link>
             );
           })}
