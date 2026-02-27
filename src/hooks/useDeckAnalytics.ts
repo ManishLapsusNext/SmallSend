@@ -2,20 +2,20 @@ import { useState, useEffect, useRef } from 'react';
 import { analyticsService } from '../services/analyticsService';
 import { Deck } from '../types';
 
-export function useDeckAnalytics(deck: Deck | null, pageNumber: number, numPages: number) {
+export function useDeckAnalytics(deck: Deck | null, pageNumber: number, numPages: number, isOwner: boolean = false) {
   const [viewedPages, setViewedPages] = useState<Set<number>>(new Set());
   const pageStartTime = useRef<number>(Date.now());
 
   // Effect to track the initial deck view
   useEffect(() => {
-    if (deck) {
+    if (deck && !isOwner) {
       analyticsService.trackDeckView(deck);
     }
-  }, [deck]);
+  }, [deck, isOwner]);
 
   // Function to track time spent on the current page
   const trackCurrentPage = () => {
-    if (!pageNumber || !deck) return;
+    if (!pageNumber || !deck || isOwner) return;
     const timeSpent = Math.floor((Date.now() - pageStartTime.current) / 1000);
     analyticsService.trackPageView(deck, pageNumber, timeSpent);
     analyticsService.syncSlideStats(deck, pageNumber, timeSpent);
