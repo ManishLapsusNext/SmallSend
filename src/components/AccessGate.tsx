@@ -4,13 +4,19 @@ import { Mail, Lock, ArrowRight, AlertCircle, ShieldCheck } from "lucide-react";
 import { Deck } from "../types";
 import Button from "./common/Button";
 import Input from "./common/Input";
+import { deckService } from "../services/deckService";
 
 interface AccessGateProps {
   deck: Deck;
   onAccessGranted: (email?: string) => void;
+  onVerifyPassword?: (password: string) => Promise<boolean>;
 }
 
-const AccessGate: React.FC<AccessGateProps> = ({ deck, onAccessGranted }) => {
+const AccessGate: React.FC<AccessGateProps> = ({
+  deck,
+  onAccessGranted,
+  onVerifyPassword,
+}) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +24,7 @@ const AccessGate: React.FC<AccessGateProps> = ({ deck, onAccessGranted }) => {
     deck.require_email ? "email" : "password",
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -33,10 +39,18 @@ const AccessGate: React.FC<AccessGateProps> = ({ deck, onAccessGranted }) => {
         onAccessGranted(email);
       }
     } else {
-      if (password === deck.view_password) {
-        onAccessGranted(email);
-      } else {
-        setError("Incorrect password. Please try again.");
+      try {
+        const isValid = onVerifyPassword
+          ? await onVerifyPassword(password)
+          : await deckService.checkDeckPassword(deck.slug, password);
+
+        if (isValid) {
+          onAccessGranted(email);
+        } else {
+          setError("Incorrect password. Please try again.");
+        }
+      } catch (err) {
+        setError("Failed to verify password. Please try again.");
       }
     }
   };

@@ -15,8 +15,10 @@ function Viewer() {
   const { slug } = useParams<{ slug: string }>();
   const [deck, setDeck] = useState<Deck | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [viewerEmail, setViewerEmail] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
 
   const loadDeck = useCallback(async () => {
     if (!slug) return;
@@ -29,12 +31,15 @@ function Viewer() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      const isOwner = session?.user?.id === data.user_id;
+      const userIsOwner = session?.user?.id === data.user_id;
+      setIsOwner(userIsOwner);
 
       // If no protection OR user is the owner, track view immediately and unlock
-      if ((!data.require_email && !data.require_password) || isOwner) {
+      if ((!data.require_email && !data.require_password) || userIsOwner) {
         setIsUnlocked(true);
-        analyticsService.trackDeckView(data);
+        if (!userIsOwner) {
+          analyticsService.trackDeckView(data);
+        }
       }
     } catch (err: any) {
       setError(err.message);
@@ -98,7 +103,7 @@ function Viewer() {
             onAccessGranted={(email) => {
               setIsUnlocked(true);
               if (email) {
-                // Track email capture in analytics if provided
+                setViewerEmail(email);
                 analyticsService.trackDeckView(deck, { email_captured: email });
               } else {
                 analyticsService.trackDeckView(deck);
@@ -121,11 +126,15 @@ function Viewer() {
               </div>
             </Link>
 
-            <div className="flex-1 w-full h-full relative">
+            <div className="flex-1 w-full relative min-h-0">
               {Array.isArray(deck.pages) && deck.pages.length > 0 ? (
-                <ImageDeckViewer deck={deck} />
+                <ImageDeckViewer
+                  deck={deck}
+                  viewerEmail={viewerEmail}
+                  isOwner={isOwner}
+                />
               ) : (
-                <DeckViewer deck={deck} />
+                <DeckViewer deck={deck} isOwner={isOwner} />
               )}
             </div>
           </motion.div>
