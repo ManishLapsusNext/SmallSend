@@ -3,6 +3,7 @@ import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { Plus, Pencil, Check, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import { deckService } from "../../services/deckService";
 
 interface DashboardLayoutProps {
@@ -16,6 +17,7 @@ export function DashboardLayout({
   title: initialTitle = "Dashboard",
   showFab = true,
 }: DashboardLayoutProps) {
+  const { branding } = useAuth();
   const [roomName, setRoomName] = React.useState<string>(() => {
     try {
       const cached = localStorage.getItem("deckly-room-name");
@@ -26,28 +28,17 @@ export function DashboardLayout({
   });
   const [isEditing, setIsEditing] = React.useState(false);
   const [tempName, setTempName] = React.useState(roomName);
-  const [loading, setLoading] = React.useState(true);
-  const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const loading = false;
+  const isRefreshing = false;
 
+  // Sync roomName with branding global state
   React.useEffect(() => {
-    async function fetchName() {
-      setIsRefreshing(true);
-      try {
-        const settings = await deckService.getBrandingSettings();
-        if (settings?.room_name) {
-          setRoomName(settings.room_name);
-          setTempName(settings.room_name);
-          localStorage.setItem("deckly-room-name", settings.room_name);
-        }
-      } catch (err) {
-        console.error("Error fetching room name:", err);
-      } finally {
-        setLoading(false);
-        setIsRefreshing(false);
-      }
+    if (branding?.room_name) {
+      setRoomName(branding.room_name);
+      setTempName(branding.room_name);
+      localStorage.setItem("deckly-room-name", branding.room_name);
     }
-    fetchName();
-  }, []);
+  }, [branding?.room_name]);
 
   const handleSave = async () => {
     if (!tempName.trim()) {

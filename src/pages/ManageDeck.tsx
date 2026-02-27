@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { deckService } from "../services/deckService";
+import { dataRoomService } from "../services/dataRoomService";
 import { supabase } from "../services/supabase";
 import {
   Upload,
@@ -37,6 +38,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLi
 function ManageDeck() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
+  const returnToRoom = searchParams.get("returnToRoom");
   const [existingDeck, setExistingDeck] = useState<Deck | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
@@ -201,6 +203,8 @@ function ManageDeck() {
         }));
       }
 
+      let newDeckId: string | null = null;
+
       if (editId) {
         setProgress("Updating deck record...");
         setProgressPercent(95);
@@ -256,11 +260,23 @@ function ManageDeck() {
         setProgress("Finalizing...");
         setProgressPercent(98);
         await deckService.updateDeckPages(deckRecord.id, pages);
+        newDeckId = deckRecord.id;
       }
 
       setProgress("Successful! Building your room...");
       setProgressPercent(100);
-      setTimeout(() => navigate("/"), 1500);
+
+      // If uploading for a data room, add the deck and go back to the room
+      if (returnToRoom && !editId && newDeckId) {
+        try {
+          await dataRoomService.addDocuments(returnToRoom, [newDeckId]);
+        } catch (err) {
+          console.error("Failed to add deck to room", err);
+        }
+        setTimeout(() => navigate(`/rooms/${returnToRoom}`), 1500);
+      } else {
+        setTimeout(() => navigate("/"), 1500);
+      }
     } catch (err: any) {
       console.error("Operation failed:", err);
       setError(err.message);

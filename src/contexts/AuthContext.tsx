@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../services/supabase";
 import { userService } from "../services/userService";
-import { UserProfile } from "../types";
+import { UserProfile, BrandingSettings } from "../types";
 
 interface AuthContextType {
   session: Session | null;
@@ -10,6 +10,9 @@ interface AuthContextType {
   loading: boolean;
   isPro: boolean;
   refreshProfile: () => Promise<void>;
+  branding: BrandingSettings | null;
+  setBranding: React.Dispatch<React.SetStateAction<BrandingSettings | null>>;
+  refreshBranding: () => Promise<void>;
   signOut: () => Promise<void>;
   initializationError: string | null;
 }
@@ -29,6 +32,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   });
   const [loading, setLoading] = useState(true);
+  const [branding, setBranding] = useState<BrandingSettings | null>(() => {
+    try {
+      const cached = localStorage.getItem("deckly-branding-settings");
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [initializationError, setInitializationError] = useState<string | null>(
     null,
   );
@@ -41,7 +52,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchProfile = async (userId: string) => {
     try {
-      const data = await userService.getProfile(userId);
+      let data = await userService.getProfile(userId);
+
+      // Auto-create profile if it doesn't exist (e.g. Google OAuth first sign-in)
+      if (!data) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        const meta = user?.user_metadata;
+        try {
+          const { error } = await supabase.from("profiles").upsert(
+            {
+              id: userId,
+              full_name: meta?.full_name || meta?.name || null,
+              avatar_url: meta?.avatar_url || meta?.picture || null,
+              tier: "FREE",
+            },
+            { onConflict: "id" },
+          );
+          if (!error) {
+            data = await userService.getProfile(userId);
+          }
+        } catch (createErr) {
+          console.error("Profile auto-create failed:", createErr);
+        }
+      }
+
       setProfile(data);
       if (data) {
         localStorage.setItem("deckly-user-profile", JSON.stringify(data));
@@ -54,6 +90,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const refreshProfile = async () => {
     if (session?.user) {
       await fetchProfile(session.user.id);
+    }
+  };
+
+  const refreshBranding = async (providedUserId?: string) => {
+    const userId = providedUserId || session?.user?.id;
+    if (userId) {
+      const { deckService } = await import("../services/deckService");
+      const data = await deckService.getBrandingSettings(userId);
+      setBranding(data);
+      if (data) {
+        localStorage.setItem("deckly-branding-settings", JSON.stringify(data));
+      }
     }
   };
 
@@ -80,8 +128,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setSession(session);
 
         if (session?.user) {
-          // Fetch profile but don't strictly block the UI if it's slow
+          // Fetch profile AND branding but don't strictly block the UI if it's slow
           fetchProfile(session.user.id);
+          refreshBranding(session.user.id);
         } else {
           setProfile(null);
         }
@@ -134,9 +183,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         session,
         profile,
+        branding,
+        setBranding,
         loading,
         isPro,
         refreshProfile,
+        refreshBranding,
         signOut,
         initializationError,
       }}

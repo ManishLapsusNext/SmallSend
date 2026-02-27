@@ -1,14 +1,21 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useKeyboardControls } from "../hooks/useKeyboardControls";
 import { analyticsService } from "../services/analyticsService";
 import { Deck } from "../types";
 
 interface ImageDeckViewerProps {
   deck: Deck;
+  viewerEmail?: string;
+  isOwner?: boolean;
 }
 
-function ImageDeckViewer({ deck }: ImageDeckViewerProps) {
+function ImageDeckViewer({
+  deck,
+  viewerEmail,
+  isOwner = false,
+}: ImageDeckViewerProps) {
   const pages = useMemo(
     () => (Array.isArray(deck?.pages) ? deck.pages : []),
     [deck?.pages],
@@ -16,7 +23,25 @@ function ImageDeckViewer({ deck }: ImageDeckViewerProps) {
   const numPages = pages.length;
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
+  const [containerHeight, setContainerHeight] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const startTimeRef = useRef(Date.now());
+
+  // Set up ResizeObserver to track container dimensions
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      if (entries[0]) {
+        setContainerWidth(entries[0].contentRect.width);
+        setContainerHeight(entries[0].contentRect.height);
+      }
+    });
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // Helper to resolve image URL from potentially stringified slide data
   const resolveSlideImage = useCallback((pageData: any) => {
@@ -60,15 +85,20 @@ function ImageDeckViewer({ deck }: ImageDeckViewerProps) {
     return () => {
       const endTime = Date.now();
       const timeSpent = (endTime - startTimeRef.current) / 1000;
-      if (timeSpent > 0.5) {
+      if (timeSpent > 0.5 && !isOwner) {
         analyticsService.trackPageView(deck, currentPage, timeSpent);
-        analyticsService.syncSlideStats(deck, currentPage, timeSpent);
+        analyticsService.syncSlideStats(
+          deck,
+          currentPage,
+          timeSpent,
+          viewerEmail,
+        );
         if (currentPage === numPages) {
           analyticsService.trackDeckComplete(deck, numPages);
         }
       }
     };
-  }, [currentPage, deck, numPages]);
+  }, [currentPage, deck, numPages, isOwner, viewerEmail]);
 
   const goToPrevPage = useCallback(() => {
     setCurrentPage((prev) => Math.max(prev - 1, 1));
@@ -102,7 +132,10 @@ function ImageDeckViewer({ deck }: ImageDeckViewerProps) {
 
   return (
     <div className="flex flex-col h-full bg-[#0d0f14] overflow-hidden">
-      <div className="flex-1 relative flex items-center justify-center p-4 md:p-12 overflow-hidden">
+      <div
+        ref={containerRef}
+        className="flex-1 relative flex items-center justify-center p-4 md:p-8 pb-8 md:pb-12 overflow-hidden"
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={currentPage}
@@ -110,7 +143,28 @@ function ImageDeckViewer({ deck }: ImageDeckViewerProps) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="relative h-full w-full flex items-center justify-center"
+            style={(() => {
+              if (!containerWidth || !containerHeight) return {};
+              const targetAspect = 16 / 9;
+              const containerAspect = containerWidth / containerHeight;
+
+              let finalWidth, finalHeight;
+              if (containerAspect > targetAspect) {
+                // Window is wider than 16:9 - height is limit
+                finalHeight = containerHeight;
+                finalWidth = containerHeight * targetAspect;
+              } else {
+                // Window is taller than 16:9 - width is limit
+                finalWidth = containerWidth;
+                finalHeight = containerWidth / targetAspect;
+              }
+
+              return {
+                width: finalWidth,
+                height: finalHeight,
+              };
+            })()}
+            className="bg-white shadow-[0_32px_128px_-12px_rgba(0,0,0,1)] rounded-sm flex items-center justify-center overflow-hidden"
           >
             {(() => {
               const imgSrc =
@@ -121,24 +175,33 @@ function ImageDeckViewer({ deck }: ImageDeckViewerProps) {
                   src={imgSrc}
                   alt={`Slide ${currentPage}`}
                   referrerPolicy="no-referrer"
-                  className="max-h-full max-w-full object-contain shadow-[0_32px_128px_-12px_rgba(0,0,0,1)] rounded-sm"
+                  className="w-full h-full object-contain"
                 />
               );
             })()}
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation Overlays */}
+        {/* Navigation Overlays & Visual Arrows */}
         <div
-          className="absolute inset-y-0 left-0 w-1/4 cursor-pointer"
+          className="absolute inset-y-0 left-0 w-1/4 cursor-pointer group/nav overflow-hidden"
           onClick={goToPrevPage}
           title="Previous"
-        />
+        >
+          <div className="absolute left-8 top-1/2 -translate-y-1/2 w-14 h-14 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white opacity-40 group-hover/nav:opacity-100 -translate-x-2 group-hover/nav:translate-x-0 transition-all duration-300 shadow-2xl">
+            <ChevronLeft size={32} />
+          </div>
+        </div>
+
         <div
-          className="absolute inset-y-0 right-0 w-1/4 cursor-pointer"
+          className="absolute inset-y-0 right-0 w-1/4 cursor-pointer group/nav overflow-hidden"
           onClick={goToNextPage}
           title="Next"
-        />
+        >
+          <div className="absolute right-8 top-1/2 -translate-y-1/2 w-14 h-14 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white opacity-40 group-hover/nav:opacity-100 translate-x-2 group-hover/nav:translate-x-0 transition-all duration-300 shadow-2xl">
+            <ChevronRight size={32} />
+          </div>
+        </div>
       </div>
 
       <footer className="h-20 bg-black/40 backdrop-blur-xl border-t border-white/5 flex items-center justify-center relative z-10 px-6">

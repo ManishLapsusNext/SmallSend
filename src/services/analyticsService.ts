@@ -79,6 +79,7 @@ export const analyticsService = {
     deck: Deck,
     pageNumber: number,
     timeSpent: number,
+    viewerEmail?: string,
   ): Promise<void> {
     try {
       const visitorId = this.getVisitorId();
@@ -101,14 +102,29 @@ export const analyticsService = {
 
       const isUniqueView = !recentView;
 
-      // 2. If it's a unique view, record it in the registry
+      // 2. Record or update the view with time_spent
       if (isUniqueView) {
         await supabase.from("deck_page_views").insert({
           deck_id: deck.id,
           page_number: pageNumber,
           visitor_id: visitorId,
           viewed_at: new Date().toISOString(),
+          time_spent: timeSpent,
+          viewer_email: viewerEmail || null,
         });
+      } else if (recentView?.id) {
+        // Accumulate time on revisit to same slide within 24h
+        const { data: existing } = await supabase
+          .from("deck_page_views")
+          .select("time_spent")
+          .eq("id", recentView.id)
+          .single();
+        await supabase
+          .from("deck_page_views")
+          .update({
+            time_spent: (existing?.time_spent || 0) + timeSpent,
+          })
+          .eq("id", recentView.id);
       }
 
       // 3. Update the aggregate stats
@@ -210,31 +226,52 @@ export const analyticsService = {
       return cached.data;
     }
 
-    const { data, error } = await supabase
+    // 1. Get time stats from deck_stats
+    const { data: statsData, error: statsError } = await supabase
       .from("deck_stats")
-      .select("deck_id, total_views, total_time_seconds, decks(title)")
+      .select("deck_id, total_time_seconds, decks(title)")
       .eq("user_id", userId);
 
-    if (error) throw error;
+    if (statsError) throw statsError;
 
-    // Aggregate by deck_id
-    const aggregated = (data as any[]).reduce((acc: any, curr) => {
-      const id = curr.deck_id;
-      if (!acc[id]) {
-        acc[id] = { 
-          id, 
-          title: curr.decks?.title || "Untitled", 
-          views: 0, 
-          time: 0 
-        };
+    // Aggregate time by deck_id and collect titles
+    const deckInfo: Record<string, { title: string; time: number }> = {};
+    for (const row of (statsData as any[])) {
+      const id = row.deck_id;
+      if (!deckInfo[id]) {
+        deckInfo[id] = { title: row.decks?.title || "Untitled", time: 0 };
       }
-      acc[id].views += curr.total_views;
-      acc[id].time += curr.total_time_seconds;
-      return acc;
-    }, {});
+      deckInfo[id].time += row.total_time_seconds;
+    }
 
-    const result = Object.values(aggregated)
-      .sort((a: any, b: any) => b.views - a.views)
+    const deckIds = Object.keys(deckInfo);
+    if (deckIds.length === 0) {
+      topDecksCache.set(cacheKey, { data: [], timestamp: Date.now() });
+      return [];
+    }
+
+    // 2. Get unique visitors per deck from deck_page_views
+    const { data: viewData } = await supabase
+      .from("deck_page_views")
+      .select("deck_id, visitor_id")
+      .in("deck_id", deckIds);
+
+    const visitorsByDeck = new Map<string, Set<string>>();
+    for (const row of (viewData || [])) {
+      if (!visitorsByDeck.has(row.deck_id)) {
+        visitorsByDeck.set(row.deck_id, new Set());
+      }
+      visitorsByDeck.get(row.deck_id)!.add(row.visitor_id);
+    }
+
+    // 3. Merge and sort
+    const result = deckIds.map(id => ({
+      id,
+      title: deckInfo[id].title,
+      views: visitorsByDeck.get(id)?.size || 0,
+      time: deckInfo[id].time,
+    }))
+      .sort((a, b) => b.views - a.views)
       .slice(0, limit);
 
     topDecksCache.set(cacheKey, { data: result, timestamp: Date.now() });
@@ -288,24 +325,29 @@ export const analyticsService = {
 
         const { data: vData, error: vError } = await supabase
             .from("deck_page_views")
-            .select("viewed_at")
+            .select("viewed_at, visitor_id, deck_id, time_spent")
             .in("deck_id", deckIds)
             .gt("viewed_at", sevenDaysAgo.toISOString());
 
         if (vError) throw vError;
+
+        // Tracks unique visitor/deck combos per day to count as "one visit"
+        const dayVisitsMap = dateKeys.map(() => new Set<string>());
 
         // Map visits to days using date keys
         (vData || []).forEach(v => {
             const vDate = new Date(v.viewed_at).toISOString().split('T')[0];
             const index = dateKeys.indexOf(vDate);
             if (index !== -1) {
-                visits[index]++;
+                // Same logic as total views: unique visitor per deck per day
+                dayVisitsMap[index].add(`${v.visitor_id}-${v.deck_id}`);
+                timeSpent[index] += Number(v.time_spent || 0);
             }
         });
 
-        // 2. Simulate time spent relative to visits for now
-        visits.forEach((v, i) => {
-            timeSpent[i] = v * (Math.random() * 60 + 30);
+        // Convert Sets to counts
+        dayVisitsMap.forEach((set, i) => {
+            visits[i] = set.size;
         });
     } catch (err) {
         console.error("Error fetching daily metrics:", err);
@@ -324,24 +366,68 @@ export const analyticsService = {
       return cached.data;
     }
 
-    let query = supabase
+    // Get total time from deck_stats
+    let timeQuery = supabase
         .from("deck_stats")
-        .select("total_views, total_time_seconds")
+        .select("total_time_seconds")
         .eq("user_id", userId);
 
     if (deckId) {
-        query = query.eq("deck_id", deckId);
+        timeQuery = timeQuery.eq("deck_id", deckId);
     }
 
-    const { data, error } = await query;
-    if (error) throw error;
+    const { data: timeData, error: timeError } = await timeQuery;
+    if (timeError) throw timeError;
 
-    const result = (data || []).reduce((acc, curr) => ({
-        totalViews: acc.totalViews + curr.total_views,
-        totalTimeSeconds: acc.totalTimeSeconds + curr.total_time_seconds,
-    }), { totalViews: 0, totalTimeSeconds: 0 });
+    const totalTimeSeconds = (timeData || []).reduce(
+      (acc, curr) => acc + curr.total_time_seconds, 0
+    );
+
+    // Get unique visitors from deck_page_views (via decks owned by user)
+    const { data: userDecks } = await supabase
+      .from("decks")
+      .select("id")
+      .eq("user_id", userId);
+
+    let totalViews = 0;
+    if (userDecks && userDecks.length > 0) {
+      const deckIds = deckId ? [deckId] : userDecks.map((d: any) => d.id);
+      const { data: viewData } = await supabase
+        .from("deck_page_views")
+        .select("visitor_id, deck_id")
+        .in("deck_id", deckIds);
+
+      if (viewData) {
+        // Count unique visitors per deck, then sum
+        const visitorsByDeck = new Map<string, Set<string>>();
+        for (const row of viewData) {
+          if (!visitorsByDeck.has(row.deck_id)) {
+            visitorsByDeck.set(row.deck_id, new Set());
+          }
+          visitorsByDeck.get(row.deck_id)!.add(row.visitor_id);
+        }
+        for (const visitors of visitorsByDeck.values()) {
+          totalViews += visitors.size;
+        }
+      }
+    }
+
+    const result = { totalViews, totalTimeSeconds };
 
     totalStatsCache.set(cacheKey, { data: result, timestamp: Date.now() });
     return result;
-  }
+  },
+
+  // Get unique visitor count for a deck (distinct people, not slide views)
+  async getUniqueVisitorCount(deckId: string): Promise<number> {
+    const { data, error } = await supabase
+      .from("deck_page_views")
+      .select("visitor_id")
+      .eq("deck_id", deckId);
+
+    if (error || !data) return 0;
+
+    const uniqueVisitors = new Set(data.map((r: any) => r.visitor_id));
+    return uniqueVisitors.size;
+  },
 };
