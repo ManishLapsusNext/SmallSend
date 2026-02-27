@@ -11,6 +11,11 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "../../utils/cn";
 import penguinMascot from "../../assets/penguine.png";
 import { useAuth } from "../../contexts/AuthContext";
+import { useEffect, useState } from "react";
+import { BrandingSettings } from "../../types";
+import { deckService } from "../../services/deckService";
+import { MascotSettingsModal } from "../dashboard/MascotSettingsModal";
+import { Settings } from "lucide-react";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
@@ -24,17 +29,33 @@ const navItems = [
 export function Sidebar() {
   const location = useLocation();
   const { profile, signOut, session } = useAuth();
+  const [branding, setBranding] = useState<BrandingSettings | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      deckService.getBrandingSettings(session.user.id).then(setBranding);
+    }
+  }, [session?.user?.id]);
 
   return (
     <aside className="w-64 bg-[#121212] flex flex-col h-screen border-r border-white/5 shrink-0">
       {/* Brand/Mascot */}
       <div className="p-6">
-        <div className="relative w-full aspect-square bg-[#1a1a1a] rounded-2xl overflow-hidden mb-8 group">
+        <div
+          onClick={() => setShowSettings(true)}
+          className="relative w-full aspect-square bg-[#1a1a1a] rounded-2xl border border-white/5 overflow-hidden mb-8 group cursor-pointer"
+        >
           <img
-            src={penguinMascot}
+            src={branding?.logo_url || penguinMascot}
             alt="Deckly Mascot"
-            className="w-full h-full object-contain p-4 transition-transform group-hover:scale-110"
+            className="w-full h-full object-contain p-4 transition-all group-hover:scale-105 group-hover:opacity-50"
           />
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="bg-deckly-primary p-2 rounded-lg shadow-xl translate-y-2 group-hover:translate-y-0 transition-transform">
+              <Settings size={18} className="text-slate-950" />
+            </div>
+          </div>
         </div>
 
         {/* Nav Items */}
@@ -120,6 +141,13 @@ export function Sidebar() {
           </button>
         </div>
       </div>
+
+      <MascotSettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        branding={branding}
+        onUpdate={(newBranding) => setBranding(newBranding)}
+      />
     </aside>
   );
 }

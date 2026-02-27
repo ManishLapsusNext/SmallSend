@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS public.branding (
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
     room_name TEXT DEFAULT 'Deckly Data Room',
     banner_url TEXT,
+    logo_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
