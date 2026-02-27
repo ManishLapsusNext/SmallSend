@@ -8,9 +8,14 @@ import { Deck } from "../types";
 interface ImageDeckViewerProps {
   deck: Deck;
   viewerEmail?: string;
+  isOwner?: boolean;
 }
 
-function ImageDeckViewer({ deck, viewerEmail }: ImageDeckViewerProps) {
+function ImageDeckViewer({
+  deck,
+  viewerEmail,
+  isOwner = false,
+}: ImageDeckViewerProps) {
   const pages = useMemo(
     () => (Array.isArray(deck?.pages) ? deck.pages : []),
     [deck?.pages],
@@ -80,7 +85,7 @@ function ImageDeckViewer({ deck, viewerEmail }: ImageDeckViewerProps) {
     return () => {
       const endTime = Date.now();
       const timeSpent = (endTime - startTimeRef.current) / 1000;
-      if (timeSpent > 0.5) {
+      if (timeSpent > 0.5 && !isOwner) {
         analyticsService.trackPageView(deck, currentPage, timeSpent);
         analyticsService.syncSlideStats(
           deck,
@@ -93,7 +98,7 @@ function ImageDeckViewer({ deck, viewerEmail }: ImageDeckViewerProps) {
         }
       }
     };
-  }, [currentPage, deck, numPages]);
+  }, [currentPage, deck, numPages, isOwner, viewerEmail]);
 
   const goToPrevPage = useCallback(() => {
     setCurrentPage((prev) => Math.max(prev - 1, 1));
