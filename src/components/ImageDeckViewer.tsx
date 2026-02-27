@@ -18,7 +18,25 @@ function ImageDeckViewer({ deck, viewerEmail }: ImageDeckViewerProps) {
   const numPages = pages.length;
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
+  const [containerHeight, setContainerHeight] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const startTimeRef = useRef(Date.now());
+
+  // Set up ResizeObserver to track container dimensions
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      if (entries[0]) {
+        setContainerWidth(entries[0].contentRect.width);
+        setContainerHeight(entries[0].contentRect.height);
+      }
+    });
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // Helper to resolve image URL from potentially stringified slide data
   const resolveSlideImage = useCallback((pageData: any) => {
@@ -109,7 +127,10 @@ function ImageDeckViewer({ deck, viewerEmail }: ImageDeckViewerProps) {
 
   return (
     <div className="flex flex-col h-full bg-[#0d0f14] overflow-hidden">
-      <div className="flex-1 relative flex items-center justify-center p-4 md:p-12 overflow-hidden">
+      <div
+        ref={containerRef}
+        className="flex-1 relative flex items-center justify-center p-4 md:p-8 pb-8 md:pb-12 overflow-hidden"
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={currentPage}
@@ -117,7 +138,28 @@ function ImageDeckViewer({ deck, viewerEmail }: ImageDeckViewerProps) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="relative h-full w-full flex items-center justify-center"
+            style={(() => {
+              if (!containerWidth || !containerHeight) return {};
+              const targetAspect = 16 / 9;
+              const containerAspect = containerWidth / containerHeight;
+
+              let finalWidth, finalHeight;
+              if (containerAspect > targetAspect) {
+                // Window is wider than 16:9 - height is limit
+                finalHeight = containerHeight;
+                finalWidth = containerHeight * targetAspect;
+              } else {
+                // Window is taller than 16:9 - width is limit
+                finalWidth = containerWidth;
+                finalHeight = containerWidth / targetAspect;
+              }
+
+              return {
+                width: finalWidth,
+                height: finalHeight,
+              };
+            })()}
+            className="bg-white shadow-[0_32px_128px_-12px_rgba(0,0,0,1)] rounded-sm flex items-center justify-center overflow-hidden"
           >
             {(() => {
               const imgSrc =
@@ -128,7 +170,7 @@ function ImageDeckViewer({ deck, viewerEmail }: ImageDeckViewerProps) {
                   src={imgSrc}
                   alt={`Slide ${currentPage}`}
                   referrerPolicy="no-referrer"
-                  className="max-h-full max-w-full object-contain shadow-[0_32px_128px_-12px_rgba(0,0,0,1)] rounded-sm"
+                  className="w-full h-full object-contain"
                 />
               );
             })()}
