@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useDeckAnalytics } from "../hooks/useDeckAnalytics";
 import { useKeyboardControls } from "../hooks/useKeyboardControls";
 import { Deck } from "../types";
@@ -94,18 +95,26 @@ function DeckViewer({ deck }: DeckViewerProps) {
           </motion.div>
         </AnimatePresence>
 
-        {/* Clickable areas for navigation */}
-        <div className="absolute inset-0 flex">
+        {/* Navigation Overlays & Visual Arrows */}
+        <div className="absolute inset-0 flex pointer-events-none">
           <div
-            className="flex-1 cursor-pointer"
+            className="flex-1 cursor-pointer group/nav overflow-hidden pointer-events-auto relative"
             onClick={() => handleNavigationClick("prev")}
             title="Previous Page"
-          />
+          >
+            <div className="absolute left-8 top-1/2 -translate-y-1/2 w-14 h-14 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white opacity-40 group-hover/nav:opacity-100 -translate-x-2 group-hover/nav:translate-x-0 transition-all duration-300 shadow-2xl">
+              <ChevronLeft size={32} />
+            </div>
+          </div>
           <div
-            className="flex-1 cursor-pointer"
+            className="flex-1 cursor-pointer group/nav overflow-hidden pointer-events-auto relative"
             onClick={() => handleNavigationClick("next")}
             title="Next Page"
-          />
+          >
+            <div className="absolute right-8 top-1/2 -translate-y-1/2 w-14 h-14 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white opacity-40 group-hover/nav:opacity-100 translate-x-2 group-hover/nav:translate-x-0 transition-all duration-300 shadow-2xl">
+              <ChevronRight size={32} />
+            </div>
+          </div>
         </div>
       </div>
 

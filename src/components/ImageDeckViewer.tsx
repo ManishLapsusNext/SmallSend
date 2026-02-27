@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useKeyboardControls } from "../hooks/useKeyboardControls";
 import { analyticsService } from "../services/analyticsService";
 import { Deck } from "../types";
@@ -134,17 +135,26 @@ function ImageDeckViewer({ deck, viewerEmail }: ImageDeckViewerProps) {
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation Overlays */}
+        {/* Navigation Overlays & Visual Arrows */}
         <div
-          className="absolute inset-y-0 left-0 w-1/4 cursor-pointer"
+          className="absolute inset-y-0 left-0 w-1/4 cursor-pointer group/nav overflow-hidden"
           onClick={goToPrevPage}
           title="Previous"
-        />
+        >
+          <div className="absolute left-8 top-1/2 -translate-y-1/2 w-14 h-14 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white opacity-40 group-hover/nav:opacity-100 -translate-x-2 group-hover/nav:translate-x-0 transition-all duration-300 shadow-2xl">
+            <ChevronLeft size={32} />
+          </div>
+        </div>
+
         <div
-          className="absolute inset-y-0 right-0 w-1/4 cursor-pointer"
+          className="absolute inset-y-0 right-0 w-1/4 cursor-pointer group/nav overflow-hidden"
           onClick={goToNextPage}
           title="Next"
-        />
+        >
+          <div className="absolute right-8 top-1/2 -translate-y-1/2 w-14 h-14 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white opacity-40 group-hover/nav:opacity-100 translate-x-2 group-hover/nav:translate-x-0 transition-all duration-300 shadow-2xl">
+            <ChevronRight size={32} />
+          </div>
+        </div>
       </div>
 
       <footer className="h-20 bg-black/40 backdrop-blur-xl border-t border-white/5 flex items-center justify-center relative z-10 px-6">
