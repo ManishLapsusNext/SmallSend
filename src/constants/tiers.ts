@@ -5,6 +5,8 @@ export interface TierConfig {
   label: string;
   isMaximum?: boolean;
   maxDataRooms: number;
+  allowInteractive: boolean;
+  allowOffice: boolean;
 }
 
 export const TIER_CONFIG: Record<Tier, TierConfig> = {
@@ -13,18 +15,24 @@ export const TIER_CONFIG: Record<Tier, TierConfig> = {
     label: "7 Day Analytics",
     isMaximum: false,
     maxDataRooms: 1,
+    allowInteractive: false,
+    allowOffice: false,
   },
   PRO: {
     days: 90,
     label: "90 Day Analytics",
     isMaximum: true,
     maxDataRooms: 5,
+    allowInteractive: true,
+    allowOffice: true,
   },
   PRO_PLUS: {
     days: 365,
     label: "1 Year Analytics",
     isMaximum: true,
     maxDataRooms: Infinity,
+    allowInteractive: true,
+    allowOffice: true,
   },
 };
 

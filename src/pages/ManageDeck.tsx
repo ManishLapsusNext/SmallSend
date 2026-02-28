@@ -17,8 +17,11 @@ import {
   CalendarDays,
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
-import { Deck, SlidePage } from "../types";
+import { Deck, SlidePage, UserProfile } from "../types";
 import { cn } from "@/lib/utils";
+import { userService } from "../services/userService";
+import { TierUpsellModal } from "../components/TierUpsellModal";
+import { TIER_CONFIG } from "../constants/tiers";
 
 // Layout
 import { DashboardLayout } from "../components/layout/DashboardLayout";
@@ -58,14 +61,28 @@ function ManageDeck() {
     "raw",
   );
   const [fileType, setFileType] = useState<string>("pdf");
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [showUpsell, setShowUpsell] = useState(false);
+  const [upsellFeature, setUpsellFeature] = useState("");
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    fetchProfile();
     if (editId) {
       loadExistingDeck(editId);
     }
   }, [editId]);
+
+  const fetchProfile = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session?.user) {
+      const profile = await userService.getProfile(session.user.id);
+      setUserProfile(profile);
+    }
+  };
 
   const loadExistingDeck = async (id: string) => {
     try {
@@ -99,6 +116,17 @@ function ManageDeck() {
       const validExts = ["pdf", "pptx", "docx", "doc", "xlsx"];
 
       if (ext && validExts.includes(ext)) {
+        // Check tier for non-PDF via centralized config
+        const currentTier = userProfile?.tier || "FREE";
+        const config = TIER_CONFIG[currentTier];
+
+        if (ext !== "pdf" && !config.allowOffice) {
+          setUpsellFeature(`${ext.toUpperCase()} Support`);
+          setShowUpsell(true);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+          return;
+        }
+
         setFile(selectedFile);
         setFileType(ext);
 
@@ -106,7 +134,11 @@ function ManageDeck() {
         if (ext === "xlsx") {
           setConversionMode("raw");
         } else if (ext === "pptx") {
-          setConversionMode("interactive");
+          if (!config.allowInteractive) {
+            setConversionMode("raw");
+          } else {
+            setConversionMode("interactive");
+          }
         }
 
         if (!slug && !editId) {
@@ -513,15 +545,30 @@ function ManageDeck() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setConversionMode("interactive")}
+                        onClick={() => {
+                          const config =
+                            TIER_CONFIG[userProfile?.tier || "FREE"];
+                          if (!config.allowInteractive) {
+                            setUpsellFeature("Interactive Mode");
+                            setShowUpsell(true);
+                          } else {
+                            setConversionMode("interactive");
+                          }
+                        }}
                         className={cn(
-                          "px-3 py-1 text-[10px] font-bold rounded-md transition-all",
+                          "px-3 py-1 text-[10px] font-bold rounded-md transition-all flex items-center gap-1.5",
                           conversionMode === "interactive"
                             ? "bg-white text-deckly-primary shadow-sm"
                             : "text-slate-500 hover:text-slate-700",
                         )}
                       >
                         INTERACTIVE
+                        {!TIER_CONFIG[userProfile?.tier || "FREE"]
+                          .allowInteractive && (
+                          <span className="bg-deckly-primary/10 text-deckly-primary text-[8px] px-1 rounded">
+                            PRO
+                          </span>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -788,6 +835,11 @@ function ManageDeck() {
           </form>
         </DashboardCard>
       </div>
+      <TierUpsellModal
+        isOpen={showUpsell}
+        onClose={() => setShowUpsell(false)}
+        featureName={upsellFeature}
+      />
     </DashboardLayout>
   );
 }
