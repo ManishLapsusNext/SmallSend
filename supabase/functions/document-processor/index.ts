@@ -29,22 +29,54 @@ serve(async (req: Request) => {
 
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Get JWT from Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) throw new Error("Missing Authorization header");
+    
+    // Get user from JWT
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (authError || !user) throw new Error("Invalid or expired token");
+
     // Get the request body
     const body = await req.json().catch(() => ({}));
-    const { record, deckId: manualDeckId } = body;
+    const { deckId } = body;
     
-    let deck;
-    if (record) {
-      deck = record;
-    } else if (manualDeckId) {
-      console.log(`[Step 1] Fetching deck from DB: ${manualDeckId}`);
-      const { data, error } = await supabaseClient.from('decks').select('*').eq('id', manualDeckId).single();
-      if (error) throw new Error(`Database fetch error: ${error.message}`);
-      deck = data;
+    if (!deckId) throw new Error("Missing deckID in request body");
+
+    console.log(`[Step 1] Fetching deck from DB: ${deckId}`);
+    const { data: deck, error: dbError } = await supabaseClient
+      .from('decks')
+      .select('*')
+      .eq('id', deckId)
+      .single();
+
+    if (dbError) throw new Error(`Database fetch error: ${dbError.message}`);
+    if (!deck) throw new Error("No deck found for processing");
+
+    // CRITICAL: Verify ownership
+    if (deck.user_id !== user.id) {
+      console.error(`[SECURITY] User ${user.id} attempted to process deck ${deckId} owned by ${deck.user_id}`);
+      throw new Error("You do not have permission to process this document");
     }
 
-    if (!deck) throw new Error("No deck found for processing");
-    console.log(`[Step 1 OK] Processing deck: ${deck.title} (${deck.id})`);
+    // NEW: Verify Tier
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('tier')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      console.error(`[SECURITY] Could not fetch profile for user ${user.id}`);
+      throw new Error("Could not verify subscription tier");
+    }
+
+    if (profile.tier === 'FREE') {
+       console.error(`[SECURITY] FREE user ${user.id} attempted to trigger interactive processing`);
+       throw new Error("Interactive mode is restricted to PRO tiers. Please upgrade your account.");
+    }
+
+    console.log(`[Step 1 OK] Processing deck: ${deck.title} (${deck.id}) Tier: ${profile.tier}`);
 
     const apiKey = Deno.env.get('CONVERT_API_SECRET');
     if (!apiKey) throw new Error("CONVERT_API_SECRET is not set in Supabase Secrets.");
@@ -167,11 +199,13 @@ serve(async (req: Request) => {
 
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    console.error(`[CRITICAL ERROR] ${errorMessage}`);
+    const errorStack = err instanceof Error && err.stack ? err.stack : undefined;
+    console.error('[CRITICAL ERROR]', { message: errorMessage, stack: errorStack });
     
     return new Response(JSON.stringify({ 
       error: true,
-      message: errorMessage 
+      code: 'INTERNAL_ERROR',
+      message: 'An unexpected error occurred while processing the document.'
     }), {
       status: 200, // Return 200 so the frontend can read the JSON error message
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
