@@ -374,7 +374,7 @@ function ManageDeck() {
 
       // Navigate back
       setTimeout(
-        () => navigate(returnToRoom ? `/rooms/${returnToRoom}` : "/"),
+        () => navigate(returnToRoom ? `/rooms/${returnToRoom}` : "/content"),
         1500,
       );
     } catch (err: any) {
@@ -821,7 +821,7 @@ function ManageDeck() {
                 )}
               </Button>
 
-              <Link to="/">
+              <Link to="/content">
                 <Button
                   type="button"
                   variant="ghost"
