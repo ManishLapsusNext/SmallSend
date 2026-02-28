@@ -32,7 +32,9 @@ CREATE TABLE IF NOT EXISTS public.decks (
     slug TEXT NOT NULL UNIQUE,
     description TEXT,
     file_url TEXT,
-    pages TEXT[] DEFAULT '{}',
+    pages JSONB DEFAULT '[]'::jsonb,
+    display_mode TEXT DEFAULT 'raw',
+    file_type TEXT DEFAULT 'pdf',
     status TEXT DEFAULT 'PENDING', -- PENDING, PROCESSED, ERROR
     file_size BIGINT,
     display_order INTEGER DEFAULT 1,
@@ -177,7 +179,14 @@ CREATE POLICY "Data room documents are viewable by everyone" ON public.data_room
   2. SELECT: Anyone can read from the bucket (since it's public)
 */
 
--- MIGRATIONS (for existing databases)
+-- MIGRATIONS (for multi-document support)
+ALTER TABLE public.decks ADD COLUMN IF NOT EXISTS file_type TEXT DEFAULT 'pdf';
+ALTER TABLE public.decks ADD COLUMN IF NOT EXISTS display_mode TEXT DEFAULT 'raw'; -- 'raw' or 'interactive'
+-- Drop view before altering column type
+DROP VIEW IF EXISTS public.decks_public;
+ALTER TABLE public.decks ALTER COLUMN pages DROP DEFAULT;
+ALTER TABLE public.decks ALTER COLUMN pages TYPE JSONB USING to_jsonb(pages);
+ALTER TABLE public.decks ALTER COLUMN pages SET DEFAULT '[]'::jsonb;
 ALTER TABLE deck_page_views ADD COLUMN IF NOT EXISTS time_spent REAL DEFAULT 0;
 ALTER TABLE deck_page_views ADD COLUMN IF NOT EXISTS viewer_email TEXT;
 
@@ -189,7 +198,7 @@ CREATE OR REPLACE VIEW public.decks_public AS
 SELECT 
     id, user_id, title, slug, description, file_url, pages, status, 
     file_size, display_order, require_email, require_password, expires_at, 
-    created_at, updated_at
+    created_at, updated_at, file_type, display_mode
 FROM public.decks;
 
 -- Public view for data rooms (excludes sensitive view_password)

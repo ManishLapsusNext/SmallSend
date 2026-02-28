@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { deckService } from "../services/deckService";
-import { dataRoomService } from "../services/dataRoomService";
 import { supabase } from "../services/supabase";
 import {
   Upload,
@@ -55,6 +54,10 @@ function ManageDeck() {
   const [progress, setProgress] = useState("");
   const [progressPercent, setProgressPercent] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [conversionMode, setConversionMode] = useState<"raw" | "interactive">(
+    "raw",
+  );
+  const [fileType, setFileType] = useState<string>("pdf");
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -91,21 +94,38 @@ function ManageDeck() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile && selectedFile.type === "application/pdf") {
-      setFile(selectedFile);
-      if (!slug && !editId) {
-        const generatedSlug = selectedFile.name
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "-")
-          .replace(/-+/g, "-")
-          .replace(/^-|-$/g, "");
-        setSlug(generatedSlug);
+    if (selectedFile) {
+      const ext = selectedFile.name.split(".").pop()?.toLowerCase();
+      const validExts = ["pdf", "pptx", "docx", "doc", "xlsx"];
+
+      if (ext && validExts.includes(ext)) {
+        setFile(selectedFile);
+        setFileType(ext);
+
+        // Default to raw for non-slideshow formats unless it's pptx
+        if (ext === "xlsx") {
+          setConversionMode("raw");
+        } else if (ext === "pptx") {
+          setConversionMode("interactive");
+        }
+
+        if (!slug && !editId) {
+          const generatedSlug = `${selectedFile.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "-")
+            .replace(/-+/g, "-")
+            .replace(
+              /^-|-$/g,
+              "",
+            )}-${Math.random().toString(36).substring(2, 6)}`;
+          setSlug(generatedSlug);
+        }
+        if (!title && !editId) {
+          setTitle(selectedFile.name.split(".")[0]);
+        }
+      } else {
+        alert("Please select a supported file (PDF, PPTX, DOCX, or XLSX).");
       }
-      if (!title && !editId) {
-        setTitle(selectedFile.name.replace(".pdf", ""));
-      }
-    } else if (selectedFile) {
-      alert("Please select a valid PDF file.");
     }
   };
 
@@ -151,6 +171,7 @@ function ManageDeck() {
     try {
       let finalFileUrl = existingDeck?.file_url;
       let finalPages: SlidePage[] = existingDeck?.pages || [];
+      let finalStatus = "PROCESSED"; // Default to processed if it's raw non-pdf
 
       const {
         data: { session },
@@ -159,7 +180,7 @@ function ManageDeck() {
       const userId = session.user.id;
 
       if (file) {
-        setProgress("Uploading new PDF...");
+        setProgress("Uploading document...");
         setProgressPercent(5);
         const fileExt = file.name.split(".").pop();
         const fileName = `${userId}/decks/${slug}-${Date.now()}.${fileExt}`;
@@ -173,8 +194,9 @@ function ManageDeck() {
         } = supabase.storage.from("decks").getPublicUrl(fileName);
         finalFileUrl = publicUrl;
 
+        // Cleanup old images if updating
         if (editId && existingDeck) {
-          setProgress("Cleaning up old slides...");
+          setProgress("Cleaning up old content...");
           const { data: files } = await supabase.storage
             .from("decks")
             .list(`${userId}/deck-images/${slug}`);
@@ -186,27 +208,39 @@ function ManageDeck() {
           }
         }
 
-        const imageBlobs = await processPdfToImages(file);
-        setProgress(`Uploading slide 1 of ${imageBlobs.length}...`);
-        const imageUrls = await deckService.uploadSlideImages(
-          userId,
-          slug,
-          imageBlobs,
-          (current, total) => {
-            setProgress(`Uploading slide ${current} of ${total}...`);
-            setProgressPercent(50 + Math.round((current / total) * 45));
-          },
-        );
-        finalPages = imageUrls.map((url, idx) => ({
-          image_url: url,
-          page_number: idx + 1,
-        }));
+        // Processing Logic
+        if (fileType === "pdf") {
+          // Keep existing PDF client-side processing
+          const imageBlobs = await processPdfToImages(file);
+          setProgress(`Uploading slide 1 of ${imageBlobs.length}...`);
+          const imageUrls = await deckService.uploadSlideImages(
+            userId,
+            slug,
+            imageBlobs,
+            (current, total) => {
+              setProgress(`Uploading slide ${current} of ${total}...`);
+              setProgressPercent(50 + Math.round((current / total) * 45));
+            },
+          );
+          finalPages = imageUrls.map((url, idx) => ({
+            image_url: url,
+            page_number: idx + 1,
+          }));
+          finalStatus = "PROCESSED";
+        } else if (conversionMode === "interactive") {
+          // TODO: Trigger backend conversion for PPTX/DOCX
+          // For now, mark as pending and we will handle it via Edge Function later
+          finalStatus = "PENDING";
+          finalPages = [];
+        } else {
+          // Raw mode for non-PDF
+          finalStatus = "PROCESSED";
+          finalPages = [];
+        }
       }
 
-      let newDeckId: string | null = null;
-
       if (editId) {
-        setProgress("Updating deck record...");
+        setProgress("Updating record...");
         setProgressPercent(95);
         const { error: dbError } = await supabase
           .from("decks")
@@ -215,8 +249,10 @@ function ManageDeck() {
             description,
             file_url: finalFileUrl,
             pages: finalPages,
-            status: "PROCESSED",
+            status: finalStatus as any,
+            display_mode: conversionMode,
             file_size: file ? file.size : existingDeck?.file_size,
+            file_type: fileType as any,
             require_email: requireEmail,
             require_password: requirePassword,
             view_password: viewPassword,
@@ -224,62 +260,100 @@ function ManageDeck() {
           })
           .eq("id", editId);
         if (dbError) throw dbError;
+
+        // Trigger conversion on update if file changed and mode is interactive
+        if (file && fileType !== "pdf" && conversionMode === "interactive") {
+          setProgress("Processing interactive slides...");
+          setProgressPercent(98);
+          const { data: invokeData, error: invokeError } =
+            await supabase.functions.invoke("document-processor", {
+              body: { deckId: editId },
+            });
+
+          if (invokeError) {
+            throw new Error(
+              invokeError.message ||
+                "Processing failed. Check your conversion service.",
+            );
+          }
+
+          if (invokeData?.error) {
+            throw new Error(invokeData.message || "Backend processing failed.");
+          }
+        }
       } else {
-        setProgress("Creating new deck...");
-        setProgressPercent(95);
-        const deckRecord = await deckService.uploadDeck(file as File, {
-          title,
-          slug,
-          description,
-          display_order: 1,
-          user_id: userId,
-          file_size: file?.size || 0,
-          require_email: requireEmail,
-          require_password: requirePassword,
-          view_password: viewPassword,
-          expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
-        });
-
-        const imageBlobs = await processPdfToImages(file as File);
-        setProgress(`Uploading slide 1 of ${imageBlobs.length}...`);
-        const imageUrls = await deckService.uploadSlideImages(
-          userId,
-          slug,
-          imageBlobs,
-          (current, total) => {
-            setProgress(`Uploading slide ${current} of ${total}...`);
-            setProgressPercent(50 + Math.round((current / total) * 45));
-          },
-        );
-
-        const pages: SlidePage[] = imageUrls.map((url, idx) => ({
-          image_url: url,
-          page_number: idx + 1,
-        }));
-
         setProgress("Finalizing...");
-        setProgressPercent(98);
-        await deckService.updateDeckPages(deckRecord.id, pages);
-        newDeckId = deckRecord.id;
+        setProgressPercent(95);
+
+        // Use insert directly for better control over file_type
+        const { data: deckRecord, error: deckError } = await supabase
+          .from("decks")
+          .insert([
+            {
+              title,
+              slug,
+              description,
+              file_url: finalFileUrl,
+              pages: finalPages,
+              status: finalStatus,
+              display_mode: conversionMode,
+              file_size: file?.size || 0,
+              file_type: fileType,
+              user_id: userId,
+              require_email: requireEmail,
+              require_password: requirePassword,
+              view_password: viewPassword,
+              expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+            },
+          ])
+          .select()
+          .single();
+
+        if (deckError) throw deckError;
+
+        // If it was an interactive non-PDF, trigger and WAIT for the edge function here
+        if (
+          fileType !== "pdf" &&
+          conversionMode === "interactive" &&
+          deckRecord
+        ) {
+          setProgress("Processing interactive slides...");
+          setProgressPercent(98);
+          const { data: invokeData, error: invokeError } =
+            await supabase.functions.invoke("document-processor", {
+              body: { deckId: deckRecord.id },
+            });
+
+          if (invokeError) {
+            throw new Error(
+              invokeError.message ||
+                "Processing failed. Check your conversion service.",
+            );
+          }
+
+          if (invokeData?.error) {
+            throw new Error(invokeData.message || "Backend processing failed.");
+          }
+        }
       }
 
-      setProgress("Successful! Building your room...");
+      setProgress("Successful!");
       setProgressPercent(100);
 
-      // If uploading for a data room, add the deck and go back to the room
-      if (returnToRoom && !editId && newDeckId) {
-        try {
-          await dataRoomService.addDocuments(returnToRoom, [newDeckId]);
-        } catch (err) {
-          console.error("Failed to add deck to room", err);
-        }
-        setTimeout(() => navigate(`/rooms/${returnToRoom}`), 1500);
-      } else {
-        setTimeout(() => navigate("/"), 1500);
-      }
+      // Navigate back
+      setTimeout(
+        () => navigate(returnToRoom ? `/rooms/${returnToRoom}` : "/"),
+        1500,
+      );
     } catch (err: any) {
-      console.error("Operation failed:", err);
-      setError(err.message);
+      console.error("Upload error:", err);
+      let errorMsg = err.message || "Something went wrong. Please try again.";
+      if (err.code === "23505" && err.message.includes("slug")) {
+        errorMsg =
+          "This URL Slug is already taken. Please enter a different one.";
+      }
+      setError(errorMsg);
+      setProgress("");
     } finally {
       setLoading(false);
     }
@@ -394,12 +468,12 @@ function ManageDeck() {
                   )}
                   <div>
                     <p className="text-sm font-bold text-slate-900">
-                      {file ? file.name : "Click to select a PDF"}
+                      {file ? file.name : "Click to select a document"}
                     </p>
                     <p className="text-xs text-slate-400 mt-1">
                       {file
                         ? `${(file.size / 1024 / 1024).toFixed(1)} MB`
-                        : "Maximum file size: 50MB"}
+                        : "PPTX, DOCX, XLSX, or PDF (Max 50MB)"}
                     </p>
                   </div>
                 </div>
@@ -407,10 +481,57 @@ function ManageDeck() {
                   type="file"
                   ref={fileInputRef}
                   hidden
-                  accept=".pdf"
+                  accept=".pdf,.pptx,.docx,.doc,.xlsx"
                   onChange={handleFileChange}
                 />
               </div>
+
+              {/* Display Mode Toggle for New Formats */}
+              {file && fileType !== "pdf" && (
+                <div className="p-4 rounded-2xl border border-deckly-primary/30 bg-deckly-primary/5 flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">
+                        Experience Mode
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        How should visitors see this?
+                      </p>
+                    </div>
+                    <div className="flex bg-slate-200 p-1 rounded-lg">
+                      <button
+                        type="button"
+                        onClick={() => setConversionMode("raw")}
+                        className={cn(
+                          "px-3 py-1 text-[10px] font-bold rounded-md transition-all",
+                          conversionMode === "raw"
+                            ? "bg-white text-deckly-primary shadow-sm"
+                            : "text-slate-500 hover:text-slate-700",
+                        )}
+                      >
+                        RAW
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConversionMode("interactive")}
+                        className={cn(
+                          "px-3 py-1 text-[10px] font-bold rounded-md transition-all",
+                          conversionMode === "interactive"
+                            ? "bg-white text-deckly-primary shadow-sm"
+                            : "text-slate-500 hover:text-slate-700",
+                        )}
+                      >
+                        INTERACTIVE
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-relaxed italic">
+                    {conversionMode === "interactive"
+                      ? "✨ We will convert your document into a smooth, slide-based presentation."
+                      : "📄 Visitors will see the original document in a high-fidelity embed viewer."}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* --- Access Protection Section --- */}

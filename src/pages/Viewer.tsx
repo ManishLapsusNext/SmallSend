@@ -127,12 +127,26 @@ function Viewer() {
             </Link>
 
             <div className="flex-1 w-full relative min-h-0">
-              {Array.isArray(deck.pages) && deck.pages.length > 0 ? (
-                <ImageDeckViewer
-                  deck={deck}
-                  viewerEmail={viewerEmail}
-                  isOwner={isOwner}
-                />
+              {deck.display_mode === "interactive" ||
+              (Array.isArray(deck.pages) && deck.pages.length > 0) ? (
+                deck.status === "PENDING" ? (
+                  <div className="h-full flex flex-col items-center justify-center p-12 text-center bg-[#0d0f14]">
+                    <div className="w-16 h-16 border-4 border-deckly-primary/30 border-t-deckly-primary rounded-full animate-spin mb-6" />
+                    <h2 className="text-2xl font-black text-white tracking-tight mb-2">
+                      Optimizing for Presentation
+                    </h2>
+                    <p className="text-slate-400 font-medium">
+                      We're converting your slides into an interactive
+                      experience. This usually takes less than a minute.
+                    </p>
+                  </div>
+                ) : (
+                  <ImageDeckViewer
+                    deck={deck}
+                    viewerEmail={viewerEmail}
+                    isOwner={isOwner}
+                  />
+                )
               ) : (
                 <DeckViewer deck={deck} isOwner={isOwner} />
               )}
