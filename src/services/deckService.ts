@@ -402,4 +402,46 @@ export const deckService = {
     if (!session) throw new Error("Not authenticated");
     return `${session.user.id}/${slug}/${filename}`;
   },
+
+  // NEW: Save deck to investor library
+  async saveToLibrary(deckId: string): Promise<void> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Not authenticated");
+
+    const { error } = await supabase
+      .from("investor_library")
+      .upsert({ user_id: session.user.id, deck_id: deckId }, { onConflict: "user_id, deck_id" });
+
+    if (error) throw error;
+  },
+
+  // NEW: Remove deck from investor library
+  async removeFromLibrary(deckId: string): Promise<void> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Not authenticated");
+
+    const { error } = await supabase
+      .from("investor_library")
+      .delete()
+      .eq("user_id", session.user.id)
+      .eq("deck_id", deckId);
+
+    if (error) throw error;
+  },
+
+  // NEW: Check if deck is in library
+  async isDeckSaved(deckId: string): Promise<boolean> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return false;
+
+    const { data, error } = await supabase
+      .from("investor_library")
+      .select("id")
+      .eq("user_id", session.user.id)
+      .eq("deck_id", deckId)
+      .maybeSingle();
+
+    if (error) return false;
+    return !!data;
+  },
 };

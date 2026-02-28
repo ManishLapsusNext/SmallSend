@@ -242,7 +242,22 @@ BEGIN
 END;
 $$;
 
--- Note: In the Supabase dashboard, you should consider revoking SELECT on the 
--- original tables for anonymous users and only allowing SELECT on the views.
--- For now, the app will be updated to fetch from these views for public access.
+-- 8. INVESTOR LIBRARY
+CREATE TABLE IF NOT EXISTS public.investor_library (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    deck_id UUID NOT NULL REFERENCES public.decks(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, deck_id)
+);
+
+-- Index for library query
+CREATE INDEX IF NOT EXISTS idx_investor_library_user ON public.investor_library(user_id);
+
+-- Enable RLS
+ALTER TABLE public.investor_library ENABLE ROW LEVEL SECURITY;
+
+-- POLICIES FOR INVESTOR LIBRARY
+CREATE POLICY "Users can manage their own library" ON public.investor_library
+    FOR ALL USING (auth.uid() = user_id);
 
