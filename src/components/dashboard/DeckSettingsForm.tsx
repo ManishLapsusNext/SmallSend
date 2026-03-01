@@ -9,6 +9,8 @@ import { Deck } from "../../types";
 import { ManagementSection } from "./form-sections/ManagementSection";
 import { AccessProtectionSection } from "./form-sections/AccessProtectionSection";
 import { DangerZoneSection } from "./form-sections/DangerZoneSection";
+import { Button } from "../ui/button";
+import { Save } from "lucide-react";
 
 // Set worker source for pdfjs-dist
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -160,8 +162,6 @@ export function DeckSettingsForm({
         originalSlug={deck.slug}
         onFileClick={() => fileInputRef.current?.click()}
         newFile={newFile}
-        isSaving={isSaving}
-        handleSave={handleSave}
       />
 
       <input
@@ -184,6 +184,26 @@ export function DeckSettingsForm({
         viewPassword={viewPassword}
         setViewPassword={setViewPassword}
       />
+
+      <div className="flex justify-end pt-2 pb-6 px-1">
+        <Button
+          type="button"
+          onClick={(e: React.MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSave();
+          }}
+          disabled={isSaving}
+          className="w-full sm:w-auto rounded-2xl px-12 py-7 font-black uppercase tracking-[0.2em] text-[10px] bg-deckly-primary text-slate-950 hover:bg-deckly-primary/90 shadow-2xl shadow-deckly-primary/20 active:scale-[0.98] transition-all disabled:opacity-50"
+        >
+          {isSaving ? (
+            <div className="w-3 h-3 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin mr-2" />
+          ) : (
+            <Save size={14} className="mr-2" strokeWidth={3} />
+          )}
+          {isSaving ? "SAVING..." : "SAVE CHANGES"}
+        </Button>
+      </div>
 
       <DangerZoneSection onDelete={() => onDelete(deck.id)} />
 
