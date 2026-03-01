@@ -13,7 +13,7 @@ interface AuthModalProps {
 export function AuthModal({
   isOpen,
   onClose,
-  message = "Sign up to save this deck to your private library.",
+  message = "Sign up to never lose track of your decks. Save this deck to your private library or add notes.",
   redirectTo,
 }: AuthModalProps) {
   if (!isOpen) return null;
