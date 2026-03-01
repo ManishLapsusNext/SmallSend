@@ -46,9 +46,33 @@ export default function DeckAnalytics() {
   const [bookmarks, setBookmarks] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  // Used to prevent too frequent background refreshes
+  const lastFetchedRef = React.useRef<number>(0);
+  const lastDeckIdRef = React.useRef<string | undefined>(undefined);
+  const FETCH_THROTTLE_MS = 2 * 60 * 1000; // 2 minutes
+
   useEffect(() => {
     if (deckId && session?.user?.id) {
-      setLoading(true);
+      const now = Date.now();
+      const isNewDeck = lastDeckIdRef.current !== deckId;
+      const isInitialLoad = !deck || isNewDeck;
+      const shouldThrottle =
+        !isInitialLoad && now - lastFetchedRef.current < FETCH_THROTTLE_MS;
+
+      if (shouldThrottle) return;
+
+      if (isInitialLoad) {
+        setLoading(true);
+        // Clear old data for new deck to prevent flicker
+        if (isNewDeck) {
+          setDeck(null);
+          setStats([]);
+        }
+      }
+
+      lastFetchedRef.current = now;
+      lastDeckIdRef.current = deckId;
+
       Promise.all([
         deckService.getDeckById(deckId),
         analyticsService.getDeckStats(deckId, !!isPro, session.user.id),
@@ -80,7 +104,7 @@ export default function DeckAnalytics() {
       // Fetch unique visitor count
       analyticsService.getUniqueVisitorCount(deckId).then(setUniqueVisitors);
     }
-  }, [deckId, session, isPro]);
+  }, [deckId, session?.user?.id, isPro]);
 
   // Derived Stats
   const totalViews = useMemo(
