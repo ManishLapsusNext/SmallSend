@@ -203,7 +203,7 @@ export function DocumentPicker({
               onClick={onClose}
               className="px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-white transition-all"
             >
-              NEGATE
+              CANCEL
             </button>
             <button
               onClick={handleAdd}

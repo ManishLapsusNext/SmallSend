@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -16,12 +16,13 @@ import {
   Users,
   Loader2,
   Monitor,
-  X,
 } from "lucide-react";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
 import { DocumentPicker } from "../components/dashboard/DocumentPicker";
 import { DataRoom, DataRoomDocument } from "../types";
+import { cn } from "@/lib/utils";
 import { dataRoomService } from "../services/dataRoomService";
+import { RoomDocumentList } from "../components/dashboard/RoomDocumentList";
 
 /* ───────── helpers ───────── */
 function formatDate(iso: string) {
@@ -50,7 +51,6 @@ function DataRoomDetail() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deletingDoc, setDeletingDoc] = useState<string | null>(null);
 
   /* ── load data ── */
   const loadAll = useCallback(async () => {
@@ -97,17 +97,12 @@ function DataRoomDetail() {
 
   const handleRemoveDocument = async (deckId: string) => {
     if (!roomId) return;
-    setDeletingDoc(deckId);
-    try {
-      await dataRoomService.removeDocument(roomId, deckId);
-      setDocuments((prev) => prev.filter((d) => d.deck_id !== deckId));
-      setAnalytics((prev) => ({
-        ...prev,
-        perDeck: prev.perDeck.filter((p) => p.deckId !== deckId),
-      }));
-    } finally {
-      setDeletingDoc(null);
-    }
+    await dataRoomService.removeDocument(roomId, deckId);
+    setDocuments((prev) => prev.filter((d) => d.deck_id !== deckId));
+    setAnalytics((prev) => ({
+      ...prev,
+      perDeck: prev.perDeck.filter((p) => p.deckId !== deckId),
+    }));
   };
 
   const handleDeleteRoom = async () => {
@@ -130,10 +125,6 @@ function DataRoomDetail() {
   }
 
   if (!room) return null;
-
-  const visitorsByDeck = new Map(
-    analytics.perDeck.map((p) => [p.deckId, p.visitors]),
-  );
 
   return (
     <DashboardLayout title="Data Rooms" showFab={false}>
@@ -159,28 +150,29 @@ function DataRoomDetail() {
               onClick={() => navigate("/rooms")}
               className="flex items-center gap-2 text-slate-500 hover:text-white text-[10px] font-black uppercase tracking-[0.2em] mb-12 group transition-all"
             >
-              <ArrowLeft
-                size={14}
-                className="group-hover:-translate-x-1 transition-transform"
-              />
-              All Rooms
+              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-deckly-primary/10 group-hover:border-deckly-primary/20 transition-all">
+                <ArrowLeft
+                  size={14}
+                  className="group-hover:-translate-x-0.5 transition-transform"
+                />
+              </div>
+              Return to Rooms
             </button>
 
-            {/* Center content */}
             <div className="flex flex-col items-center text-center">
               {/* Icon */}
-              <div className="w-24 h-24 rounded-[2rem] bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden mb-8 shadow-2xl backdrop-blur-md relative group">
+              <div className="w-20 h-20 md:w-24 md:h-24 rounded-[2rem] bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden mb-8 shadow-2xl backdrop-blur-md relative group">
                 <div className="absolute inset-0 bg-deckly-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 {room.icon_url ? (
                   <img
                     src={room.icon_url}
                     alt={room.name}
-                    className="w-full h-full object-cover rounded-[1.5rem]"
+                    className="w-full h-full object-cover relative z-10 transition-transform duration-700 group-hover:scale-110"
                   />
                 ) : (
                   <Monitor
                     size={32}
-                    className="text-slate-500 group-hover:text-deckly-primary transition-colors duration-500"
+                    className="text-slate-500 group-hover:text-deckly-primary transition-colors duration-500 relative z-10"
                   />
                 )}
               </div>
@@ -200,7 +192,7 @@ function DataRoomDetail() {
               <div className="flex items-center gap-3 flex-wrap justify-center">
                 <button
                   onClick={handleCopyLink}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all active:scale-95"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-white/3 hover:bg-white/10 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all active:scale-95 shadow-lg"
                 >
                   {copied ? (
                     <>
@@ -218,21 +210,21 @@ function DataRoomDetail() {
                   href={shareUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all active:scale-95"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-white/3 hover:bg-white/10 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all active:scale-95 shadow-lg"
                 >
                   <ExternalLink size={14} />
                   Live Preview
                 </a>
                 <button
                   onClick={() => navigate(`/rooms/${roomId}/edit`)}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all active:scale-95"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-deckly-primary text-slate-950 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-deckly-primary/90 transition-all active:scale-95 shadow-lg shadow-deckly-primary/10"
                 >
                   <Pencil size={14} />
                   Manage
                 </button>
                 <button
                   onClick={() => setConfirmDelete(true)}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-400 transition-all active:scale-95"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-400 transition-all active:scale-95 shadow-lg"
                 >
                   <Trash2 size={14} />
                   Erase
@@ -241,11 +233,10 @@ function DataRoomDetail() {
             </div>
           </div>
         </div>
-
         {/* ═══════════════ STATS ROW ═══════════════ */}
-        <div className="bg-[#0e1117] border-b border-white/5">
-          <div className="max-w-5xl mx-auto px-6 py-0">
-            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-white/5">
+        <div className="bg-[#0e1117]/50 border-b border-white/5 py-0 px-6 backdrop-blur-md overflow-x-auto scrollbar-hide">
+          <div className="max-w-5xl mx-auto min-w-[640px] md:min-w-0">
+            <div className="grid grid-cols-4 divide-x divide-white/5">
               <StatItem
                 icon={<FileText size={16} />}
                 label="Assets Gated"
@@ -258,45 +249,49 @@ function DataRoomDetail() {
               />
               <StatItem
                 icon={<Calendar size={16} />}
-                label="ESTABLISHED"
+                label="Established"
                 value={formatDate(room.created_at)}
                 isText
               />
               <StatItem
-                icon={<LinkIcon size={16} />}
-                label="Public Link"
-                value={`/room/${room.slug}`}
+                icon={
+                  copied ? (
+                    <Check size={16} className="text-deckly-primary" />
+                  ) : (
+                    <LinkIcon size={16} />
+                  )
+                }
+                label={copied ? "Copied" : "Public Link"}
+                value={copied ? "Success" : `/room/${room.slug}`}
                 isText
+                onClick={handleCopyLink}
               />
             </div>
           </div>
         </div>
 
         {/* ═══════════════ MAIN CONTENT ═══════════════ */}
-        <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
-          {/* ── Documents Section ── */}
-          <section>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-8">
+        <div className="max-w-5xl mx-auto px-6 py-12 space-y-12">
+          {/* Room Assets section */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-3">
                 <FileText size={16} className="text-deckly-primary" />
-                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
                   Room Assets
                 </h2>
-                <span className="ml-1 px-3 py-1 bg-deckly-primary/10 text-deckly-primary text-[10px] font-black rounded-lg border border-deckly-primary/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]">
-                  {documents.length}
-                </span>
               </div>
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={() => navigate(`/upload?returnToRoom=${roomId}`)}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 font-bold text-xs uppercase tracking-widest rounded-xl transition-all active:scale-95"
+                  className="flex items-center gap-2 px-4 py-2 bg-deckly-primary text-slate-950 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-deckly-primary/90 transition-all active:scale-95 shadow-lg shadow-deckly-primary/10"
                 >
                   <Plus size={14} />
-                  Upload
+                  Add New
                 </button>
                 <button
                   onClick={() => setPickerOpen(true)}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-deckly-primary text-slate-950 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-deckly-primary/90 transition-all active:scale-95 shadow-xl shadow-deckly-primary/20"
+                  className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all active:scale-95"
                 >
                   <Plus size={14} />
                   Add Existing
@@ -304,207 +299,27 @@ function DataRoomDetail() {
               </div>
             </div>
 
-            {documents.length === 0 ? (
-              <div className="bg-white/[0.02] border border-dashed border-white/10 rounded-[2rem] p-16 text-center shadow-inner">
-                <FileText
-                  size={48}
-                  className="text-slate-700 mx-auto mb-6 opacity-30"
-                />
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">
-                  No assets identified
-                </p>
-                <p className="text-[10px] text-slate-600 uppercase tracking-widest mb-8">
-                  Populate this room with your best decks
-                </p>
-                <button
-                  onClick={() => setPickerOpen(true)}
-                  className="text-[10px] font-black uppercase tracking-[0.2em] text-deckly-primary hover:text-deckly-primary/80 transition-colors bg-deckly-primary/10 px-6 py-3 rounded-xl border border-deckly-primary/10"
-                >
-                  + Select Assets
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {documents.map((doc, idx) => {
-                  const deck = doc.deck;
-                  const visitors = visitorsByDeck.get(doc.deck_id) || 0;
+            <div className="glass-shiny bg-white/[0.03] backdrop-blur-xl rounded-[2rem] border border-white/10 p-4 shadow-2xl">
+              <RoomDocumentList
+                documents={documents}
+                onRemove={handleRemoveDocument}
+                onReorder={(ids: string[]) =>
+                  dataRoomService.reorderDocuments(roomId!, ids)
+                }
+              />
+            </div>
+          </div>
 
-                  return (
-                    <motion.div
-                      key={doc.deck_id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.04 }}
-                      className="group glass-shiny border border-white/5 rounded-2xl p-4 md:p-5 hover:border-deckly-primary/30 hover:shadow-2xl hover:shadow-deckly-primary/5 transition-all duration-300 relative overflow-hidden"
-                    >
-                      <div className="flex items-center gap-5 relative z-10">
-                        {/* Order badge */}
-                        <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-black text-slate-500 shrink-0">
-                          {String(idx + 1).padStart(2, "0")}
-                        </div>
-
-                        {/* Thumbnail */}
-                        <div className="w-16 h-12 rounded-xl bg-white/5 border border-white/10 overflow-hidden shrink-0 shadow-inner group-hover:border-deckly-primary/30 transition-all">
-                          {deck?.pages?.[0]?.image_url ? (
-                            <img
-                              src={deck.pages[0].image_url}
-                              alt=""
-                              className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <FileText size={16} className="text-slate-700" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[13px] font-black text-white uppercase tracking-wider truncate group-hover:text-deckly-primary transition-colors">
-                            {deck?.title || "Untitled Deck"}
-                          </p>
-                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
-                            {deck?.pages?.length || 0} SLIDES IN BUNDLE
-                          </p>
-                        </div>
-
-                        {/* Stats */}
-                        <div className="hidden md:flex items-center gap-8 px-6">
-                          <div className="text-center">
-                            <p className="text-lg font-black text-deckly-primary leading-none">
-                              {visitors}
-                            </p>
-                            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-500 mt-1.5">
-                              Readers
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300">
-                          {deck && (
-                            <Link
-                              to={`/analytics/${deck.id}`}
-                              className="p-3 text-slate-400 hover:text-deckly-primary bg-white/5 hover:bg-deckly-primary/10 border border-white/10 hover:border-deckly-primary/20 rounded-xl transition-all"
-                              title="View Analytics"
-                            >
-                              <BarChart3 size={14} />
-                            </Link>
-                          )}
-                          <a
-                            href={deck ? `/${deck.slug}` : "#"}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="p-3 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
-                            title="Direct Access"
-                          >
-                            <ExternalLink size={14} />
-                          </a>
-                          <button
-                            onClick={() => handleRemoveDocument(doc.deck_id)}
-                            disabled={deletingDoc === doc.deck_id}
-                            className="p-3 text-slate-400 hover:text-red-400 bg-white/5 hover:bg-red-500/10 border border-white/10 hover:border-red-500/20 rounded-xl transition-all disabled:opacity-30"
-                            title="Remove from room"
-                          >
-                            {deletingDoc === doc.deck_id ? (
-                              <Loader2 size={14} className="animate-spin" />
-                            ) : (
-                              <X size={14} />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-
-          {/* ── Analytics Per Deck ── */}
-          {analytics.perDeck.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-5">
-                <BarChart3 size={16} className="text-deckly-primary" />
-                <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">
-                  Analytics Overview
-                </h2>
-              </div>
-
-              <div className="glass-shiny border border-white/5 rounded-[2rem] overflow-hidden shadow-2xl">
-                <div className="grid grid-cols-12 px-6 py-4 bg-white/5 border-b border-white/5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
-                  <div className="col-span-6">ASSET IDENTITY</div>
-                  <div className="col-span-3 text-right">ENGAGEMENT</div>
-                  <div className="col-span-3 text-right">DISTRIBUTION</div>
-                </div>
-                {analytics.perDeck.map((item, idx) => {
-                  const pct =
-                    analytics.totalVisitors > 0
-                      ? Math.round(
-                          (item.visitors / analytics.totalVisitors) * 100,
-                        )
-                      : 0;
-
-                  return (
-                    <div
-                      key={item.deckId}
-                      className={`grid grid-cols-12 px-6 py-5 items-center ${
-                        idx < analytics.perDeck.length - 1
-                          ? "border-b border-white/5"
-                          : ""
-                      } hover:bg-white/[0.04] transition-colors group`}
-                    >
-                      <div className="col-span-6 flex items-center gap-4 min-w-0">
-                        <div className="w-8 h-8 rounded-xl bg-deckly-primary/10 flex items-center justify-center text-[10px] font-black text-deckly-primary shrink-0 border border-deckly-primary/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]">
-                          {idx + 1}
-                        </div>
-                        <p className="text-[13px] text-white font-black uppercase tracking-wider truncate group-hover:text-deckly-primary transition-colors">
-                          {item.title}
-                        </p>
-                      </div>
-                      <div className="col-span-3 text-right">
-                        <span className="text-base font-black text-deckly-primary">
-                          {item.visitors}
-                        </span>
-                      </div>
-                      <div className="col-span-3 flex items-center justify-end gap-3 group/share relative">
-                        <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5 shadow-inner">
-                          <div
-                            className="h-full bg-deckly-primary rounded-full transition-all duration-700 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] font-black text-slate-500 w-10 text-right uppercase tracking-widest">
-                          {pct}%
-                        </span>
-
-                        {/* Tooltip */}
-                        <div
-                          className={`absolute ${idx === 0 ? "top-full mt-3" : "bottom-full mb-3"} right-0 w-56 p-4 bg-slate-950/90 backdrop-blur-xl border border-white/10 text-[9px] font-black uppercase tracking-widest text-slate-400 rounded-2xl opacity-0 group-hover/share:opacity-100 transition-all duration-300 pointer-events-none z-50 text-center leading-relaxed shadow-2xl scale-95 group-hover/share:scale-100`}
-                        >
-                          Performance relative to total room traffic.
-                          <div
-                            className={`absolute ${idx === 0 ? "bottom-full border-b-slate-950/90" : "top-full border-t-slate-950/90"} right-6 border-8 border-transparent`}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-
-          {/* ── Room Settings Summary ── */}
-          <section>
-            <div className="flex items-center gap-2 mb-5">
-              <Pencil size={16} className="text-deckly-primary" />
-              <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">
-                Room Settings
+          {/* Configuration Overview section */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 px-2">
+              <BarChart3 size={16} className="text-deckly-primary" />
+              <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
+                Security Protocol
               </h2>
             </div>
 
-            <div className="glass-shiny border border-white/5 rounded-[2rem] p-8 shadow-2xl">
+            <div className="glass-shiny bg-white/[0.03] backdrop-blur-xl rounded-[2rem] border border-white/10 p-8 shadow-2xl">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <SettingPill
                   label="Email Required"
@@ -534,7 +349,7 @@ function DataRoomDetail() {
                 </button>
               </div>
             </div>
-          </section>
+          </div>
         </div>
       </div>
 
@@ -604,15 +419,30 @@ function StatItem({
   label,
   value,
   isText = false,
+  onClick,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string | number;
   isText?: boolean;
+  onClick?: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center py-6 px-4 gap-2">
-      <div className="text-slate-500 group-hover:text-deckly-primary transition-colors">
+    <div
+      onClick={onClick}
+      className={cn(
+        "flex flex-col items-center justify-center py-6 px-4 gap-2 transition-all duration-300",
+        onClick
+          ? "cursor-pointer hover:bg-white/[0.04] active:scale-95 group/stat"
+          : "",
+      )}
+    >
+      <div
+        className={cn(
+          "text-slate-500 transition-colors duration-300",
+          onClick ? "group-hover/stat:text-deckly-primary" : "",
+        )}
+      >
         {icon}
       </div>
       <p

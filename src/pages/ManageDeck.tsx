@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { deckService } from "../services/deckService";
 import { supabase } from "../services/supabase";
+import { dataRoomService } from "../services/dataRoomService";
 import {
   Upload,
   ArrowLeft,
@@ -342,6 +343,12 @@ function ManageDeck() {
           .single();
 
         if (deckError) throw deckError;
+
+        // Automatically link to Data Room if returnToRoom is set
+        if (returnToRoom && deckRecord) {
+          setProgress("Linking to Data Room...");
+          await dataRoomService.addDocuments(returnToRoom, [deckRecord.id]);
+        }
 
         // If it was an interactive non-PDF, trigger and WAIT for the edge function here
         if (
