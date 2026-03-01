@@ -194,12 +194,12 @@ function Viewer() {
             animate={{ opacity: 1 }}
             className="flex-1 flex flex-col items-stretch relative"
           >
-            <div className="absolute top-6 left-6 z-[100] flex items-center gap-3">
+            <div className="absolute top-4 left-4 md:top-6 md:left-6 z-[100] flex flex-wrap items-center gap-2 md:gap-3 px-2 md:px-0">
               <Link to="/" className="group">
-                <div className="flex items-center gap-3 px-6 py-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full text-slate-400 hover:text-white hover:bg-black/60 transition-all group-hover:-translate-x-1">
-                  <ArrowLeft size={18} />
-                  <span className="text-sm font-bold uppercase tracking-wider">
-                    Leave Room
+                <div className="flex items-center gap-2 md:gap-3 px-3 py-2 md:px-6 md:py-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full text-slate-400 hover:text-white hover:bg-black/60 transition-all group-hover:-translate-x-1">
+                  <ArrowLeft size={16} className="md:w-[18px] md:h-[18px]" />
+                  <span className="text-[10px] md:text-sm font-bold uppercase tracking-wider">
+                    Leave
                   </span>
                 </div>
               </Link>
@@ -208,7 +208,7 @@ function Viewer() {
                 onClick={handleSave}
                 disabled={isSaving}
                 className={`
-                  flex items-center gap-3 px-6 py-3 backdrop-blur-xl border transition-all active:scale-95 rounded-full
+                  flex items-center gap-2 md:gap-3 px-3 py-2 md:px-6 md:py-3 backdrop-blur-xl border transition-all active:scale-95 rounded-full
                   ${
                     isSaved
                       ? "bg-deckly-primary/20 border-deckly-primary/30 text-deckly-primary"
@@ -216,22 +216,28 @@ function Viewer() {
                   }
                 `}
               >
-                {isSaved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
-                <span className="text-sm font-bold uppercase tracking-wider">
-                  {isSaving
-                    ? "Saving..."
-                    : isSaved
-                      ? "Saved to Library"
-                      : "Save to Library"}
+                {isSaved ? (
+                  <BookmarkCheck
+                    size={16}
+                    className="md:w-[18px] md:h-[18px]"
+                  />
+                ) : (
+                  <Bookmark size={16} className="md:w-[18px] md:h-[18px]" />
+                )}
+                <span className="text-[10px] md:text-sm font-bold uppercase tracking-wider">
+                  {isSaving ? "Saving..." : isSaved ? "Saved" : "Save"}
                 </span>
               </button>
 
               <button
                 onClick={() => setIsNotesOpen(true)}
-                className="flex items-center gap-3 px-6 py-3 bg-black/40 backdrop-blur-xl border border-white/10 text-slate-400 hover:text-white hover:bg-black/60 transition-all rounded-full active:scale-95"
+                className="flex items-center gap-2 md:gap-3 px-3 py-2 md:px-6 md:py-3 bg-black/40 backdrop-blur-xl border border-white/10 text-slate-400 hover:text-white hover:bg-black/60 transition-all rounded-full active:scale-95"
               >
-                <MessageSquareText size={18} />
-                <span className="text-sm font-bold uppercase tracking-wider">
+                <MessageSquareText
+                  size={16}
+                  className="md:w-[18px] md:h-[18px]"
+                />
+                <span className="text-[10px] md:text-sm font-bold uppercase tracking-wider">
                   Notes
                 </span>
               </button>
