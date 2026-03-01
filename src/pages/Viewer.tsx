@@ -101,19 +101,27 @@ function Viewer() {
       return;
     }
 
+    // Optimistic Update
+    const previousSaved = isSaved;
+    setIsSaved(!previousSaved);
+
+    if (!previousSaved) {
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
+    }
+
     try {
       setIsSaving(true);
-      if (isSaved) {
+      if (previousSaved) {
         await deckService.removeFromLibrary(deck.id);
-        setIsSaved(false);
       } else {
         await deckService.saveToLibrary(deck.id);
-        setIsSaved(true);
-        setShowSuccessToast(true);
-        setTimeout(() => setShowSuccessToast(false), 3000);
       }
     } catch (err) {
       console.error("Save to library failed:", err);
+      // Rollback on error
+      setIsSaved(previousSaved);
+      setShowSuccessToast(false);
     } finally {
       setIsSaving(false);
     }

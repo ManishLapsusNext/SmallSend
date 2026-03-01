@@ -254,6 +254,10 @@ CREATE TABLE IF NOT EXISTS public.investor_library (
 
 -- Index for library query
 CREATE INDEX IF NOT EXISTS idx_investor_library_user ON public.investor_library(user_id);
+CREATE INDEX IF NOT EXISTS idx_investor_library_deck ON public.investor_library(deck_id);
+
+-- Index for unique visitor counting
+CREATE INDEX IF NOT EXISTS idx_page_views_visitor ON public.deck_page_views(deck_id, visitor_id);
 
 -- Enable RLS
 ALTER TABLE public.investor_library ENABLE ROW LEVEL SECURITY;

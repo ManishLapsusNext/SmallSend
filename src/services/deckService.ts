@@ -362,27 +362,19 @@ export const deckService = {
 
       const deckIds = decks.map(d => d.id);
 
-      // 2. Fetch latest activity from deck_stats
-    const { data: stats, error: statsError } = await supabase
-      .from("deck_stats")
-      .select("deck_id, updated_at")
-      .in("deck_id", deckIds);
+      // 2. Fetch stats, pageViews, and saves in parallel
+      const [
+        { data: stats, error: statsError },
+        { data: pageViews },
+        { data: saves, error: savesError }
+      ] = await Promise.all([
+        supabase.from("deck_stats").select("deck_id, updated_at").in("deck_id", deckIds),
+        supabase.from("deck_page_views").select("deck_id, visitor_id").in("deck_id", deckIds),
+        supabase.from("investor_library").select("deck_id").in("deck_id", deckIds)
+      ]);
 
-    if (statsError) throw statsError;
-
-    // 3. Fetch unique visitors per deck from deck_page_views
-    const { data: pageViews } = await supabase
-      .from("deck_page_views")
-      .select("deck_id, visitor_id")
-      .in("deck_id", deckIds);
-
-    // 4. Fetch save counts from investor_library
-    const { data: saves, error: savesError } = await supabase
-      .from("investor_library")
-      .select("deck_id")
-      .in("deck_id", deckIds);
-
-    if (savesError) throw savesError;
+      if (statsError) throw statsError;
+      if (savesError) throw savesError;
 
     // Count unique visitors per deck
     const viewsMap: Record<string, Set<string>> = {};

@@ -366,61 +366,53 @@ export const analyticsService = {
       return cached.data;
     }
 
-    // Get total time from deck_stats
-    let timeQuery = supabase
-        .from("deck_stats")
-        .select("total_time_seconds")
-        .eq("user_id", userId);
-
-    if (deckId) {
-        timeQuery = timeQuery.eq("deck_id", deckId);
-    }
-
-    const { data: timeData, error: timeError } = await timeQuery;
-    if (timeError) throw timeError;
-
-    const totalTimeSeconds = (timeData || []).reduce(
-      (acc, curr) => acc + curr.total_time_seconds, 0
-    );
-
-    // Get unique visitors from deck_page_views (via decks owned by user)
+    // 1. Fetch user's deck IDs
     const { data: userDecks } = await supabase
       .from("decks")
       .select("id")
       .eq("user_id", userId);
 
-    let totalViews = 0;
-    let totalSaves = 0;
-    if (userDecks && userDecks.length > 0) {
-      const deckIds = deckId ? [deckId] : userDecks.map((d: any) => d.id);
-      
-      // 1. Unique visitors per deck
-      const { data: viewData } = await supabase
-        .from("deck_page_views")
-        .select("visitor_id, deck_id")
-        .in("deck_id", deckIds);
-
-      if (viewData) {
-        const visitorsByDeck = new Map<string, Set<string>>();
-        for (const row of viewData) {
-          if (!visitorsByDeck.has(row.deck_id)) {
-            visitorsByDeck.set(row.deck_id, new Set());
-          }
-          visitorsByDeck.get(row.deck_id)!.add(row.visitor_id);
-        }
-        for (const visitors of visitorsByDeck.values()) {
-          totalViews += visitors.size;
-        }
-      }
-
-      // 2. Total saves across these decks
-      const { data: saveData } = await supabase
-        .from("investor_library")
-        .select("id")
-        .in("deck_id", deckIds);
-      
-      totalSaves = (saveData || []).length;
+    if (!userDecks || userDecks.length === 0) {
+      const result = { totalViews: 0, totalTimeSeconds: 0, totalSaves: 0 };
+      totalStatsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+      return result;
     }
+
+    const deckIds = deckId ? [deckId] : userDecks.map((d: any) => d.id);
+
+    // 2. Fetch everything in parallel
+    const [timeResult, viewResult, saveResult] = await Promise.all([
+      // Total time
+      supabase.from("deck_stats").select("total_time_seconds").in("deck_id", deckIds),
+      // Unique visitors
+      supabase.from("deck_page_views").select("visitor_id, deck_id").in("deck_id", deckIds),
+      // Total saves - use count check
+      supabase.from("investor_library").select("id", { count: 'exact', head: true }).in("deck_id", deckIds)
+    ]);
+
+    if (timeResult.error) console.error("Error fetching time stats:", timeResult.error);
+    if (viewResult.error) console.error("Error fetching view stats:", viewResult.error);
+    if (saveResult.error) console.error("Error fetching save counts:", saveResult.error);
+
+    const totalTimeSeconds = (timeResult.data || []).reduce(
+      (acc, curr) => acc + curr.total_time_seconds, 0
+    );
+
+    let totalViews = 0;
+    if (viewResult.data) {
+      const visitorsByDeck = new Map<string, Set<string>>();
+      for (const row of viewResult.data) {
+        if (!visitorsByDeck.has(row.deck_id)) {
+          visitorsByDeck.set(row.deck_id, new Set());
+        }
+        visitorsByDeck.get(row.deck_id)!.add(row.visitor_id);
+      }
+      for (const visitors of visitorsByDeck.values()) {
+        totalViews += visitors.size;
+      }
+    }
+
+    const totalSaves = saveResult.count || 0;
 
     const result = { totalViews, totalTimeSeconds, totalSaves };
 
@@ -439,5 +431,37 @@ export const analyticsService = {
 
     const uniqueVisitors = new Set(data.map((r: any) => r.visitor_id));
     return uniqueVisitors.size;
+  },
+
+  // Get detailed bookmarks for a deck
+  async getDeckBookmarks(deckId: string) {
+    // Attempt with join first
+    const { data, error } = await supabase
+      .from("investor_library")
+      .select(`
+        created_at,
+        user_id,
+        profiles (
+          full_name,
+          avatar_url
+        )
+      `)
+      .eq("deck_id", deckId)
+      .order("created_at", { ascending: false });
+
+    // If join fails (often due to missing FK relation in schema), fallback to basic fetch
+    if (error) {
+      console.warn("Join with profiles failed, falling back to basic bookmarks:", error);
+      const { data: basicData, error: basicError } = await supabase
+        .from("investor_library")
+        .select("created_at, user_id")
+        .eq("deck_id", deckId)
+        .order("created_at", { ascending: false });
+      
+      if (basicError) throw basicError;
+      return basicData;
+    }
+    
+    return data;
   },
 };
