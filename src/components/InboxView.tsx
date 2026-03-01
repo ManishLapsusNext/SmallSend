@@ -53,20 +53,14 @@ export function InboxView() {
   };
 
   return (
-    <div className="space-y-8 pb-12 animate-in fade-in duration-700 relative">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-          Inbox
-        </h2>
-        <p className="text-slate-500 font-medium">
-          Saved decks from other founders. Always up to date.
-        </p>
-      </div>
-
+    <div className="space-y-12 pb-12 animate-in fade-in duration-700 relative">
+      <p className="text-slate-500 font-medium -mb-6 md:-mb-4">
+        Saved decks from other founders. Always up to date.
+      </p>
       {isRefreshing && !loading && (
         <div className="absolute top-0 right-0 py-2 flex items-center gap-2">
           <div className="w-2 h-2 bg-deckly-primary rounded-full animate-ping" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+          <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">
             Syncing...
           </span>
         </div>
@@ -132,18 +126,18 @@ export function InboxView() {
                       return null;
                     })()}
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <p className="text-[10px] text-slate-400 uppercase tracking-wider font-extrabold">
-                      Saved {new Date(deck.saved_at).toLocaleDateString()}
-                    </p>
-                    <span className="text-slate-300">•</span>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-wider font-extrabold">
-                      Viewed{" "}
-                      {deck.last_viewed_at
-                        ? new Date(deck.last_viewed_at).toLocaleDateString()
-                        : "Never"}
-                    </p>
-                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Saved{" "}
+                    {new Date(deck.saved_at)
+                      .toLocaleDateString("en-GB")
+                      .replace(/\//g, "-")}{" "}
+                    · Viewed{" "}
+                    {deck.last_viewed_at
+                      ? new Date(deck.last_viewed_at)
+                          .toLocaleDateString("en-GB")
+                          .replace(/\//g, "-")
+                      : "Never"}
+                  </p>
                 </div>
                 <button
                   onClick={() => handleUnsave(deck.id)}

@@ -188,8 +188,11 @@ export default function DeckAnalytics() {
   console.log("Analytics State:", { deck, stats, totalSaves, bookmarks });
 
   return (
-    <DashboardLayout title="Deck Analytics">
-      <div className="flex-1 p-4 md:p-8 space-y-4 md:space-y-8 max-w-7xl mx-auto w-full">
+    <DashboardLayout title={`${deck?.title || "Deck"} Analytics`}>
+      <div className="space-y-12 pb-12 animate-in fade-in duration-700 relative">
+        <p className="text-slate-500 font-medium -mb-6 md:-mb-4">
+          Engagement and performance insights for your deck.
+        </p>
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <Button
@@ -202,10 +205,6 @@ export default function DeckAnalytics() {
               Back
             </span>
           </Button>
-          <h2 className="text-lg md:text-2xl font-bold text-slate-900 truncate">
-            {deck?.title}
-          </h2>
-          <div className="hidden md:block w-24" /> {/* Spacer */}
         </div>
 
         {/* Top Summary Cards */}

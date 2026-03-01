@@ -83,6 +83,9 @@ export function ContentView() {
 
   return (
     <div className="space-y-12 pb-12 animate-in fade-in duration-700 relative">
+      <p className="text-slate-500 font-medium -mb-6 md:-mb-4">
+        Manage your assets and track engagement across all your decks.
+      </p>
       {/* Subtle refresh indicator */}
       {isRefreshing && !loading && (
         <div className="absolute top-0 right-0 py-2 flex items-center gap-2">

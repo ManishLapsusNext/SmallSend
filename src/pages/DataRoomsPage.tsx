@@ -54,15 +54,12 @@ function DataRoomsPage() {
 
   return (
     <DashboardLayout title="Data Rooms" showFab={false}>
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-bold text-slate-800">Data Rooms</h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Bundle documents into shareable folders with access controls
-            </p>
-          </div>
+      <div className="space-y-12 animate-in fade-in duration-700 relative">
+        <p className="text-slate-500 font-medium -mb-6 md:-mb-4">
+          Bundle documents into shareable folders with access controls
+        </p>
+        {/* Subtle refresh indicator placeholder if needed, or just header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4">
           <div className="flex items-center gap-3 w-full sm:w-auto">
             {/* Usage indicator */}
             {!loading && (
