@@ -242,7 +242,59 @@ BEGIN
 END;
 $$;
 
--- Note: In the Supabase dashboard, you should consider revoking SELECT on the 
--- original tables for anonymous users and only allowing SELECT on the views.
--- For now, the app will be updated to fetch from these views for public access.
+-- 8. INVESTOR LIBRARY
+CREATE TABLE IF NOT EXISTS public.investor_library (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    deck_id UUID NOT NULL REFERENCES public.decks(id) ON DELETE CASCADE,
+    last_viewed_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, deck_id)
+);
 
+-- Index for library query
+CREATE INDEX IF NOT EXISTS idx_investor_library_user ON public.investor_library(user_id);
+CREATE INDEX IF NOT EXISTS idx_investor_library_deck ON public.investor_library(deck_id);
+
+-- Index for unique visitor counting
+CREATE INDEX IF NOT EXISTS idx_page_views_visitor ON public.deck_page_views(deck_id, visitor_id);
+
+-- Enable RLS
+ALTER TABLE public.investor_library ENABLE ROW LEVEL SECURITY;
+
+-- POLICIES FOR INVESTOR LIBRARY
+CREATE POLICY "Users can manage their own library" ON public.investor_library
+    FOR ALL USING (auth.uid() = user_id);
+
+CREATE POLICY "Owners can view bookmarks of their decks" 
+ON public.investor_library 
+FOR SELECT 
+USING (
+  EXISTS (
+    SELECT 1 FROM public.decks 
+    WHERE decks.id = deck_id 
+    AND decks.user_id = auth.uid()
+  )
+);
+
+
+-- 9. INVESTOR NOTES
+CREATE TABLE IF NOT EXISTS public.investor_notes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    deck_id UUID NOT NULL REFERENCES public.decks(id) ON DELETE CASCADE,
+    content TEXT DEFAULT '',
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, deck_id)
+);
+
+-- Index for note retrieval
+CREATE INDEX IF NOT EXISTS idx_investor_notes_user_deck ON public.investor_notes(user_id, deck_id);
+
+-- Enable RLS
+ALTER TABLE public.investor_notes ENABLE ROW LEVEL SECURITY;
+
+-- POLICIES FOR INVESTOR NOTES
+CREATE POLICY "Notes are strictly private" ON public.investor_notes
+    FOR ALL USING (auth.uid() = user_id);

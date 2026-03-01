@@ -188,8 +188,8 @@ function ImageDeckViewer({
           onClick={goToPrevPage}
           title="Previous"
         >
-          <div className="absolute left-8 top-1/2 -translate-y-1/2 w-14 h-14 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white opacity-40 group-hover/nav:opacity-100 -translate-x-2 group-hover/nav:translate-x-0 transition-all duration-300 shadow-2xl">
-            <ChevronLeft size={32} />
+          <div className="absolute left-2 md:left-8 top-1/2 -translate-y-1/2 w-10 h-10 md:w-14 md:h-14 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white opacity-40 group-hover/nav:opacity-100 -translate-x-2 group-hover/nav:translate-x-0 transition-all duration-300 shadow-2xl">
+            <ChevronLeft size={20} className="md:w-8 md:h-8" />
           </div>
         </div>
 
@@ -198,14 +198,14 @@ function ImageDeckViewer({
           onClick={goToNextPage}
           title="Next"
         >
-          <div className="absolute right-8 top-1/2 -translate-y-1/2 w-14 h-14 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white opacity-40 group-hover/nav:opacity-100 translate-x-2 group-hover/nav:translate-x-0 transition-all duration-300 shadow-2xl">
-            <ChevronRight size={32} />
+          <div className="absolute right-2 md:right-8 top-1/2 -translate-y-1/2 w-10 h-10 md:w-14 md:h-14 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white opacity-40 group-hover/nav:opacity-100 translate-x-2 group-hover/nav:translate-x-0 transition-all duration-300 shadow-2xl">
+            <ChevronRight size={20} className="md:w-8 md:h-8" />
           </div>
         </div>
       </div>
 
-      <footer className="h-20 bg-black/40 backdrop-blur-xl border-t border-white/5 flex items-center justify-center relative z-10 px-6">
-        <div className="px-5 py-2 bg-white/5 rounded-full border border-white/5 text-slate-300 text-sm font-black tracking-widest uppercase">
+      <footer className="h-16 md:h-20 bg-black/40 backdrop-blur-xl border-t border-white/5 flex items-center justify-center relative z-10 px-6">
+        <div className="px-4 py-1.5 md:px-5 md:py-2 bg-white/5 rounded-full border border-white/5 text-slate-300 text-xs md:text-sm font-black tracking-widest uppercase">
           {currentPage} <span className="text-slate-600 mx-2">/</span>{" "}
           {numPages}
         </div>

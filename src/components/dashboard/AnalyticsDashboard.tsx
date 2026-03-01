@@ -23,13 +23,25 @@ export function AnalyticsDashboard() {
 
   const initialCache = getCachedData();
   const [stats, setStats] = useState(
-    initialCache?.stats || { totalViews: 0, totalTimeSeconds: 0 },
+    initialCache?.stats || {
+      totalViews: 0,
+      totalTimeSeconds: 0,
+      totalSaves: 0,
+    },
   );
   const [daily, setDaily] = useState<{
     labels: string[];
     visits: number[];
     timeSpent: number[];
-  }>(initialCache?.daily || { labels: [], visits: [], timeSpent: [] });
+    bookmarks: number[];
+  }>(
+    initialCache?.daily || {
+      labels: [],
+      visits: [],
+      timeSpent: [],
+      bookmarks: [],
+    },
+  );
 
   const [loading, setLoading] = useState(!initialCache);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -85,8 +97,8 @@ export function AnalyticsDashboard() {
       },
       {
         label: "Bookmarked",
-        value: "0",
-        sub: "Coming Soon",
+        value: (stats.totalSaves || 0).toLocaleString(),
+        sub: "",
       },
     ];
   }, [stats]);
@@ -158,32 +170,13 @@ export function AnalyticsDashboard() {
 
           <TabsContent
             value="BOOKMARKS"
-            className="flex-1 m-0 p-8 flex flex-col items-center justify-center text-center"
+            className="flex-1 m-0 p-4 md:p-8 pb-8 md:pb-12 flex flex-col justify-end"
           >
-            <div className="space-y-4">
-              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-300">
-                <svg
-                  className="w-8 h-8"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                  />
-                </svg>
-              </div>
-              <h4 className="font-bold text-slate-900">
-                Bookmarks Coming Soon
-              </h4>
-              <p className="text-sm text-slate-500 max-w-[240px]">
-                We're building a way for you to see which slides investors are
-                bookmarking most.
-              </p>
-            </div>
+            <AnalyticsChart
+              labels={daily.labels}
+              data={daily.bookmarks}
+              loading={loading}
+            />
           </TabsContent>
         </Tabs>
       </div>
