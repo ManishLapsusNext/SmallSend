@@ -624,10 +624,10 @@ function ManageDeck() {
                     </div>
                     <div>
                       <p className="text-[11px] font-black uppercase tracking-widest text-white leading-tight">
-                        Require Email
+                        Email Required
                       </p>
                       <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
-                        Capture Leads
+                        ID Authentication
                       </p>
                     </div>
                   </div>
@@ -663,7 +663,7 @@ function ManageDeck() {
                         Gate Access
                       </p>
                       <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
-                        Password Protect
+                        Password Lock
                       </p>
                     </div>
                   </div>
@@ -744,7 +744,7 @@ function ManageDeck() {
                       Expiration
                     </p>
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
-                      Time-Limited Access
+                      Duration Control
                     </p>
                   </div>
                 </div>

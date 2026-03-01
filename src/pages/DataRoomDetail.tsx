@@ -276,7 +276,7 @@ function DataRoomDetail() {
         <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
           {/* ── Documents Section ── */}
           <section>
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-8">
               <div className="flex items-center gap-3">
                 <FileText size={16} className="text-deckly-primary" />
                 <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
@@ -286,17 +286,17 @@ function DataRoomDetail() {
                   {documents.length}
                 </span>
               </div>
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => navigate(`/upload?returnToRoom=${roomId}`)}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 font-bold text-xs uppercase tracking-widest rounded-xl transition-all active:scale-95"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 font-bold text-xs uppercase tracking-widest rounded-xl transition-all active:scale-95"
                 >
                   <Plus size={14} />
                   Upload
                 </button>
                 <button
                   onClick={() => setPickerOpen(true)}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-deckly-primary text-slate-950 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-deckly-primary/90 transition-all active:scale-95 shadow-xl shadow-deckly-primary/20"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-deckly-primary text-slate-950 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-deckly-primary/90 transition-all active:scale-95 shadow-xl shadow-deckly-primary/20"
                 >
                   <Plus size={14} />
                   Add Existing
@@ -507,17 +507,17 @@ function DataRoomDetail() {
             <div className="glass-shiny border border-white/5 rounded-[2rem] p-8 shadow-2xl">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <SettingPill
-                  label="Leads Capture"
+                  label="Email Required"
                   value={room.require_email ? "FORCED" : "BYPASS"}
                   active={!!room.require_email}
                 />
                 <SettingPill
-                  label="Elite Access"
+                  label="Gate Access"
                   value={room.require_password ? "GATED" : "OPEN"}
                   active={!!room.require_password}
                 />
                 <SettingPill
-                  label="Life Span"
+                  label="Expiration"
                   value={
                     room.expires_at ? formatDate(room.expires_at) : "INFINITE"
                   }

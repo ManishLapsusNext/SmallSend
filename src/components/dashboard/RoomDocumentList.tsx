@@ -50,15 +50,7 @@ export function RoomDocumentList({
     dragItemRef.current = null;
   };
 
-  if (documents.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-        <FileText size={36} className="mb-3 opacity-40" />
-        <p className="text-sm font-medium">No documents added yet</p>
-        <p className="text-xs mt-1">Click "Add Documents" to get started</p>
-      </div>
-    );
-  }
+  if (documents.length === 0) return null;
 
   return (
     <div className="space-y-1">

@@ -80,7 +80,7 @@ export function DocumentPicker({
               ASSET LIBRARY
             </p>
             <h2 className="text-2xl font-black text-white uppercase tracking-wider">
-              Select Bundles
+              Select Assets
             </h2>
           </div>
           <button

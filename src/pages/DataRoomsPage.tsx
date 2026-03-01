@@ -55,14 +55,16 @@ function DataRoomsPage() {
   return (
     <DashboardLayout title="Data Rooms" showFab={false}>
       <div className="space-y-12 animate-in fade-in duration-700 relative">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 -mb-6 md:-mb-4">
-          Bundle assets into shareable secure rooms with access controls
-        </p>
+        {rooms.length > 0 && (
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 -mb-6 md:-mb-4">
+            Bundle assets into shareable secure rooms with access controls
+          </p>
+        )}
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-6">
-          <div className="flex items-center gap-4 w-full sm:w-auto">
-            {/* Usage indicator */}
-            {!loading && rooms.length > 0 && (
+        {!loading && rooms.length > 0 && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-6">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              {/* Usage indicator */}
               <div className="hidden md:flex items-center gap-4 px-5 py-2.5 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md">
                 <div className="flex gap-1">
                   {Array.from({ length: Math.min(maxRooms, 5) }).map((_, i) => (
@@ -86,23 +88,23 @@ function DataRoomsPage() {
                   {!isUnlimited && ` / ${maxRooms}`} Rooms
                 </span>
               </div>
-            )}
 
-            {/* Create button */}
-            <button
-              onClick={() => !isAtLimit && navigate("/rooms/new")}
-              disabled={isAtLimit}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-3 px-8 py-3.5 font-black text-xs uppercase tracking-[0.2em] rounded-2xl transition-all active:scale-[0.98] shadow-2xl ${
-                isAtLimit
-                  ? "bg-white/5 text-slate-500 border border-white/10 cursor-not-allowed"
-                  : "bg-deckly-primary text-slate-950 hover:bg-deckly-primary/90 shadow-deckly-primary/20"
-              }`}
-            >
-              {isAtLimit ? <Lock size={16} /> : <Plus size={16} />}
-              {isAtLimit ? "Room Limit Reached" : "New Room"}
-            </button>
+              {/* Create button */}
+              <button
+                onClick={() => !isAtLimit && navigate("/rooms/new")}
+                disabled={isAtLimit}
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-3 px-8 py-3.5 font-black text-xs uppercase tracking-[0.2em] rounded-2xl transition-all active:scale-[0.98] shadow-2xl ${
+                  isAtLimit
+                    ? "bg-white/5 text-slate-500 border border-white/10 cursor-not-allowed"
+                    : "bg-deckly-primary text-slate-950 hover:bg-deckly-primary/90 shadow-deckly-primary/20"
+                }`}
+              >
+                {isAtLimit ? <Lock size={16} /> : <Plus size={16} />}
+                {isAtLimit ? "Room Limit Reached" : "New Room"}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Upgrade banner */}
         {isAtLimit && !isUnlimited && (

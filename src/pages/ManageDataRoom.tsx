@@ -319,7 +319,7 @@ function ManageDataRoom() {
               {isEditMode ? "Data Room Configuration" : "Room Initiation"}
             </p>
             <h1 className="text-3xl font-black text-white tracking-tight uppercase tracking-wider">
-              {isEditMode ? "Modify Assets" : "Bundle Assets"}
+              {isEditMode ? "Modify Assets" : "Create Data Room"}
             </h1>
           </div>
         </div>
@@ -332,7 +332,7 @@ function ManageDataRoom() {
         )}
 
         {/* ──── Section 1: Room Identity ──── */}
-        <div className="glass-shiny rounded-[2rem] border border-white/5 overflow-hidden shadow-2xl relative">
+        <div className="glass-shiny bg-white/[0.03] backdrop-blur-xl rounded-[32px] border border-white/10 overflow-hidden shadow-2xl relative">
           <div className="absolute top-0 right-0 w-64 h-64 bg-deckly-primary/5 rounded-full blur-[80px] -mr-32 -mt-32" />
 
           <div className="px-8 py-6 border-b border-white/5 relative z-10">
@@ -477,30 +477,57 @@ function ManageDataRoom() {
         </div>
 
         {/* ──── Section 2: Documents ──── */}
-        <div className="glass-shiny rounded-[2rem] border border-white/5 overflow-hidden shadow-2xl">
-          <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between">
+        <div className="glass-shiny bg-white/[0.03] backdrop-blur-xl rounded-[32px] border border-white/10 overflow-hidden shadow-2xl">
+          <div className="px-8 py-6 border-b border-white/10 flex items-center justify-between">
             <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
               Bundle Composition
             </h2>
-            <button
-              onClick={() => setPickerOpen(true)}
-              className="flex items-center gap-2.5 px-6 py-2.5 bg-deckly-primary text-slate-950 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-deckly-primary/90 transition-all active:scale-95 shadow-xl shadow-deckly-primary/20"
-            >
-              <Plus size={16} />
-              IDENTIFY ASSETS
-            </button>
+            {documents.length > 0 && (
+              <button
+                onClick={() => setPickerOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
+              >
+                <Plus size={14} />
+                ADD ASSETS
+              </button>
+            )}
           </div>
           <div className="p-4">
-            <RoomDocumentList
-              documents={documents}
-              onRemove={handleRemoveDocument}
-              onReorder={handleReorder}
-            />
+            {documents.length === 0 ? (
+              <div
+                onClick={() => setPickerOpen(true)}
+                className="group cursor-pointer border-2 border-dashed border-white/5 bg-white/[0.01] hover:border-deckly-primary/30 hover:bg-deckly-primary/[0.02] rounded-2xl p-12 text-center transition-all duration-500 flex flex-col items-center gap-4 m-2"
+              >
+                <div className="w-16 h-16 rounded-[1.5rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-deckly-primary/10 group-hover:border-deckly-primary/20 transition-all duration-500">
+                  <Plus
+                    size={32}
+                    className="text-slate-600 group-hover:text-deckly-primary transition-colors"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-black text-white uppercase tracking-wider">
+                    Add documents to your room
+                  </p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+                    Existing Assets will be bundled into a secure link
+                  </p>
+                </div>
+                <button className="mt-2 px-8 py-3 bg-deckly-primary text-slate-950 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-deckly-primary/90 transition-all shadow-xl shadow-deckly-primary/20 group-hover:scale-105 active:scale-95">
+                  ADD ASSETS
+                </button>
+              </div>
+            ) : (
+              <RoomDocumentList
+                documents={documents}
+                onRemove={handleRemoveDocument}
+                onReorder={handleReorder}
+              />
+            )}
           </div>
         </div>
 
         {/* ──── Section 3: Access Controls ──── */}
-        <div className="glass-shiny rounded-[2rem] border border-white/5 overflow-hidden shadow-2xl">
+        <div className="glass-shiny bg-white/[0.03] backdrop-blur-xl rounded-[32px] border border-white/10 overflow-hidden shadow-2xl">
           <div className="px-8 py-6 border-b border-white/5">
             <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
               Security Protocol
@@ -524,13 +551,13 @@ function ManageDataRoom() {
 
         {/* ──── Section 4: Danger Zone (edit only) ──── */}
         {isEditMode && (
-          <div className="bg-white rounded-2xl border border-red-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-red-100">
-              <h2 className="text-[10px] font-black uppercase tracking-widest text-red-400">
+          <div className="glass-shiny bg-red-500/[0.02] backdrop-blur-xl rounded-[32px] border border-red-500/10 overflow-hidden shadow-2xl">
+            <div className="px-8 py-5 border-b border-red-500/10">
+              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500/60">
                 Danger Zone
               </h2>
             </div>
-            <div className="p-6">
+            <div className="p-8">
               <DangerZoneSection onDelete={handleDelete} />
             </div>
           </div>

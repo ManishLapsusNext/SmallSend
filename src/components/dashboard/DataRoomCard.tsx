@@ -18,7 +18,7 @@ export function DataRoomCard({
   return (
     <button
       onClick={() => navigate(`/rooms/${room.id}`)}
-      className="w-full text-left glass-shiny border border-white/5 rounded-[2rem] p-6 hover:border-deckly-primary/30 hover:shadow-2xl hover:shadow-deckly-primary/10 transition-all duration-300 group relative overflow-hidden"
+      className="w-full text-left glass-shiny bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 hover:bg-white/[0.05] hover:border-deckly-primary/30 hover:shadow-2xl hover:shadow-deckly-primary/10 transition-all duration-300 group relative overflow-hidden"
     >
       <div className="flex items-center gap-5 relative z-10">
         {/* Icon */}
