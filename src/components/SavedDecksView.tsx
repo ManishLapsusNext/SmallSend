@@ -172,7 +172,7 @@ export function SavedDecksView() {
                     </div>
                     <button
                       onClick={() => handleUnsave(deck.id)}
-                      className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 rounded-xl transition-all shadow-lg shadow-red-500/5 disabled:opacity-30"
+                      className="p-3 bg-white/5 border border-white/10 text-slate-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 rounded-xl transition-all shadow-lg disabled:opacity-30"
                       title="Remove from Library"
                     >
                       <BookmarkMinus size={20} />
@@ -426,7 +426,7 @@ export function SavedDecksView() {
                           <Link
                             to={`/${deck.slug}`}
                             target="_blank"
-                            className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 hover:border-emerald-500/40 rounded-xl transition-all shadow-lg shadow-emerald-500/5 group/icon"
+                            className="p-3 bg-white/5 border border-white/10 text-slate-400 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20 rounded-xl transition-all shadow-lg group/icon"
                             title="Open Deck"
                           >
                             <ExternalLink
@@ -437,7 +437,7 @@ export function SavedDecksView() {
                           <button
                             onClick={() => handleUnsave(deck.id)}
                             disabled={unsavingId === deck.id}
-                            className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 rounded-xl transition-all shadow-lg shadow-red-500/5 group/icon disabled:opacity-30"
+                            className="p-3 bg-white/5 border border-white/10 text-slate-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 rounded-xl transition-all shadow-lg group/icon disabled:opacity-30"
                             title="Remove from Library"
                           >
                             <BookmarkMinus

@@ -117,20 +117,20 @@ export function DecksTable({ decks, loading, onDelete }: DecksTableProps) {
                 </button>
                 <Link
                   to={`/analytics/${deck.id}`}
-                  className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 rounded-xl transition-all"
+                  className="p-3 bg-white/5 border border-white/10 text-slate-400 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20 rounded-xl transition-all"
                 >
                   <BarChart3 size={18} />
                 </Link>
                 <Link
                   to={`/edit/${deck.id}`}
-                  className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 hover:border-blue-500/40 rounded-xl transition-all shadow-lg shadow-blue-500/5 group/icon"
+                  className="p-3 bg-white/5 border border-white/10 text-slate-400 hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/20 rounded-xl transition-all"
                 >
                   <Pencil size={18} />
                 </Link>
                 <button
                   onClick={() => handleDelete(deck)}
                   disabled={deletingId === deck.id}
-                  className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 rounded-xl transition-all disabled:opacity-30"
+                  className="p-3 bg-white/5 border border-white/10 text-slate-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 rounded-xl transition-all disabled:opacity-30"
                 >
                   <Trash2 size={18} />
                 </button>
@@ -278,7 +278,7 @@ export function DecksTable({ decks, loading, onDelete }: DecksTableProps) {
                     <div className="flex items-center justify-end gap-3">
                       <Link
                         to={`/analytics/${deck.id}`}
-                        className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 hover:border-emerald-500/40 rounded-xl transition-all shadow-lg shadow-emerald-500/5 group/icon"
+                        className="p-3 bg-white/5 border border-white/10 text-slate-400 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20 rounded-xl transition-all shadow-lg group/icon"
                         title="View Detailed Analytics"
                       >
                         <BarChart3
@@ -288,7 +288,7 @@ export function DecksTable({ decks, loading, onDelete }: DecksTableProps) {
                       </Link>
                       <Link
                         to={`/edit/${deck.id}`}
-                        className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 hover:border-blue-500/40 rounded-xl transition-all shadow-lg shadow-blue-500/5 group/icon"
+                        className="p-3 bg-white/5 border border-white/10 text-slate-400 hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/20 rounded-xl transition-all shadow-lg group/icon"
                         title="Edit Deck"
                       >
                         <Pencil
@@ -299,7 +299,7 @@ export function DecksTable({ decks, loading, onDelete }: DecksTableProps) {
                       <button
                         onClick={() => handleDelete(deck)}
                         disabled={deletingId === deck.id}
-                        className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 rounded-xl transition-all shadow-lg shadow-red-500/5 group/icon disabled:opacity-30"
+                        className="p-3 bg-white/5 border border-white/10 text-slate-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 rounded-xl transition-all shadow-lg group/icon disabled:opacity-30"
                         title="Delete Deck"
                       >
                         <Trash2
