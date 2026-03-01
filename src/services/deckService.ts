@@ -212,7 +212,11 @@ export const deckService = {
 
     const { data, error } = await supabase
       .from("decks")
-      .update({ pages, status: "PROCESSED" })
+      .update({ 
+        pages, 
+        status: "PROCESSED",
+        updated_at: new Date().toISOString()
+      })
       .eq("id", deckId)
       .eq("user_id", userId) 
       .select()
@@ -233,7 +237,10 @@ export const deckService = {
 
     const { data, error } = await supabase
       .from("decks")
-      .update(updates)
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
       .eq("id", deckId)
       .eq("user_id", userId)
       .select()
@@ -369,11 +376,25 @@ export const deckService = {
       .select("deck_id, visitor_id")
       .in("deck_id", deckIds);
 
+    // 4. Fetch save counts from investor_library
+    const { data: saves, error: savesError } = await supabase
+      .from("investor_library")
+      .select("deck_id")
+      .in("deck_id", deckIds);
+
+    if (savesError) throw savesError;
+
     // Count unique visitors per deck
     const viewsMap: Record<string, Set<string>> = {};
     (pageViews || []).forEach((pv: any) => {
       if (!viewsMap[pv.deck_id]) viewsMap[pv.deck_id] = new Set();
       viewsMap[pv.deck_id].add(pv.visitor_id);
+    });
+
+    // Count saves per deck
+    const savesMap: Record<string, number> = {};
+    (saves || []).forEach((s: any) => {
+      savesMap[s.deck_id] = (savesMap[s.deck_id] || 0) + 1;
     });
 
     // Find latest activity per deck
@@ -389,6 +410,7 @@ export const deckService = {
     return decks.map(deck => ({
       ...deck,
       total_views: viewsMap[deck.id]?.size || 0,
+      save_count: savesMap[deck.id] || 0,
       last_viewed_at: lastActiveMap[deck.id] || null
     }));
   });
@@ -410,7 +432,11 @@ export const deckService = {
 
     const { error } = await supabase
       .from("investor_library")
-      .upsert({ user_id: session.user.id, deck_id: deckId }, { onConflict: "user_id, deck_id" });
+      .upsert({ 
+        user_id: session.user.id, 
+        deck_id: deckId,
+        last_viewed_at: new Date().toISOString()
+      }, { onConflict: "user_id, deck_id" });
 
     if (error) throw error;
   },
@@ -443,5 +469,63 @@ export const deckService = {
 
     if (error) return false;
     return !!data;
+  },
+
+  // NEW: Get all saved decks for the logged-in user
+  async getSavedDecks(): Promise<Deck[]> {
+    return withRetry(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return [];
+
+      const { data, error } = await supabase
+        .from("investor_library")
+        .select(`
+          id,
+          created_at,
+          last_viewed_at,
+          deck:decks (
+            id,
+            title,
+            slug,
+            description,
+            file_url,
+            pages,
+            display_mode,
+            file_type,
+            status,
+            created_at,
+            updated_at,
+            user_id
+          )
+        `)
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      
+      // Flatten the response so it looks like an array of decks (with extra library metadata if needed)
+      return (data || []).map((item: any) => ({
+        ...item.deck,
+        saved_at: item.created_at,
+        last_viewed_at: item.last_viewed_at,
+        library_id: item.id
+      })) as Deck[];
+    });
+  },
+
+  // NEW: Update the last_viewed_at for a saved deck
+  async updateLibraryLastViewed(deckId: string): Promise<void> {
+    return withRetry(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { error } = await supabase
+        .from("investor_library")
+        .update({ last_viewed_at: new Date().toISOString() })
+        .eq("user_id", session.user.id)
+        .eq("deck_id", deckId);
+
+      if (error) throw error;
+    });
   },
 };

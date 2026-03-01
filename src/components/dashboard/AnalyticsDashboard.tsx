@@ -23,7 +23,11 @@ export function AnalyticsDashboard() {
 
   const initialCache = getCachedData();
   const [stats, setStats] = useState(
-    initialCache?.stats || { totalViews: 0, totalTimeSeconds: 0 },
+    initialCache?.stats || {
+      totalViews: 0,
+      totalTimeSeconds: 0,
+      totalSaves: 0,
+    },
   );
   const [daily, setDaily] = useState<{
     labels: string[];
@@ -85,8 +89,8 @@ export function AnalyticsDashboard() {
       },
       {
         label: "Bookmarked",
-        value: "0",
-        sub: "Coming Soon",
+        value: (stats.totalSaves || 0).toLocaleString(),
+        sub: "",
       },
     ];
   }, [stats]);
@@ -161,7 +165,7 @@ export function AnalyticsDashboard() {
             className="flex-1 m-0 p-8 flex flex-col items-center justify-center text-center"
           >
             <div className="space-y-4">
-              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-300">
+              <div className="w-16 h-16 bg-deckly-primary/10 rounded-full flex items-center justify-center mx-auto text-deckly-primary">
                 <svg
                   className="w-8 h-8"
                   fill="none"
@@ -177,11 +181,11 @@ export function AnalyticsDashboard() {
                 </svg>
               </div>
               <h4 className="font-bold text-slate-900">
-                Bookmarks Coming Soon
+                {stats.totalSaves || 0} Saved Decks
               </h4>
-              <p className="text-sm text-slate-500 max-w-[240px]">
-                We're building a way for you to see which slides investors are
-                bookmarking most.
+              <p className="text-sm text-slate-500 max-w-[280px]">
+                Investors have bookmarked your assets {stats.totalSaves || 0}{" "}
+                times for easy access in their library.
               </p>
             </div>
           </TabsContent>

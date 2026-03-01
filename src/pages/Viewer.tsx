@@ -82,6 +82,11 @@ function Viewer() {
             handleSave();
           }
         }
+
+        // 3. Mark as viewed if it's already in the library
+        if (saved) {
+          deckService.updateLibraryLastViewed(deck.id);
+        }
       }
     };
     checkSaved();

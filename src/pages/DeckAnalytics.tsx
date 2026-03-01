@@ -42,6 +42,7 @@ export default function DeckAnalytics() {
   const [signalsLoading, setSignalsLoading] = useState(true);
   const [expandedVisitor, setExpandedVisitor] = useState<string | null>(null);
   const [uniqueVisitors, setUniqueVisitors] = useState(0);
+  const [totalSaves, setTotalSaves] = useState(0);
 
   useEffect(() => {
     if (deckId && session?.user?.id) {
@@ -49,10 +50,12 @@ export default function DeckAnalytics() {
       Promise.all([
         deckService.getDeckById(deckId),
         analyticsService.getDeckStats(deckId, !!isPro, session.user.id),
+        analyticsService.getUserTotalStats(session.user.id, deckId, true),
       ])
-        .then(([deckData, statsData]) => {
+        .then(([deckData, statsData, totalData]) => {
           setDeck(deckData);
           setStats(statsData || []);
+          setTotalSaves(totalData.totalSaves || 0);
         })
         .finally(() => setLoading(false));
 
@@ -173,8 +176,8 @@ export default function DeckAnalytics() {
           <SummaryCard
             icon={<Bookmark />}
             label="Bookmarked"
-            value="Coming Soon"
-            isPlaceholder
+            value={totalSaves.toLocaleString()}
+            color="primary"
           />
           <SummaryCard
             icon={<MessageSquare />}

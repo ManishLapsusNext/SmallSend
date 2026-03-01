@@ -17,7 +17,7 @@ const navItems = [
   { icon: FileText, label: "Content", href: "/content" },
   { icon: Monitor, label: "Rooms", href: "/rooms" },
   { icon: BarChart3, label: "Analytics", href: "/analytics", disabled: true },
-  { icon: Mail, label: "Inbox", href: "/inbox", disabled: true },
+  { icon: Mail, label: "Inbox", href: "/inbox" },
   { icon: MessageCircle, label: "Requests", href: "/requests", disabled: true },
 ];
 

@@ -20,7 +20,11 @@ export function ContentView() {
 
   const initialCache = getCachedData();
   const [stats, setStats] = useState(
-    initialCache?.stats || { totalViews: 0, totalTimeSeconds: 0 },
+    initialCache?.stats || {
+      totalViews: 0,
+      totalTimeSeconds: 0,
+      totalSaves: 0,
+    },
   );
   const [decks, setDecks] = useState<any[]>(initialCache?.decks || []);
   const [loading, setLoading] = useState(!initialCache);
@@ -37,7 +41,7 @@ export function ContentView() {
 
       try {
         const [totalStats, decksWithStats] = await Promise.all([
-          analyticsService.getUserTotalStats(session.user.id),
+          analyticsService.getUserTotalStats(session.user.id, undefined, true),
           deckService.getDecksWithAnalytics(session.user.id),
         ]);
 
@@ -92,6 +96,7 @@ export function ContentView() {
       <ContentStatsCard
         totalViews={stats.totalViews}
         totalTimeSeconds={stats.totalTimeSeconds}
+        totalSaves={stats.totalSaves}
         loading={loading}
       />
 

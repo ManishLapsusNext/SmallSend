@@ -359,10 +359,10 @@ export const analyticsService = {
   },
 
   // Get total stats for the user dashboard (optionally filtered by deck)
-  async getUserTotalStats(userId: string, deckId?: string) {
+  async getUserTotalStats(userId: string, deckId?: string, forceRefresh: boolean = false) {
     const cacheKey = `total-${userId}-${deckId || "all"}`;
     const cached = totalStatsCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < 30000) { // 30s cache for total stats
+    if (!forceRefresh && cached && Date.now() - cached.timestamp < 10000) { // 10s cache
       return cached.data;
     }
 
@@ -390,15 +390,17 @@ export const analyticsService = {
       .eq("user_id", userId);
 
     let totalViews = 0;
+    let totalSaves = 0;
     if (userDecks && userDecks.length > 0) {
       const deckIds = deckId ? [deckId] : userDecks.map((d: any) => d.id);
+      
+      // 1. Unique visitors per deck
       const { data: viewData } = await supabase
         .from("deck_page_views")
         .select("visitor_id, deck_id")
         .in("deck_id", deckIds);
 
       if (viewData) {
-        // Count unique visitors per deck, then sum
         const visitorsByDeck = new Map<string, Set<string>>();
         for (const row of viewData) {
           if (!visitorsByDeck.has(row.deck_id)) {
@@ -410,9 +412,17 @@ export const analyticsService = {
           totalViews += visitors.size;
         }
       }
+
+      // 2. Total saves across these decks
+      const { data: saveData } = await supabase
+        .from("investor_library")
+        .select("id")
+        .in("deck_id", deckIds);
+      
+      totalSaves = (saveData || []).length;
     }
 
-    const result = { totalViews, totalTimeSeconds };
+    const result = { totalViews, totalTimeSeconds, totalSaves };
 
     totalStatsCache.set(cacheKey, { data: result, timestamp: Date.now() });
     return result;

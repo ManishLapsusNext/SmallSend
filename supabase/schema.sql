@@ -247,6 +247,7 @@ CREATE TABLE IF NOT EXISTS public.investor_library (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     deck_id UUID NOT NULL REFERENCES public.decks(id) ON DELETE CASCADE,
+    last_viewed_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id, deck_id)
 );
@@ -260,4 +261,15 @@ ALTER TABLE public.investor_library ENABLE ROW LEVEL SECURITY;
 -- POLICIES FOR INVESTOR LIBRARY
 CREATE POLICY "Users can manage their own library" ON public.investor_library
     FOR ALL USING (auth.uid() = user_id);
+
+CREATE POLICY "Owners can view bookmarks of their decks" 
+ON public.investor_library 
+FOR SELECT 
+USING (
+  EXISTS (
+    SELECT 1 FROM public.decks 
+    WHERE decks.id = deck_id 
+    AND decks.user_id = auth.uid()
+  )
+);
 
