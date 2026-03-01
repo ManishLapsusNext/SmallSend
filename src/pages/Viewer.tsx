@@ -7,11 +7,13 @@ import {
   Bookmark,
   BookmarkCheck,
   Check,
+  MessageSquareText,
 } from "lucide-react";
 import ImageDeckViewer from "../components/ImageDeckViewer";
 import DeckViewer from "../components/DeckViewer";
 import AccessGate from "../components/AccessGate";
 import { AuthModal } from "../components/AuthModal";
+import { NotesSidebar } from "../components/viewer/NotesSidebar";
 import { deckService } from "../services/deckService";
 import { analyticsService } from "../services/analyticsService";
 import { supabase } from "../services/supabase";
@@ -32,6 +34,7 @@ function Viewer() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
 
   const loadDeck = useCallback(async () => {
     if (!slug) return;
@@ -222,6 +225,16 @@ function Viewer() {
                       : "Save to Library"}
                 </span>
               </button>
+
+              <button
+                onClick={() => setIsNotesOpen(true)}
+                className="flex items-center gap-3 px-6 py-3 bg-black/40 backdrop-blur-xl border border-white/10 text-slate-400 hover:text-white hover:bg-black/60 transition-all rounded-full active:scale-95"
+              >
+                <MessageSquareText size={18} />
+                <span className="text-sm font-bold uppercase tracking-wider">
+                  Notes
+                </span>
+              </button>
             </div>
 
             <div className="flex-1 w-full relative min-h-0">
@@ -258,6 +271,18 @@ function Viewer() {
         onClose={() => setShowAuthModal(false)}
         redirectTo={window.location.href}
       />
+
+      {deck && (
+        <NotesSidebar
+          isOpen={isNotesOpen}
+          onClose={() => setIsNotesOpen(false)}
+          deckId={deck.id}
+          onRequireAuth={() => {
+            setIsNotesOpen(false);
+            setShowAuthModal(true);
+          }}
+        />
+      )}
 
       {/* Success Toast */}
       <AnimatePresence>

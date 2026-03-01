@@ -494,13 +494,31 @@ export const deckService = {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
+
+      // Fetch notes for these decks in parallel
+      const deckIds = (data || []).map(item => (item.deck as any).id);
+      const { data: notesData, error: notesError } = await supabase
+        .from("investor_notes")
+        .select("deck_id, content")
+        .eq("user_id", session.user.id)
+        .in("deck_id", deckIds);
+
+      if (notesError) {
+        console.error("Error fetching notes for inbox:", notesError);
+      }
+
+      const notesMap = (notesData || []).reduce((acc, curr) => {
+        acc[curr.deck_id] = curr.content;
+        return acc;
+      }, {} as Record<string, string>);
       
       // Flatten the response so it looks like an array of decks (with extra library metadata if needed)
       return (data || []).map((item: any) => ({
         ...item.deck,
         saved_at: item.created_at,
         last_viewed_at: item.last_viewed_at,
-        library_id: item.id
+        library_id: item.id,
+        investor_note: notesMap[item.deck.id] || ""
       })) as Deck[];
     });
   },
