@@ -3,7 +3,7 @@ import {
   FileText,
   Monitor,
   BarChart3,
-  Mail,
+  Bookmark,
   MessageCircle,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
@@ -16,7 +16,7 @@ const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   { icon: FileText, label: "Content", href: "/content" },
   { icon: Monitor, label: "Rooms", href: "/rooms" },
-  { icon: Mail, label: "Saved Decks", href: "/saved-decks" },
+  { icon: Bookmark, label: "Saved Decks", href: "/saved-decks" },
   { icon: BarChart3, label: "Analytics", href: "/analytics", disabled: true },
   { icon: MessageCircle, label: "Requests", href: "/requests", disabled: true },
 ];
