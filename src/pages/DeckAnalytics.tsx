@@ -251,20 +251,20 @@ export default function DeckAnalytics() {
                 }}
                 className="w-full flex flex-col items-center"
               >
-                <TabsList className="bg-white border border-slate-200 p-1.5 h-auto rounded-xl gap-1 flex-wrap justify-center">
+                <TabsList className="bg-white/5 border border-white/10 p-1.5 h-auto rounded-2xl gap-2 backdrop-blur-md shadow-inner">
                   {tabs.map((tab) => (
                     <TabsTrigger
                       key={tab.id}
                       value={tab.id}
                       className={cn(
-                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative overflow-hidden text-slate-700 data-[state=active]:bg-deckly-primary data-[state=active]:text-white shadow-none",
+                        "rounded-xl text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3.5 text-slate-500 data-[state=active]:bg-deckly-primary data-[state=active]:text-slate-950 shadow-xl transition-all duration-300 active:scale-95",
                         tab.comingSoon &&
                           "opacity-50 cursor-not-allowed grayscale",
                       )}
                     >
                       {tab.label}
                       {tab.comingSoon && (
-                        <span className="text-[7px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded ml-1 font-bold">
+                        <span className="text-[7px] bg-white/5 text-slate-600 px-1.5 py-0.5 rounded ml-1 font-bold">
                           CS
                         </span>
                       )}
@@ -619,45 +619,43 @@ function SummaryCard({
   isPlaceholder = false,
 }: any) {
   return (
-    <DashboardCard className="p-4 md:p-8 group hover:border-slate-300 transition-all cursor-default">
+    <DashboardCard className="p-4 md:p-8 group cursor-default border-white/5 shadow-2xl glass-shiny">
       <div className="flex items-start justify-between mb-3 md:mb-6">
         <div
           className={cn(
-            "w-8 h-8 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center text-white transition-transform group-hover:scale-110",
+            "w-8 h-8 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110",
             color === "primary"
-              ? "bg-deckly-primary"
+              ? "bg-deckly-primary text-slate-950 shadow-[0_0_20px_rgba(34,197,94,0.3)]"
               : color === "secondary"
-                ? "bg-slate-900"
-                : "bg-slate-50 text-slate-400",
+                ? "bg-white/10 text-white"
+                : "bg-white/5 text-slate-500",
           )}
         >
           {React.isValidElement(icon)
-            ? React.cloneElement(icon as React.ReactElement<any>, { size: 16 })
+            ? React.cloneElement(icon as React.ReactElement<any>, { size: 20 })
             : icon}
         </div>
         {isPlaceholder && (
           <Badge
             variant="outline"
-            className="bg-slate-50 text-[7px] font-black uppercase text-slate-400 border-slate-200 hidden md:inline-flex"
+            className="bg-white/5 text-[7px] font-black uppercase text-slate-500 border-white/10 hidden md:inline-flex"
           >
             Coming Soon
           </Badge>
         )}
       </div>
-      <div>
-        <div className="flex items-baseline gap-1">
-          <p
-            className={cn(
-              "text-2xl md:text-5xl font-bold mb-1 tracking-tighter",
-              isPlaceholder
-                ? "text-slate-300 text-xl md:text-3xl"
-                : "text-deckly-primary",
-            )}
-          >
-            {value}
-          </p>
-        </div>
-        <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight">
+      <div className="space-y-1">
+        <p
+          className={cn(
+            "text-2xl md:text-5xl font-black tracking-tighter leading-none shadow-premium",
+            isPlaceholder
+              ? "text-slate-700 text-xl md:text-3xl"
+              : "text-deckly-primary",
+          )}
+        >
+          {value}
+        </p>
+        <p className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] leading-tight">
           {label}
         </p>
       </div>
