@@ -33,7 +33,15 @@ export function AnalyticsDashboard() {
     labels: string[];
     visits: number[];
     timeSpent: number[];
-  }>(initialCache?.daily || { labels: [], visits: [], timeSpent: [] });
+    bookmarks: number[];
+  }>(
+    initialCache?.daily || {
+      labels: [],
+      visits: [],
+      timeSpent: [],
+      bookmarks: [],
+    },
+  );
 
   const [loading, setLoading] = useState(!initialCache);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -162,32 +170,13 @@ export function AnalyticsDashboard() {
 
           <TabsContent
             value="BOOKMARKS"
-            className="flex-1 m-0 p-8 flex flex-col items-center justify-center text-center"
+            className="flex-1 m-0 p-4 md:p-8 pb-8 md:pb-12 flex flex-col justify-end"
           >
-            <div className="space-y-4">
-              <div className="w-16 h-16 bg-deckly-primary/10 rounded-full flex items-center justify-center mx-auto text-deckly-primary">
-                <svg
-                  className="w-8 h-8"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                  />
-                </svg>
-              </div>
-              <h4 className="font-bold text-slate-900">
-                {stats.totalSaves || 0} Saved Decks
-              </h4>
-              <p className="text-sm text-slate-500 max-w-[280px]">
-                Investors have bookmarked your assets {stats.totalSaves || 0}{" "}
-                times for easy access in their library.
-              </p>
-            </div>
+            <AnalyticsChart
+              labels={daily.labels}
+              data={daily.bookmarks}
+              loading={loading}
+            />
           </TabsContent>
         </Tabs>
       </div>

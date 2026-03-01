@@ -290,6 +290,7 @@ export const analyticsService = {
     const labels: string[] = [];
     const visits: number[] = [];
     const timeSpent: number[] = [];
+    const bookmarks: number[] = [];
     const dateKeys: string[] = []; // YYYY-MM-DD for matching
 
     // Initialize days (Mon-Sun style, ending today)
@@ -301,6 +302,7 @@ export const analyticsService = {
       dateKeys.push(d.toISOString().split('T')[0]);
       visits.push(0);
       timeSpent.push(0);
+      bookmarks.push(0);
     }
 
     try {
@@ -321,27 +323,48 @@ export const analyticsService = {
         const { data: userDecks } = await deckIdsQuery;
         
         const deckIds = (userDecks || []).map(d => d.id);
-        if (deckIds.length === 0) return { labels, visits, timeSpent };
+        if (deckIds.length === 0) return { labels, visits, timeSpent, bookmarks };
 
-        const { data: vData, error: vError } = await supabase
-            .from("deck_page_views")
-            .select("viewed_at, visitor_id, deck_id, time_spent")
-            .in("deck_id", deckIds)
-            .gt("viewed_at", sevenDaysAgo.toISOString());
+        // 2. Fetch both page views and bookmarks in parallel
+        const [vResult, bResult] = await Promise.all([
+            supabase
+                .from("deck_page_views")
+                .select("viewed_at, visitor_id, deck_id, time_spent")
+                .in("deck_id", deckIds)
+                .gt("viewed_at", sevenDaysAgo.toISOString()),
+            supabase
+                .from("investor_library")
+                .select("created_at, deck_id")
+                .in("deck_id", deckIds)
+                .gt("created_at", sevenDaysAgo.toISOString())
+        ]);
 
-        if (vError) throw vError;
+        if (vResult.error) throw vResult.error;
+        if (bResult.error) throw bResult.error;
+
+        const vData = vResult.data || [];
+        const bData = bResult.data || [];
 
         // Tracks unique visitor/deck combos per day to count as "one visit"
         const dayVisitsMap = dateKeys.map(() => new Set<string>());
 
         // Map visits to days using date keys
-        (vData || []).forEach(v => {
+        vData.forEach(v => {
             const vDate = new Date(v.viewed_at).toISOString().split('T')[0];
             const index = dateKeys.indexOf(vDate);
             if (index !== -1) {
                 // Same logic as total views: unique visitor per deck per day
                 dayVisitsMap[index].add(`${v.visitor_id}-${v.deck_id}`);
                 timeSpent[index] += Number(v.time_spent || 0);
+            }
+        });
+
+        // Map bookmarks to days
+        bData.forEach(b => {
+            const bDate = new Date(b.created_at).toISOString().split('T')[0];
+            const index = dateKeys.indexOf(bDate);
+            if (index !== -1) {
+                bookmarks[index]++;
             }
         });
 
@@ -353,7 +376,7 @@ export const analyticsService = {
         console.error("Error fetching daily metrics:", err);
     }
 
-    const result = { labels, visits, timeSpent };
+    const result = { labels, visits, timeSpent, bookmarks };
     dailyMetricsCache.set(cacheKey, { data: result, timestamp: Date.now() });
     return result;
   },
