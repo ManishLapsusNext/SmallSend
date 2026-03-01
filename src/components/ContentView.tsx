@@ -20,7 +20,11 @@ export function ContentView() {
 
   const initialCache = getCachedData();
   const [stats, setStats] = useState(
-    initialCache?.stats || { totalViews: 0, totalTimeSeconds: 0 },
+    initialCache?.stats || {
+      totalViews: 0,
+      totalTimeSeconds: 0,
+      totalSaves: 0,
+    },
   );
   const [decks, setDecks] = useState<any[]>(initialCache?.decks || []);
   const [loading, setLoading] = useState(!initialCache);
@@ -37,7 +41,7 @@ export function ContentView() {
 
       try {
         const [totalStats, decksWithStats] = await Promise.all([
-          analyticsService.getUserTotalStats(session.user.id),
+          analyticsService.getUserTotalStats(session.user.id, undefined, true),
           deckService.getDecksWithAnalytics(session.user.id),
         ]);
 
@@ -79,6 +83,9 @@ export function ContentView() {
 
   return (
     <div className="space-y-12 pb-12 animate-in fade-in duration-700 relative">
+      <p className="text-slate-500 font-medium -mb-6 md:-mb-4">
+        Manage your assets and track engagement across all your decks.
+      </p>
       {/* Subtle refresh indicator */}
       {isRefreshing && !loading && (
         <div className="absolute top-0 right-0 py-2 flex items-center gap-2">
@@ -92,6 +99,7 @@ export function ContentView() {
       <ContentStatsCard
         totalViews={stats.totalViews}
         totalTimeSeconds={stats.totalTimeSeconds}
+        totalSaves={stats.totalSaves}
         loading={loading}
       />
 
