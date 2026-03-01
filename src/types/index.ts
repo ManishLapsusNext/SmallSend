@@ -18,8 +18,13 @@ export interface Deck {
   require_email?: boolean;
   require_password?: boolean;
   view_password?: string;
+  file_type?: string;
+  display_mode?: 'raw' | 'interactive';
   expires_at?: string | null;
+  investor_note?: string;
 }
+
+export type DeckWithExpiry = Deck;
 
 export interface BrandingSettings {
   id: string;

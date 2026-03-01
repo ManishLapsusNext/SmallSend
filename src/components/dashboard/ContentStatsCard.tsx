@@ -6,12 +6,14 @@ import { cn } from "@/lib/utils";
 interface ContentStatsCardProps {
   totalViews: number;
   totalTimeSeconds: number;
+  totalSaves: number;
   loading?: boolean;
 }
 
 export function ContentStatsCard({
   totalViews,
   totalTimeSeconds,
+  totalSaves,
   loading,
 }: ContentStatsCardProps) {
   const stats = useMemo(() => {
@@ -32,11 +34,10 @@ export function ContentStatsCard({
       },
       {
         label: "Bookmarked",
-        value: "0",
-        sub: "Coming Soon",
+        value: (totalSaves || 0).toLocaleString(),
       },
-    ];
-  }, [totalViews, totalTimeSeconds]);
+    ] as { label: string; value: string; sub?: string }[];
+  }, [totalViews, totalTimeSeconds, totalSaves]);
 
   return (
     <DashboardCard className="py-4 md:py-12 px-4 md:px-8">

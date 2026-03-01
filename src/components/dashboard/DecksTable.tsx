@@ -19,6 +19,7 @@ interface Deck {
   total_views: number;
   last_viewed_at: string | null;
   file_url: string;
+  save_count: number;
 }
 
 interface DecksTableProps {
@@ -89,7 +90,7 @@ export function DecksTable({ decks, loading, onDelete }: DecksTableProps) {
                   {deck.title}
                 </Link>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  {deck.total_views} views
+                  {deck.total_views} views · {deck.save_count} saves
                   {deck.last_viewed_at
                     ? ` · ${new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(deck.last_viewed_at)).replace(/\//g, "-")}`
                     : ""}
@@ -160,6 +161,9 @@ export function DecksTable({ decks, loading, onDelete }: DecksTableProps) {
                 Views
               </TableHead>
               <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-400 py-6 text-center">
+                Saves
+              </TableHead>
+              <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-400 py-6 text-center">
                 Last Viewed
               </TableHead>
               <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-400 py-6 text-right px-8">
@@ -181,6 +185,9 @@ export function DecksTable({ decks, loading, onDelete }: DecksTableProps) {
                     </TableCell>
                     <TableCell className="py-6">
                       <div className="h-8 w-24 bg-slate-50 animate-pulse rounded-lg mx-auto" />
+                    </TableCell>
+                    <TableCell className="py-6">
+                      <div className="h-4 w-8 bg-slate-50 animate-pulse rounded mx-auto" />
                     </TableCell>
                     <TableCell className="py-6">
                       <div className="h-4 w-8 bg-slate-50 animate-pulse rounded mx-auto" />
@@ -255,6 +262,9 @@ export function DecksTable({ decks, loading, onDelete }: DecksTableProps) {
                   </TableCell>
                   <TableCell className="py-6 text-center font-bold text-slate-900">
                     {deck.total_views}
+                  </TableCell>
+                  <TableCell className="py-6 text-center font-bold text-slate-900">
+                    {deck.save_count}
                   </TableCell>
                   <TableCell className="py-6 text-center text-slate-500 font-medium text-xs">
                     {deck.last_viewed_at
