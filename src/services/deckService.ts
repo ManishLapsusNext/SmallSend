@@ -504,7 +504,7 @@ export const deckService = {
         .in("deck_id", deckIds);
 
       if (notesError) {
-        console.error("Error fetching notes for inbox:", notesError);
+        console.error("Error fetching notes for bookmarked library:", notesError);
       }
 
       const notesMap = (notesData || []).reduce((acc, curr) => {

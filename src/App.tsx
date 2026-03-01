@@ -17,7 +17,7 @@ import DataRoomsPage from "./pages/DataRoomsPage";
 import ManageDataRoom from "./pages/ManageDataRoom";
 import DataRoomDetail from "./pages/DataRoomDetail";
 import DataRoomViewer from "./pages/DataRoomViewer";
-import Inbox from "./pages/Inbox";
+import SavedDecks from "./pages/SavedDecks";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import "./App.css";
 
@@ -120,8 +120,8 @@ const AppContent = () => {
           element={!session ? <Signup /> : <Navigate to="/" />}
         />
         <Route
-          path="/inbox"
-          element={session ? <Inbox /> : <Navigate to="/login" />}
+          path="/saved-decks"
+          element={session ? <SavedDecks /> : <Navigate to="/login" />}
         />
         <Route
           path="/"

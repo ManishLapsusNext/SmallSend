@@ -23,7 +23,7 @@ import {
 import { Link } from "react-router-dom";
 import { cn } from "../utils/cn";
 
-export function InboxView() {
+export function SavedDecksView() {
   const { session } = useAuth();
   const [decks, setDecks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,8 +125,8 @@ export function InboxView() {
                 <FileText size={32} />
               </div>
               <p className="text-slate-400 text-sm font-medium">
-                Your inbox is empty. Save decks while viewing them to see them
-                here.
+                Your saved decks list is empty. Save decks while viewing them to
+                see them here.
               </p>
             </div>
           ) : (
@@ -191,12 +191,13 @@ export function InboxView() {
                     <div className="flex gap-2 items-start justify-start w-fit">
                       <div className="min-w-0">
                         {editingId === deck.id ? (
-                          <div className="space-y-2 min-w-[200px]">
+                          <div className="space-y-2 min-w-[240px]">
                             <textarea
                               value={editContent}
                               onChange={(e) => setEditContent(e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm text-slate-600 focus:outline-none focus:ring-1 focus:ring-deckly-primary/30 min-h-[80px]"
+                              className="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm text-slate-600 focus:outline-none focus:ring-1 focus:ring-deckly-primary/30 min-h-[120px]"
                               autoFocus
+                              placeholder="Write your private notes here..."
                             />
                             <div className="flex items-center justify-end gap-2">
                               <button
@@ -220,7 +221,7 @@ export function InboxView() {
                             </div>
                           </div>
                         ) : (
-                          <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed font-medium italic">
+                          <p className="text-sm text-slate-600 leading-relaxed font-medium italic">
                             {deck.investor_note
                               ? `"${deck.investor_note}"`
                               : "No notes yet..."}
@@ -298,8 +299,8 @@ export function InboxView() {
                         <FileText size={32} />
                       </div>
                       <p className="font-medium max-w-xs mx-auto">
-                        Your inbox is empty. Save decks while viewing them to
-                        keep track of them here.
+                        Your saved decks list is empty. Save decks while viewing
+                        them to keep track of them here.
                       </p>
                     </div>
                   </TableCell>
@@ -350,7 +351,7 @@ export function InboxView() {
                           <div className="min-w-0">
                             {editingId === deck.id ? (
                               <div
-                                className="flex items-start gap-2 min-w-[200px]"
+                                className="flex items-start gap-2 min-w-[300px]"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <textarea
@@ -358,8 +359,9 @@ export function InboxView() {
                                   onChange={(e) =>
                                     setEditContent(e.target.value)
                                   }
-                                  className="flex-1 bg-white border border-slate-200 rounded-lg p-2 text-xs text-slate-600 focus:outline-none focus:ring-1 focus:ring-deckly-primary/30 min-h-[60px]"
+                                  className="flex-1 bg-white border border-slate-200 rounded-lg p-3 text-xs text-slate-600 focus:outline-none focus:ring-1 focus:ring-deckly-primary/30 min-h-[100px]"
                                   autoFocus
+                                  placeholder="Write your private notes here..."
                                 />
                                 <div className="flex flex-col gap-1">
                                   <button
@@ -387,7 +389,7 @@ export function InboxView() {
                                 </div>
                               </div>
                             ) : (
-                              <p className="text-xs text-slate-500 line-clamp-2 italic font-medium max-w-[180px]">
+                              <p className="text-xs text-slate-500 italic font-medium max-w-[350px]">
                                 {deck.investor_note ||
                                   "Click to add description..."}
                               </p>

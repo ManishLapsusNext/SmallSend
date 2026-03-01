@@ -19,8 +19,8 @@ const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   { icon: FileText, label: "Content", href: "/content" },
   { icon: Monitor, label: "Rooms", href: "/rooms" },
+  { icon: Mail, label: "Saved Decks", href: "/saved-decks" },
   { icon: BarChart3, label: "Analytics", href: "/analytics", disabled: true },
-  { icon: Mail, label: "Inbox", href: "/inbox" },
   { icon: MessageCircle, label: "Requests", href: "/requests", disabled: true },
 ];
 
