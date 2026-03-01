@@ -35,10 +35,10 @@ export function AccessProtectionSection({
 
   return (
     <section className="space-y-5">
-      <div className="flex items-center gap-2 px-1">
+      <div className="flex items-center gap-3 px-1 mb-6">
         <Lock size={16} className="text-deckly-primary" />
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-          Access Protection
+        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+          SECURITY OVERRIDE
         </h3>
       </div>
 
@@ -46,23 +46,29 @@ export function AccessProtectionSection({
         {/* Require Email */}
         <div
           className={cn(
-            "flex items-center justify-between p-4 rounded-2xl border transition-all",
+            "flex items-center justify-between p-6 rounded-[2rem] border transition-all duration-300 group",
             requireEmail
-              ? "bg-deckly-primary/5 border-deckly-primary/30"
-              : "bg-slate-50/50 border-slate-200",
+              ? "bg-deckly-primary/10 border-deckly-primary/30 shadow-[0_0_30px_rgba(34,197,94,0.05)]"
+              : "bg-white/5 border-white/5 hover:border-white/10",
           )}
         >
-          <div className="flex items-center gap-3">
-            <Mail
-              size={18}
-              className={
-                requireEmail ? "text-deckly-primary" : "text-slate-400"
-              }
-            />
+          <div className="flex items-center gap-4">
+            <div
+              className={cn(
+                "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-inner",
+                requireEmail
+                  ? "bg-deckly-primary/20 text-deckly-primary border border-deckly-primary/30"
+                  : "bg-white/5 text-slate-700 border border-white/5",
+              )}
+            >
+              <Mail size={20} />
+            </div>
             <div>
-              <p className="text-sm font-bold text-slate-900">Require Email</p>
-              <p className="text-[11px] text-slate-400">
-                Capture viewer emails
+              <p className="text-[11px] font-black text-white uppercase tracking-wider">
+                LEADS CAPTURE
+              </p>
+              <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-0.5">
+                FORCED EMAIL ENTRY
               </p>
             </div>
           </div>
@@ -70,30 +76,36 @@ export function AccessProtectionSection({
             id="require-email"
             checked={requireEmail}
             onCheckedChange={setRequireEmail}
-            className="data-[state=checked]:bg-deckly-primary"
+            className="data-[state=checked]:bg-deckly-primary scale-110"
           />
         </div>
 
         {/* Password Protected */}
         <div
           className={cn(
-            "flex items-center justify-between p-4 rounded-2xl border transition-all",
+            "flex items-center justify-between p-6 rounded-[2rem] border transition-all duration-300 group",
             requirePassword
-              ? "bg-deckly-primary/5 border-deckly-primary/30"
-              : "bg-slate-50/50 border-slate-200",
+              ? "bg-deckly-primary/10 border-deckly-primary/30 shadow-[0_0_30px_rgba(34,197,94,0.05)]"
+              : "bg-white/5 border-white/5 hover:border-white/10",
           )}
         >
-          <div className="flex items-center gap-3">
-            <Lock
-              size={18}
-              className={
-                requirePassword ? "text-deckly-primary" : "text-slate-400"
-              }
-            />
+          <div className="flex items-center gap-4">
+            <div
+              className={cn(
+                "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-inner",
+                requirePassword
+                  ? "bg-deckly-primary/20 text-deckly-primary border border-deckly-primary/30"
+                  : "bg-white/5 text-slate-700 border border-white/5",
+              )}
+            >
+              <Lock size={20} />
+            </div>
             <div>
-              <p className="text-sm font-bold text-slate-900">Password</p>
-              <p className="text-[11px] text-slate-400">
-                Restrict with a password
+              <p className="text-[11px] font-black text-white uppercase tracking-wider">
+                ELITE ACCESS
+              </p>
+              <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-0.5">
+                PASSWORD PROTECTION
               </p>
             </div>
           </div>
@@ -101,32 +113,36 @@ export function AccessProtectionSection({
             id="require-password"
             checked={requirePassword}
             onCheckedChange={setRequirePassword}
-            className="data-[state=checked]:bg-deckly-primary"
+            className="data-[state=checked]:bg-deckly-primary scale-110"
           />
         </div>
 
         {/* Set Expiry Date */}
         <div
           className={cn(
-            "flex items-center justify-between p-4 rounded-2xl border transition-all",
+            "flex items-center justify-between p-6 rounded-[2rem] border transition-all duration-300 group",
             expiryEnabled
-              ? "bg-deckly-primary/5 border-deckly-primary/30"
-              : "bg-slate-50/50 border-slate-200",
+              ? "bg-deckly-primary/10 border-deckly-primary/30 shadow-[0_0_30px_rgba(34,197,94,0.05)]"
+              : "bg-white/5 border-white/5 hover:border-white/10",
           )}
         >
-          <div className="flex items-center gap-3">
-            <CalendarDays
-              size={18}
-              className={
-                expiryEnabled ? "text-deckly-primary" : "text-slate-400"
-              }
-            />
+          <div className="flex items-center gap-4">
+            <div
+              className={cn(
+                "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-inner",
+                expiryEnabled
+                  ? "bg-deckly-primary/20 text-deckly-primary border border-deckly-primary/30"
+                  : "bg-white/5 text-slate-700 border border-white/5",
+              )}
+            >
+              <CalendarDays size={20} />
+            </div>
             <div>
-              <p className="text-sm font-bold text-slate-900">
-                Set Expiry Date
+              <p className="text-[11px] font-black text-white uppercase tracking-wider">
+                LIFE SPAN
               </p>
-              <p className="text-[11px] text-slate-400">
-                Auto-disable access after date
+              <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-0.5">
+                EXPIRATION DATE
               </p>
             </div>
           </div>
@@ -137,7 +153,7 @@ export function AccessProtectionSection({
               setExpiryEnabled(checked);
               if (!checked) setExpiryDate("");
             }}
-            className="data-[state=checked]:bg-deckly-primary"
+            className="data-[state=checked]:bg-deckly-primary scale-110"
           />
         </div>
       </div>

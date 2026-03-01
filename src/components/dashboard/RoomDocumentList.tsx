@@ -75,56 +75,56 @@ export function RoomDocumentList({
             onDragOver={(e) => handleDragOver(e, index)}
             onDrop={() => handleDrop(index)}
             onDragEnd={handleDragEnd}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
+            className={`flex items-center gap-4 px-4 py-3 rounded-2xl border transition-all duration-300 group ${
               isDragging
-                ? "opacity-50 border-deckly-primary/30 bg-deckly-primary/5"
+                ? "opacity-40 border-deckly-primary/50 bg-deckly-primary/10"
                 : isDragOver
-                  ? "border-deckly-primary/50 bg-deckly-primary/5"
-                  : "border-transparent hover:bg-slate-50"
+                  ? "border-white/20 bg-white/5 scale-[1.02]"
+                  : "glass-shiny border-white/5 hover:border-deckly-primary/30"
             }`}
           >
             {/* Drag handle */}
-            <div className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 transition-colors">
-              <GripVertical size={16} />
+            <div className="cursor-grab active:cursor-grabbing text-slate-600 hover:text-deckly-primary transition-colors">
+              <GripVertical size={18} />
             </div>
 
             {/* Order number */}
-            <span className="text-xs font-bold text-slate-300 w-5 text-center shrink-0">
-              {index + 1}
+            <span className="text-[10px] font-black text-slate-700 w-6 text-center shrink-0 uppercase tracking-widest">
+              {String(index + 1).padStart(2, "0")}
             </span>
 
             {/* Thumbnail */}
-            <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
+            <div className="w-12 h-10 rounded-xl bg-white/5 border border-white/10 overflow-hidden shrink-0 shadow-inner group-hover:border-deckly-primary/30 transition-all">
               {deck?.pages?.[0]?.image_url ? (
                 <img
                   src={deck.pages[0].image_url}
                   alt=""
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <FileText size={16} className="text-slate-300" />
+                  <FileText size={16} className="text-slate-700" />
                 </div>
               )}
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-700 truncate">
-                {deck?.title || "Untitled"}
+              <p className="text-[11px] font-black text-white uppercase tracking-wider truncate group-hover:text-deckly-primary transition-colors">
+                {deck?.title || "Untitled Asset"}
               </p>
-              <p className="text-xs text-slate-400">
-                {deck?.pages?.length || 0} pages
+              <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-0.5">
+                {deck?.pages?.length || 0} SLIDES IN BUNDLE
               </p>
             </div>
 
             {/* Remove */}
             <button
               onClick={() => onRemove(doc.deck_id)}
-              className="p-2 text-slate-300 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
-              title="Remove from room"
+              className="p-2.5 text-slate-600 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100 border border-transparent hover:border-red-500/20"
+              title="Expose from room"
             >
-              <Trash2 size={15} />
+              <Trash2 size={16} />
             </button>
           </div>
         );
